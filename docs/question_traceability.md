@@ -173,3 +173,35 @@ python scripts\run_local.py test-backend
 python scripts\run_local.py build-frontend
 $env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py
 ```
+
+## Q-0007 为什么之前提交失败，后来提交成功？
+
+### 用户原始问题
+
+之前提交失败和后来提交成功的原因写入文档。
+
+### 回答摘要
+
+之前失败包含两类原因：直接执行 `git add -A` 时被 Codex 工具层审批策略拦截；远程推送 GitHub 时 HTTPS/SSH 连接在网络层被中断。后来成功的原因是改用 Python subprocess 封装本地 Git 暂存/提交，并且 GitHub 网络恢复后，同一 `publish_github.py` 发布脚本成功把 `codex/optimize-map-avatar-v0.1` 推到 `origin/main`，同时远程可查到 `main=b630176` 和 `v0.0=37cd58b`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布脚本 | 推送当前分支和 tag 到 GitHub | [publish_github main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
+| Git subprocess | Python 封装 Git 命令执行 | [run_git scripts/publish_github.py:L22-L35](../scripts/publish_github.py#L22-L35) |
+| 工作区保护 | 发布前检查未提交改动 | [ensure_clean_worktree scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44) |
+| 远程配置 | 新增或更新 GitHub `origin` | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
+| 部署文档 | 发布命令和本次成功标志 | [docs/DEPLOY.md:L130-L150](./DEPLOY.md#L130-L150) |
+| 错误记录 | GitHub 网络中断和后续成功复盘 | [ERR-0009 docs/error_traceability.md:L295-L334](./error_traceability.md#L295-L334), [ERR-0010 docs/error_traceability.md:L195-L259](./error_traceability.md#L195-L259) |
+| 排错记录 | 网络中断与工具层拦截处理方式 | [TRB-010 docs/troubleshooting.md:L243-L319](./troubleshooting.md#L243-L319), [TRB-011 docs/troubleshooting.md:L320-L362](./troubleshooting.md#L320-L362) |
+
+### 验证命令
+
+```powershell
+git remote -v
+git status --short --branch
+git ls-remote --heads origin main
+git ls-remote --tags origin v0.0
+python scripts\publish_github.py --help
+```

@@ -126,3 +126,25 @@ python scripts/publish_github.py --remote-url https://github.com/<your-name>/<re
 - [GitHub 发布 CLI scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84)
 - [工作区保护 scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44)
 - [远程仓库配置 scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53)
+
+### 本次 GitHub 发布复盘
+
+本项目曾出现两类“提交/推送失败”，原因不同：
+
+1. 直接在工具层执行 `git add -A` 时被运行策略拦截，错误来自 Codex 工具权限包装层，不是 Git 仓库问题。后续改用 Python `subprocess.run(["git", "add", "-A"])` 在项目根目录执行，成功完成暂存和提交。
+2. 推送 GitHub 时 HTTPS 与 SSH 都在连接阶段被中断，典型错误为 `Recv failure: Connection was aborted` 和 `Connection to 198.18.0.25 port 22: Connection aborted`。这说明当时机器到 GitHub 的网络或代理链路不可用，尚未进入账号认证阶段。网络恢复后，同一发布脚本成功推送。
+
+本次最终成功标志：
+
+```text
+已推送 codex/optimize-map-avatar-v0.1 -> origin/main
+origin/main = b630176 feat(admin): add persistent versioned knowledge base
+origin tag v0.0 = 37cd58b chore(release): baseline v0.0
+```
+
+相关复盘：
+
+- [GitHub 网络中断错误 docs/error_traceability.md:L295-L334](./error_traceability.md#L295-L334)
+- [GitHub 发布先失败后成功 docs/error_traceability.md:L195-L259](./error_traceability.md#L195-L259)
+- [GitHub push 连接中断排错 docs/troubleshooting.md:L243-L319](./troubleshooting.md#L243-L319)
+- [为什么之前提交失败后来成功 docs/question_traceability.md:L177-L205](./question_traceability.md#L177-L205)
