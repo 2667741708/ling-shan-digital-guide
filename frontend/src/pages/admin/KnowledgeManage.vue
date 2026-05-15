@@ -2,8 +2,12 @@
 import { onMounted, ref } from "vue";
 
 import {
+  archiveKnowledgeDocument,
   deleteKnowledgeDocument,
   fetchKnowledgeDocs,
+  fetchKnowledgeHistory,
+  fetchKnowledgeVersions,
+  publishKnowledgeDocument,
   reindexKnowledgeBase,
   searchKnowledge,
   updateKnowledgeDocument,
@@ -15,16 +19,24 @@ type KnowledgeDoc = {
   title: string;
   file_name: string;
   source: string;
-  status: string;
+  status: "draft" | "active" | "archived" | "deleted";
   editable: boolean;
   chunk_count: number;
+  current_version: number;
+  version_count: number;
+  history_count: number;
   updated_at: string;
   preview: string;
 };
 
 const docs = ref<KnowledgeDoc[]>([]);
+const versions = ref<any[]>([]);
+const history = ref<any[]>([]);
+const selectedDoc = ref<KnowledgeDoc | null>(null);
 const selectedFile = ref<File | null>(null);
+const statusFilter = ref("all");
 const uploadTitle = ref("");
+const changeNote = ref("后台上传");
 const editorTitle = ref("");
 const editorContent = ref("");
 const editingId = ref("");
@@ -33,8 +45,16 @@ const searchResult = ref<any[]>([]);
 const busy = ref(false);
 const notice = ref("");
 
+const statusText: Record<string, string> = {
+  all: "全部",
+  draft: "草稿",
+  active: "已发布",
+  archived: "已归档",
+  deleted: "已删除"
+};
+
 async function loadDocs() {
-  docs.value = await fetchKnowledgeDocs() as KnowledgeDoc[];
+  docs.value = await fetchKnowledgeDocs(statusFilter.value) as KnowledgeDoc[];
 }
 
 function onFileChange(event: Event) {
@@ -52,6 +72,7 @@ async function runWithNotice(action: () => Promise<unknown>, message: string) {
     await action();
     notice.value = message;
     await loadDocs();
+    if (selectedDoc.value) await inspectDoc(selectedDoc.value.id);
   } catch (error) {
     notice.value = error instanceof Error ? error.message : "操作失败";
   } finally {
@@ -65,8 +86,8 @@ async function uploadDoc() {
     return;
   }
   await runWithNotice(
-    () => uploadKnowledgeDocument(selectedFile.value as File, uploadTitle.value),
-    "上传成功，已自动重建向量索引"
+    () => uploadKnowledgeDocument(selectedFile.value as File, uploadTitle.value, changeNote.value),
+    "上传成功，当前为草稿；发布后才会进入游客端 RAG"
   );
   selectedFile.value = null;
 }
@@ -77,7 +98,7 @@ async function createTextDoc() {
     return;
   }
   const file = new File([editorContent.value], `${editorTitle.value.trim()}.md`, { type: "text/markdown" });
-  await runWithNotice(() => uploadKnowledgeDocument(file, editorTitle.value), "文本资料已保存并进入知识库");
+  await runWithNotice(() => uploadKnowledgeDocument(file, editorTitle.value, changeNote.value), "文本资料已保存为草稿");
   editingId.value = "";
 }
 
@@ -85,6 +106,7 @@ function editDoc(doc: KnowledgeDoc) {
   editingId.value = doc.id;
   editorTitle.value = doc.title;
   editorContent.value = doc.preview || "";
+  selectedDoc.value = doc;
 }
 
 async function updateDoc() {
@@ -93,17 +115,23 @@ async function updateDoc() {
     return;
   }
   await runWithNotice(
-    () => updateKnowledgeDocument(editingId.value, { title: editorTitle.value, content: editorContent.value }),
-    "资料已更新，向量索引已刷新"
+    () => updateKnowledgeDocument(editingId.value, { title: editorTitle.value, content: editorContent.value, change_note: changeNote.value }),
+    "资料已生成新草稿版本；发布后才会进入游客端 RAG"
   );
 }
 
-async function removeDoc(doc: KnowledgeDoc) {
-  if (!doc.editable) {
-    notice.value = "内置资料不可在页面删除";
-    return;
-  }
-  await runWithNotice(() => deleteKnowledgeDocument(doc.id), "资料已删除，向量索引已刷新");
+async function changeStatus(doc: KnowledgeDoc, action: "publish" | "archive" | "delete") {
+  const messages = {
+    publish: "资料已发布，已重建向量索引",
+    archive: "资料已归档，已从游客端 RAG 中移除",
+    delete: "资料已软删除，历史仍保留"
+  };
+  const actions = {
+    publish: () => publishKnowledgeDocument(doc.id),
+    archive: () => archiveKnowledgeDocument(doc.id),
+    delete: () => deleteKnowledgeDocument(doc.id)
+  };
+  await runWithNotice(actions[action], messages[action]);
 }
 
 async function rebuild() {
@@ -113,6 +141,19 @@ async function rebuild() {
 async function runSearch() {
   const data = await searchKnowledge(searchQuery.value) as any;
   searchResult.value = data.chunks || [];
+}
+
+async function inspectDoc(documentId: string) {
+  const doc = docs.value.find((item) => item.id === documentId);
+  if (doc) selectedDoc.value = doc;
+  versions.value = await fetchKnowledgeVersions(documentId) as any[];
+  history.value = await fetchKnowledgeHistory(documentId) as any[];
+}
+
+function logout() {
+  localStorage.removeItem("admin_token");
+  localStorage.removeItem("admin_username");
+  window.location.href = "/admin/login";
 }
 
 onMounted(async () => {
@@ -127,6 +168,7 @@ onMounted(async () => {
       <strong>知识库管理</strong>
       <router-link to="/admin">返回大屏</router-link>
       <router-link to="/guide">游客端验证</router-link>
+      <button class="secondary" @click="logout">退出登录</button>
     </nav>
 
     <section class="knowledge-grid">
@@ -134,19 +176,14 @@ onMounted(async () => {
         <div class="section-heading">
           <div>
             <strong>上传知识文档</strong>
-            <span>支持 Markdown、TXT、CSV、JSON、DOCX、XLSX，上传后自动切片并重建索引。</span>
+            <span>上传后为草稿；点击发布后才会进入游客端 RAG。</span>
           </div>
         </div>
         <div class="form-stack">
-          <label>
-            资料标题
-            <input v-model="uploadTitle" placeholder="例如：梵宫讲解词" />
-          </label>
-          <label>
-            选择文件
-            <input type="file" accept=".md,.txt,.csv,.json,.docx,.xlsx" @change="onFileChange" />
-          </label>
-          <button :disabled="busy" @click="uploadDoc">上传并入库</button>
+          <label>资料标题 <input v-model="uploadTitle" placeholder="例如：梵宫讲解词" /></label>
+          <label>变更说明 <input v-model="changeNote" placeholder="例如：补充雨天讲解词" /></label>
+          <label>选择文件 <input type="file" accept=".md,.txt,.csv,.json,.docx,.xlsx" @change="onFileChange" /></label>
+          <button :disabled="busy" @click="uploadDoc">上传为草稿</button>
           <p v-if="selectedFile" class="muted">待上传：{{ selectedFile.name }}</p>
         </div>
       </div>
@@ -155,20 +192,14 @@ onMounted(async () => {
         <div class="section-heading">
           <div>
             <strong>维护文本资料</strong>
-            <span>可直接新增或编辑后台上传的讲解词、FAQ、文史资料。</span>
+            <span>编辑会创建新版本，并回到草稿状态。</span>
           </div>
         </div>
         <div class="form-stack">
-          <label>
-            标题
-            <input v-model="editorTitle" placeholder="例如：雨天游览 FAQ" />
-          </label>
-          <label>
-            正文
-            <textarea v-model="editorContent" rows="9" placeholder="输入讲解词、常见问答或文史资料正文"></textarea>
-          </label>
+          <label>标题 <input v-model="editorTitle" placeholder="例如：雨天游览 FAQ" /></label>
+          <label>正文 <textarea v-model="editorContent" rows="9" placeholder="输入讲解词、常见问答或文史资料正文"></textarea></label>
           <div class="actions-line">
-            <button :disabled="busy" @click="updateDoc">{{ editingId ? "更新资料" : "新增文本资料" }}</button>
+            <button :disabled="busy" @click="updateDoc">{{ editingId ? "生成新版本" : "新增文本草稿" }}</button>
             <button class="secondary" :disabled="busy" @click="editingId = ''; editorTitle = ''; editorContent = ''">清空</button>
           </div>
         </div>
@@ -178,30 +209,56 @@ onMounted(async () => {
     <section class="panel">
       <div class="section-heading">
         <div>
-          <strong>文档列表</strong>
-          <span>内置资料只读，后台上传资料可编辑和删除。</span>
+          <strong>文档版本与发布状态</strong>
+          <span>游客端只检索已发布资料。</span>
         </div>
-        <button :disabled="busy" @click="rebuild">重建索引</button>
+        <div class="actions-line">
+          <select v-model="statusFilter" @change="loadDocs">
+            <option v-for="(label, key) in statusText" :key="key" :value="key">{{ label }}</option>
+          </select>
+          <button :disabled="busy" @click="rebuild">重建索引</button>
+        </div>
       </div>
       <p v-if="notice" class="notice">{{ notice }}</p>
       <div class="knowledge-table">
         <div class="knowledge-row head">
           <span>资料</span>
           <span>状态</span>
-          <span>切片</span>
+          <span>版本</span>
           <span>操作</span>
         </div>
-        <div v-for="doc in docs" :key="doc.source" class="knowledge-row">
+        <div v-for="doc in docs" :key="doc.id" class="knowledge-row">
           <div>
             <strong>{{ doc.title }}</strong>
             <small>{{ doc.source }}</small>
           </div>
-          <span>{{ doc.editable ? "可维护" : doc.status }}</span>
-          <span>{{ doc.chunk_count }}</span>
+          <span>{{ statusText[doc.status] || doc.status }}</span>
+          <span>v{{ doc.current_version }} / {{ doc.version_count }}</span>
           <div class="row-actions">
-            <button class="secondary" :disabled="!doc.editable" @click="editDoc(doc)">编辑</button>
-            <button class="danger" :disabled="!doc.editable || busy" @click="removeDoc(doc)">删除</button>
+            <button class="secondary" :disabled="doc.status === 'deleted'" @click="inspectDoc(doc.id)">历史</button>
+            <button class="secondary" :disabled="doc.status === 'deleted' || !doc.preview" @click="editDoc(doc)">编辑</button>
+            <button :disabled="doc.status === 'active' || doc.status === 'deleted' || busy" @click="changeStatus(doc, 'publish')">发布</button>
+            <button class="secondary" :disabled="doc.status !== 'active' || busy" @click="changeStatus(doc, 'archive')">归档</button>
+            <button class="danger" :disabled="doc.status === 'deleted' || busy" @click="changeStatus(doc, 'delete')">删除</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="selectedDoc" class="knowledge-grid">
+      <div class="panel">
+        <strong>{{ selectedDoc.title }} 版本</strong>
+        <div v-for="version in versions" :key="version.id" class="history-row">
+          <span>v{{ version.version }} {{ version.is_current ? "当前" : "" }}</span>
+          <small>{{ version.created_by }} · {{ version.created_at }}</small>
+          <small>{{ version.change_note }}</small>
+        </div>
+      </div>
+      <div class="panel">
+        <strong>操作历史</strong>
+        <div v-for="item in history" :key="item.id" class="history-row">
+          <span>{{ item.action }}</span>
+          <small>{{ item.actor }} · {{ item.created_at }}</small>
         </div>
       </div>
     </section>
@@ -210,7 +267,7 @@ onMounted(async () => {
       <div class="section-heading">
         <div>
           <strong>检索测试</strong>
-          <span>验证新增资料是否已经成为数字人回答依据。</span>
+          <span>只检索已发布知识和内置资料，草稿不会命中。</span>
         </div>
       </div>
       <div class="search-line">

@@ -175,24 +175,21 @@ python scripts\publish_github.py --remote-url https://github.com/<your-name>/<re
 
 ### 用户场景
 
-管理员可以在后台上传、更新、删除景区讲解词、文史资料、FAQ 和数据表资料；系统保存资料后立即重建本地向量索引，游客端数字人问答可检索到新增内容。
+管理员登录后台后，可以上传、编辑、发布、归档、软删除景区讲解词、文史资料、FAQ 和数据表资料；只有 `active` 已发布文档会进入游客端 RAG 检索。
 
 ### 实现位置
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| API 上传 | 接收 `multipart/form-data` 文件并保存入库 | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36) |
-| API 更新 | 修改可编辑文本资料并重建索引 | [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47) |
-| API 删除 | 删除后台上传资料并重建索引 | [knowledge_delete backend/app/api/admin.py:L50-L56](../backend/app/api/admin.py#L50-L56) |
-| API 重建 | 手动触发知识库重建 | [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61) |
-| 服务层 | 保存、更新、删除和列出后台资料 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90), [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105), [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116), [list_documents backend/app/services/knowledge_service.py:L143-L166](../backend/app/services/knowledge_service.py#L143-L166) |
-| 向量入库 | 读取 `data/admin_knowledge` 中的后台资料并切片入向量库 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L170](../backend/app/services/vector_store.py#L150-L170) |
-| 前端页面 | 上传表单、文本维护、文档列表、重建索引和检索测试 | [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L25-L118](../frontend/src/pages/admin/KnowledgeManage.vue#L25-L118), [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L132-L211](../frontend/src/pages/admin/KnowledgeManage.vue#L132-L211) |
-| 测试 | 保存、更新、删除后台知识文档 | [test_save_update_delete_admin_knowledge_document backend/tests/test_knowledge_management.py:L7-L30](../backend/tests/test_knowledge_management.py#L7-L30) |
-
-### 配置项
-
-- 后台上传资料固定保存到 [ADMIN_KNOWLEDGE_DIR backend/app/services/vector_store.py:L15-L19](../backend/app/services/vector_store.py#L15-L19)，当前路径为 `data/admin_knowledge`。
+| API 列表 | 按 `all/draft/active/archived/deleted` 状态筛选文档 | [knowledge_documents backend/app/api/admin.py:L30-L35](../backend/app/api/admin.py#L30-L35) |
+| API 上传 | 上传文档后默认保存为 `draft` | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50) |
+| API 更新 | 更新文本资料会生成新版本并回到 `draft` | [knowledge_update backend/app/api/admin.py:L54-L67](../backend/app/api/admin.py#L54-L67) |
+| API 发布/归档/删除 | 发布后重建索引，归档/删除后不再进入 RAG | [knowledge_publish backend/app/api/admin.py:L71-L76](../backend/app/api/admin.py#L71-L76), [knowledge_archive backend/app/api/admin.py:L80-L85](../backend/app/api/admin.py#L80-L85), [knowledge_delete backend/app/api/admin.py:L89-L94](../backend/app/api/admin.py#L89-L94) |
+| 版本与历史 | 查询文档版本和操作日志 | [knowledge_versions backend/app/api/admin.py:L98-L103](../backend/app/api/admin.py#L98-L103), [knowledge_history backend/app/api/admin.py:L107-L112](../backend/app/api/admin.py#L107-L112) |
+| 服务层 | 文档保存、更新、发布、删除和历史查询 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213), [update_document backend/app/services/knowledge_service.py:L216-L262](../backend/app/services/knowledge_service.py#L216-L262), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [delete_document backend/app/services/knowledge_service.py:L305-L324](../backend/app/services/knowledge_service.py#L305-L324) |
+| 向量入库 | 只读取数据库中 `active` 文档的当前版本 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201) |
+| 前端页面 | 状态筛选、版本/历史、发布、归档、删除、检索测试 | [KnowledgeManage script frontend/src/pages/admin/KnowledgeManage.vue:L33-L156](../frontend/src/pages/admin/KnowledgeManage.vue#L33-L156), [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
+| 测试 | 草稿不命中、发布命中、删除后不命中且历史保留 | [test_versioned_knowledge_document_lifecycle backend/tests/test_knowledge_management.py:L18-L58](../backend/tests/test_knowledge_management.py#L18-L58) |
 
 ### 验证命令
 
@@ -205,3 +202,33 @@ python scripts\run_local.py build-frontend
 ### 影响范围
 
 影响管理后台知识库页面、后台知识库 API、本地向量库构建、游客端 RAG 回答依据和文档检索测试。
+
+## REQ-008 后台权限、版本化知识库与数据库持久化
+
+### 用户场景
+
+后台管理员使用账号密码登录，写操作必须携带 Bearer token；知识文档元数据、版本、发布状态、上传历史和数字人配置持久化到数据库。本地默认 SQLite，Docker 使用 PostgreSQL。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 数据库配置 | SQLAlchemy engine/session、`create_all` 初始化、测试库重置 | [configure_database backend/app/core/database.py:L33-L46](../backend/app/core/database.py#L33-L46), [init_db backend/app/core/database.py:L49-L55](../backend/app/core/database.py#L49-L55), [new_session backend/app/core/database.py:L67-L69](../backend/app/core/database.py#L67-L69) |
+| 数据模型 | 管理员、知识文档、版本、操作日志、数字人配置表 | [AdminUser backend/app/models/persistence.py:L16-L27](../backend/app/models/persistence.py#L16-L27), [KnowledgeDocument backend/app/models/persistence.py:L29-L57](../backend/app/models/persistence.py#L29-L57), [KnowledgeDocumentVersion backend/app/models/persistence.py:L59-L79](../backend/app/models/persistence.py#L59-L79), [KnowledgeOperationLog backend/app/models/persistence.py:L81-L97](../backend/app/models/persistence.py#L81-L97), [AvatarConfig backend/app/models/persistence.py:L99-L112](../backend/app/models/persistence.py#L99-L112) |
+| 权限服务 | PBKDF2 密码哈希、HMAC token、管理员依赖 | [hash_password backend/app/services/auth_service.py:L32-L41](../backend/app/services/auth_service.py#L32-L41), [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
+| 登录接口 | `POST /api/admin/login` 和 `GET /api/admin/me` | [login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16), [me backend/app/api/admin.py:L20-L21](../backend/app/api/admin.py#L20-L21) |
+| 数字人持久化 | 保存和读取 active 数字人配置 | [get_active_avatar backend/app/services/avatar_service.py:L65-L73](../backend/app/services/avatar_service.py#L65-L73), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99) |
+| 前端鉴权 | 登录页、token 注入、401 跳转、路由守卫 | [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46), [http token frontend/src/api/http.ts:L8-L22](../frontend/src/api/http.ts#L8-L22), [admin router guard frontend/src/router/index.ts:L17-L27](../frontend/src/router/index.ts#L17-L27) |
+| 配置 | `DATABASE_URL`、`ADMIN_TOKEN_SECRET`、Docker PostgreSQL URL | [settings backend/app/core/config.py:L7-L14](../backend/app/core/config.py#L7-L14), [.env.example:L14-L35](../.env.example#L14-L35), [deploy/docker-compose.yml:L5-L11](../deploy/docker-compose.yml#L5-L11) |
+| 测试 | 登录、错误密码、禁用用户、无 token 写接口、数字人配置持久化 | [auth tests backend/tests/test_auth_service.py:L18-L50](../backend/tests/test_auth_service.py#L18-L50), [avatar test backend/tests/test_avatar_service.py:L8-L17](../backend/tests/test_avatar_service.py#L8-L17) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\smoke_vue_full_stack.py
+```
+
+### 影响范围
+
+影响所有 `/api/admin/*` 后台接口、管理端登录态、知识库文档生命周期、向量库构建来源、Docker 部署数据库连接和数字人配置读取。

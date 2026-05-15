@@ -143,3 +143,33 @@ python scripts\run_local.py build-kb
 python scripts\run_local.py build-frontend
 python scripts\smoke_vue_full_stack.py
 ```
+
+## Q-0006 文档版本、发布状态、上传历史、权限和数据库持久化是否完成？
+
+### 用户原始问题
+
+文档版本、发布/草稿状态、上传历史、用户权限和数据库持久化。 这些都帮我完成。
+
+### 回答摘要
+
+已完成：本地默认 SQLite、Docker 使用 PostgreSQL；后台管理员登录返回 Bearer token；后台写接口需要 token；知识文档上传默认 draft，更新生成新版本，发布后进入 RAG，归档/删除后退出 RAG，版本和历史可查；数字人配置持久化到数据库。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 数据库配置 | SQLAlchemy engine/session、SQLite/PostgreSQL 切换 | [configure_database backend/app/core/database.py:L33-L46](../backend/app/core/database.py#L33-L46) |
+| 数据表模型 | 管理员、知识文档、版本、操作日志、数字人配置 | [persistence models backend/app/models/persistence.py:L16-L112](../backend/app/models/persistence.py#L16-L112) |
+| 鉴权服务 | 密码哈希、登录、token 校验 | [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
+| 知识库状态流转 | 上传 draft、发布 active、归档、软删除、版本/历史 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [list_history backend/app/services/knowledge_service.py:L372-L396](../backend/app/services/knowledge_service.py#L372-L396) |
+| 向量库约束 | 只把 active 文档当前版本加入 RAG 索引 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201) |
+| 后台页面 | 登录、知识库版本/历史、数字人配置 | [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265), [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
+| 测试 | 权限、版本化知识库、数字人配置持久化 | [auth tests backend/tests/test_auth_service.py:L18-L50](../backend/tests/test_auth_service.py#L18-L50), [knowledge lifecycle backend/tests/test_knowledge_management.py:L18-L58](../backend/tests/test_knowledge_management.py#L18-L58), [avatar test backend/tests/test_avatar_service.py:L8-L17](../backend/tests/test_avatar_service.py#L8-L17) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py
+```

@@ -14,9 +14,10 @@ bash scripts/dev_vue_full_stack.sh
 |---|---|---|
 | 数字人导游 | http://127.0.0.1:5173/guide | 测试灵灵数字人、文本问答、浏览器语音输入、语音播报、RAG 引用和路线卡片 |
 | 景区地图 | http://127.0.0.1:5173/map | 查看灵山胜境真实点位、地图路线、兴趣和时间筛选 |
+| 后台登录 | http://127.0.0.1:5173/admin/login | 管理员登录，默认 `admin` / `123456`，登录后 token 存入浏览器 localStorage |
 | 管理大屏 | http://127.0.0.1:5173/admin | 查看热门问答、热门景点、路线偏好、情绪趋势 |
-| 知识库管理 | http://127.0.0.1:5173/admin/knowledge | 上传、维护、删除知识文档，重建索引并检索验证 |
-| 数字人配置 | http://127.0.0.1:5173/admin/avatar | 查看数字人配置 |
+| 知识库管理 | http://127.0.0.1:5173/admin/knowledge | 上传草稿、发布、归档、软删除、查看版本/历史、重建索引并检索验证 |
+| 数字人配置 | http://127.0.0.1:5173/admin/avatar | 保存当前启用的数字人配置 |
 
 对应实现：
 
@@ -190,38 +191,82 @@ POST /api/admin/knowledge/search-test
 1. 打开：
 
    ```text
+   http://127.0.0.1:5173/admin/login
+   ```
+
+2. 登录：
+
+   ```text
+   用户名：admin
+   密码：123456
+   ```
+
+   登录页实现为 [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46)，后端鉴权为 [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131)。
+
+3. 进入知识库管理：
+
+   ```text
    http://127.0.0.1:5173/admin/knowledge
    ```
 
-2. 上传资料：
+4. 上传资料：
 
    - 在“上传知识文档”中填写标题；
    - 选择 `.md/.txt/.csv/.json/.docx/.xlsx` 文件；
-   - 点击“上传并入库”。
+   - 点击“上传为草稿”。
 
-   对应后端入口为 [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36)，保存后会调用 [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90) 并重建向量库。
+   对应后端入口为 [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50)，保存后会调用 [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213)。上传默认状态是 `draft`，不会进入游客端 RAG。
 
-3. 新增或更新文本资料：
+5. 新增或更新文本资料：
 
    - 在“维护文本资料”中填写标题和正文；
-   - 点击“新增文本资料”或在文档列表中选择可维护资料后点击“更新资料”。
+   - 点击“保存为草稿”或在文档列表中选择可维护资料后点击“更新资料”。
 
-   对应前端逻辑为 [updateDoc frontend/src/pages/admin/KnowledgeManage.vue:L87-L95](../frontend/src/pages/admin/KnowledgeManage.vue#L87-L95)，后端更新入口为 [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47)。
+   对应后端更新入口为 [knowledge_update backend/app/api/admin.py:L54-L67](../backend/app/api/admin.py#L54-L67)。更新不会覆盖历史，会创建新版本并回到 `draft`。
 
-4. 验证是否进入知识库：
+6. 发布并验证是否进入知识库：
 
+   - 点击文档卡片上的“发布”；
+   - 确认状态变为“已发布”；
    - 在“检索测试”中输入新增资料相关问题；
    - 结果列表应出现 `data/admin_knowledge/...` 来源；
    - 再到数字人页 `http://127.0.0.1:5173/guide` 提问同一问题，回答引用应包含新增资料。
 
-5. 删除和重建：
+   发布实现为 [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282)，向量入库只读取 active 文档的当前版本，位置为 [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201)。
 
-   - 后台上传资料可点击“删除”；
-   - 如手动改了 `data/admin_knowledge` 文件，可点击“重建索引”。
+7. 查看版本和上传历史：
 
-   对应实现为 [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) 和 [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61)。
+   - 点击“版本”查看每次上传/编辑生成的版本；
+   - 点击“历史”查看上传、更新、发布、归档、删除、重建索引等操作日志。
 
-## 6. Git Bash 路径规则
+   对应实现为 [list_versions backend/app/services/knowledge_service.py:L340-L369](../backend/app/services/knowledge_service.py#L340-L369) 和 [list_history backend/app/services/knowledge_service.py:L372-L396](../backend/app/services/knowledge_service.py#L372-L396)。
+
+8. 删除和重建：
+
+   - 后台上传资料可点击“删除”，系统会软删除并保留历史；
+   - 如手动改了资料文件，可点击“重建索引”。
+
+   对应实现为 [delete_document backend/app/services/knowledge_service.py:L305-L324](../backend/app/services/knowledge_service.py#L305-L324) 和 [knowledge_reindex backend/app/api/admin.py:L116-L117](../backend/app/api/admin.py#L116-L117)。
+
+## 6. 数字人配置测试流程
+
+1. 登录后台后打开：
+
+   ```text
+   http://127.0.0.1:5173/admin/avatar
+   ```
+
+2. 修改名称、风格、服装、音色、语速或欢迎语。
+3. 点击“保存配置”。
+4. 刷新游客端 `/guide`，新会话会读取当前 active 数字人配置。
+
+实现位置：
+
+- [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62)
+- [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99)
+- [create_session backend/app/services/chat_service.py:L30-L36](../backend/app/services/chat_service.py#L30-L36)
+
+## 7. Git Bash 路径规则
 
 Git Bash / MINGW64 中必须使用 `/`：
 

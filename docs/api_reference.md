@@ -38,53 +38,91 @@
 |---|---|
 | 方法与路径 | `POST /api/admin/knowledge/search-test` |
 | 请求字段 | `query` |
+| 鉴权 | `Authorization: Bearer <token>` |
 | 响应字段 | `query`, `chunks` |
-| API 入口 | [knowledge_search_test backend/app/api/admin.py:L64-L66](../backend/app/api/admin.py#L64-L66) |
-| 服务函数 | [search_test backend/app/services/knowledge_service.py:L169-L170](../backend/app/services/knowledge_service.py#L169-L170) |
+| API 入口 | [knowledge_search_test backend/app/api/admin.py:L121-L122](../backend/app/api/admin.py#L121-L122) |
+| 服务函数 | [search_test backend/app/services/knowledge_service.py:L399-L400](../backend/app/services/knowledge_service.py#L399-L400) |
+
+## API-011 管理员登录与身份校验
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/admin/login`, `GET /api/admin/me` |
+| 请求字段 | 登录：`username`, `password` |
+| 响应字段 | 登录：`token`, `token_type`, `username`, `role` |
+| API 入口 | [login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16), [me backend/app/api/admin.py:L20-L21](../backend/app/api/admin.py#L20-L21) |
+| 服务函数 | [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
+| 前端使用 | [loginAdmin frontend/src/api/admin.ts:L7-L8](../frontend/src/api/admin.ts#L7-L8), [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46) |
 
 ## API-007 后台知识文档上传
 
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `POST /api/admin/knowledge/upload` |
-| 请求字段 | `multipart/form-data`: `file`, `title` |
-| 响应字段 | `id`, `title`, `file_name`, `source`, `editable`, `chunk_count`, `index_result` |
-| API 入口 | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36) |
-| 服务函数 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90) |
-| 前端使用 | [uploadKnowledgeDocument frontend/src/api/admin.ts:L11-L16](../frontend/src/api/admin.ts#L11-L16) |
+| 鉴权 | `Authorization: Bearer <token>` |
+| 请求字段 | `multipart/form-data`: `file`, `title`, `change_note` |
+| 响应字段 | `id`, `title`, `file_name`, `source`, `status=draft`, `current_version`, `version_count`, `history_count` |
+| API 入口 | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50) |
+| 服务函数 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213) |
+| 前端使用 | [uploadKnowledgeDocument frontend/src/api/admin.ts:L19-L25](../frontend/src/api/admin.ts#L19-L25) |
 
 ## API-008 后台知识文档更新
 
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `PUT /api/admin/knowledge/documents/{document_id}` |
-| 请求字段 | `title`, `content` |
-| 响应字段 | `id`, `title`, `source`, `editable`, `index_result` |
-| API 入口 | [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47) |
-| 服务函数 | [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105) |
-| 前端使用 | [updateKnowledgeDocument frontend/src/api/admin.ts:L18-L20](../frontend/src/api/admin.ts#L18-L20) |
+| 鉴权 | `Authorization: Bearer <token>` |
+| 请求字段 | `title`, `content`, `change_note` |
+| 响应字段 | `id`, `title`, `source`, `status=draft`, `current_version` |
+| API 入口 | [knowledge_update backend/app/api/admin.py:L54-L67](../backend/app/api/admin.py#L54-L67) |
+| 服务函数 | [update_document backend/app/services/knowledge_service.py:L216-L262](../backend/app/services/knowledge_service.py#L216-L262) |
+| 前端使用 | [updateKnowledgeDocument frontend/src/api/admin.ts:L27-L29](../frontend/src/api/admin.ts#L27-L29) |
 
 ## API-009 后台知识文档删除
 
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `DELETE /api/admin/knowledge/documents/{document_id}` |
+| 鉴权 | `Authorization: Bearer <token>` |
 | 请求字段 | path 参数 `document_id` |
 | 响应字段 | `id`, `title`, `status`, `index_result` |
-| API 入口 | [knowledge_delete backend/app/api/admin.py:L50-L56](../backend/app/api/admin.py#L50-L56) |
-| 服务函数 | [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) |
-| 前端使用 | [deleteKnowledgeDocument frontend/src/api/admin.ts:L22-L24](../frontend/src/api/admin.ts#L22-L24) |
+| API 入口 | [knowledge_delete backend/app/api/admin.py:L89-L94](../backend/app/api/admin.py#L89-L94) |
+| 服务函数 | [delete_document backend/app/services/knowledge_service.py:L305-L324](../backend/app/services/knowledge_service.py#L305-L324) |
+| 前端使用 | [deleteKnowledgeDocument frontend/src/api/admin.ts:L39-L41](../frontend/src/api/admin.ts#L39-L41) |
 
 ## API-010 后台知识库重建索引
 
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `POST /api/admin/knowledge/reindex` |
+| 鉴权 | `Authorization: Bearer <token>` |
 | 请求字段 | 无 |
 | 响应字段 | `path`, `entry_count` |
-| API 入口 | [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61) |
-| 服务函数 | [rebuild_index backend/app/services/knowledge_service.py:L68-L70](../backend/app/services/knowledge_service.py#L68-L70) |
-| 前端使用 | [reindexKnowledgeBase frontend/src/api/admin.ts:L26-L28](../frontend/src/api/admin.ts#L26-L28) |
+| API 入口 | [knowledge_reindex backend/app/api/admin.py:L116-L117](../backend/app/api/admin.py#L116-L117) |
+| 服务函数 | [rebuild_index backend/app/services/knowledge_service.py:L141-L150](../backend/app/services/knowledge_service.py#L141-L150) |
+| 前端使用 | [reindexKnowledgeBase frontend/src/api/admin.ts:L51-L53](../frontend/src/api/admin.ts#L51-L53) |
+
+## API-012 后台知识文档状态、版本和历史
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/admin/knowledge/documents?status=all|draft|active|archived|deleted` |
+| 版本与历史 | `GET /api/admin/knowledge/documents/{document_id}/versions`, `GET /api/admin/knowledge/documents/{document_id}/history` |
+| 状态流转 | `POST /api/admin/knowledge/documents/{document_id}/publish`, `POST /api/admin/knowledge/documents/{document_id}/archive` |
+| 鉴权 | `Authorization: Bearer <token>` |
+| API 入口 | [knowledge_documents backend/app/api/admin.py:L30-L35](../backend/app/api/admin.py#L30-L35), [knowledge_publish backend/app/api/admin.py:L71-L76](../backend/app/api/admin.py#L71-L76), [knowledge_archive backend/app/api/admin.py:L80-L85](../backend/app/api/admin.py#L80-L85), [knowledge_versions backend/app/api/admin.py:L98-L103](../backend/app/api/admin.py#L98-L103), [knowledge_history backend/app/api/admin.py:L107-L112](../backend/app/api/admin.py#L107-L112) |
+| 服务函数 | [list_documents backend/app/services/knowledge_service.py:L327-L337](../backend/app/services/knowledge_service.py#L327-L337), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [archive_document backend/app/services/knowledge_service.py:L285-L302](../backend/app/services/knowledge_service.py#L285-L302), [list_versions backend/app/services/knowledge_service.py:L340-L369](../backend/app/services/knowledge_service.py#L340-L369), [list_history backend/app/services/knowledge_service.py:L372-L396](../backend/app/services/knowledge_service.py#L372-L396) |
+
+## API-013 后台数字人配置
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/admin/avatar-configs/active`, `POST /api/admin/avatar-configs` |
+| 鉴权 | `Authorization: Bearer <token>` |
+| 请求字段 | `name`, `avatar_style`, `clothes`, `voice_name`, `voice_speed`, `opening_text`, `expressions` |
+| 响应字段 | 当前启用的数字人配置 |
+| API 入口 | [active_avatar backend/app/api/admin.py:L126-L127](../backend/app/api/admin.py#L126-L127), [avatar_configs backend/app/api/admin.py:L131-L132](../backend/app/api/admin.py#L131-L132) |
+| 服务函数 | [get_active_avatar backend/app/services/avatar_service.py:L65-L73](../backend/app/services/avatar_service.py#L65-L73), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99) |
 
 ## API-004 管理后台数据大屏
 

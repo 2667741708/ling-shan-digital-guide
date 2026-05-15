@@ -127,7 +127,7 @@ python scripts\run_local.py build-kb
 结果：entry_count = 3377
 
 python scripts\run_local.py test-backend
-结果：7 passed
+结果：11 passed
 
 python scripts\run_local.py smoke-backend
 结果：DeepSeek 模型 deepseek-v4-flash 返回问答，知识库命中 faq_3
@@ -141,11 +141,11 @@ python scripts\run_local.py install-frontend
 python scripts\run_local.py build-frontend
 结果：Vue/Vite production build 通过
 
-python scripts\smoke_vue_full_stack.py
-结果：Vue dev server + FastAPI + DeepSeek 问答完整栈通过
+PowerShell：`$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py`
+结果：Vue dev server + FastAPI + DeepSeek 问答完整栈通过，完成登录、草稿上传、发布、RAG 命中、游客端引用、软删除后不命中
 
 后台知识库上传 API 验证：
-结果：`POST /api/admin/knowledge/upload` 返回 200，检索来源命中 `data/admin_knowledge/临时验证资料.md`，随后 `DELETE /api/admin/knowledge/documents/{id}` 返回 deleted
+结果：`POST /api/admin/knowledge/upload` 返回 draft，发布后检索来源命中 `data/admin_knowledge/{document_id}/v1_*.md`，随后 `DELETE /api/admin/knowledge/documents/{id}` 返回 deleted
 ```
 
 ## TEST-013 GitHub 发布脚本帮助命令
@@ -164,10 +164,10 @@ python scripts\smoke_vue_full_stack.py
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-007 |
-| 测试函数 | [test_save_update_delete_admin_knowledge_document backend/tests/test_knowledge_management.py:L7-L30](../backend/tests/test_knowledge_management.py#L7-L30) |
-| 被测函数 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90), [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105), [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) |
+| 测试函数 | [test_versioned_knowledge_document_lifecycle backend/tests/test_knowledge_management.py:L18-L58](../backend/tests/test_knowledge_management.py#L18-L58) |
+| 被测函数 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213), [update_document backend/app/services/knowledge_service.py:L216-L262](../backend/app/services/knowledge_service.py#L216-L262), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [delete_document backend/app/services/knowledge_service.py:L305-L324](../backend/app/services/knowledge_service.py#L305-L324) |
 | 运行命令 | `python scripts\run_local.py test-backend` |
-| 预期结果 | 后台知识文档可保存、改名/改正文、删除，且每次操作都会触发索引重建 |
+| 预期结果 | 上传创建 draft 和 v1，更新创建 v2，发布后进入 RAG，软删除后不再命中且历史保留 |
 
 ## TEST-015 后台知识库页面构建验证
 
@@ -178,3 +178,15 @@ python scripts\smoke_vue_full_stack.py
 | API 客户端 | [admin api frontend/src/api/admin.ts:L7-L32](../frontend/src/api/admin.ts#L7-L32) |
 | 运行命令 | `python scripts\run_local.py build-frontend` |
 | 预期结果 | Vue 构建通过，知识库页面包含上传、编辑、删除、重建索引和检索测试控件 |
+
+## TEST-016 后台权限和数字人配置持久化
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-008 |
+| 登录测试 | [test_admin_login_success_and_invalid_password backend/tests/test_auth_service.py:L18-L27](../backend/tests/test_auth_service.py#L18-L27) |
+| 禁用用户测试 | [test_disabled_admin_user_cannot_login backend/tests/test_auth_service.py:L30-L43](../backend/tests/test_auth_service.py#L30-L43) |
+| 无 token 写接口测试 | [test_admin_write_api_requires_bearer_token backend/tests/test_auth_service.py:L46-L50](../backend/tests/test_auth_service.py#L46-L50) |
+| 数字人配置测试 | [test_avatar_config_persists_in_database backend/tests/test_avatar_service.py:L8-L17](../backend/tests/test_avatar_service.py#L8-L17) |
+| 运行命令 | `python scripts\run_local.py test-backend` |
+| 预期结果 | 登录成功、错误密码失败、禁用用户失败、未带 token 调后台写接口返回 401、数字人配置保存后可重新读取 |

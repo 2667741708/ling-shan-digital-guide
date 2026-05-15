@@ -15,7 +15,10 @@
 | 口型动画 | 已完成 MVP | [simulateSpeaking frontend/src/store/avatar.ts:L16-L32](../frontend/src/store/avatar.ts#L16-L32) |
 | 景区知识库问答 | 已完成 | [retrieve_context backend/app/services/vector_store.py:L252-L273](../backend/app/services/vector_store.py#L252-L273) |
 | 用户提供资料入库 | 已完成 | [load_scenic_pack_entries backend/app/services/vector_store.py:L191-L216](../backend/app/services/vector_store.py#L191-L216) |
-| 管理后台知识库维护 | 本轮补齐 MVP | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L132-L211](../frontend/src/pages/admin/KnowledgeManage.vue#L132-L211) |
+| 管理后台知识库维护 | 已升级为版本化后台 | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
+| 后台登录和写权限 | 已完成 | [login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145), [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46) |
+| 数据库持久化 | 已完成本地 SQLite / Docker PostgreSQL 切换 | [configure_database backend/app/core/database.py:L33-L46](../backend/app/core/database.py#L33-L46), [persistence models backend/app/models/persistence.py:L16-L112](../backend/app/models/persistence.py#L16-L112), [deploy/docker-compose.yml:L5-L11](../deploy/docker-compose.yml#L5-L11) |
+| 数字人配置持久化 | 已完成 | [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
 | 真实景区地图 | 本轮增强 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 个性化路线推荐 | 已增强 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
 | 管理后台大屏 | 部分完成 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L1-L75](../frontend/src/pages/admin/AdminDashboard.vue#L1-L75) |
@@ -29,8 +32,6 @@
 | 后端真实 ASR | 当前语音识别主要依赖浏览器 SpeechRecognition，后端 `/chat/voice` 仍是演示返回 | 在 [voice_chat backend/app/services/chat_service.py:L90-L94](../backend/app/services/chat_service.py#L90-L94) 接入 Whisper/FunASR 或云 ASR |
 | 后端真实 TTS 音频文件 | 当前前端用浏览器 SpeechSynthesis，后端 `audio_url` 是演示路径 | 新增 TTS 服务并替换 [chat_with_text backend/app/services/chat_service.py:L82-L87](../backend/app/services/chat_service.py#L82-L87) |
 | 多模态大模型图片识景 | `/chat/image` 仍是固定识别灵山大佛 | 在 [image_chat backend/app/services/chat_service.py:L97-L103](../backend/app/services/chat_service.py#L97-L103) 接入 Qwen-VL 或其他视觉模型 |
-| 数字人配置持久化 | 当前配置接口存在，但前端配置页未保存 | 在 [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L24](../frontend/src/pages/admin/AvatarManage.vue#L1-L24) 增加保存动作 |
-| PostgreSQL 持久化 | 当前核心演示使用内存数据和本地 JSON 向量库 | 按 [init_db scripts/init_db.sql:L1-L36](../scripts/init_db.sql#L1-L36) 接 SQLAlchemy/Alembic |
 | 150 条准确率测试集 | 当前有基础测试，不足 150 条标准问答评测 | 扩充 [data/test_questions.csv:L1-L4](../data/test_questions.csv#L1-L4) 并增加评测脚本 |
 | Docker Compose 全链路验证 | Compose 文件存在但本轮主要验证 Python runner | 验证 [deploy/docker-compose.yml:L1-L39](../deploy/docker-compose.yml#L1-L39) 并补充部署测试 |
 | 7 分钟演示视频 | 文档有脚本方向，视频文件未生成 | 基于 [docs/user_interaction_guide.md:L1-L120](./user_interaction_guide.md#L1-L120) 录制 |
@@ -38,7 +39,7 @@
 ## 3. 赛题风险排序
 
 1. 最高风险：真实多模态图片识景和后端 TTS/ASR 仍是部分实现。
-2. 中风险：数字人配置保存、数据库持久化还需补齐；知识库管理已具备文件型 MVP，但还不是 PostgreSQL 版本化管理。
+2. 中风险：Docker Compose 全链路和 150 条准确率评测仍需补齐；知识库版本化、权限和数据库持久化已完成。
 3. 低风险：前端展示、RAG 问答、路线地图、本地运行和烟测已具备演示闭环。
 
 ## 4. 当前推荐演示路径

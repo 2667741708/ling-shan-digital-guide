@@ -8,6 +8,12 @@ const data = ref<any>({});
 onMounted(async () => {
   data.value = await fetchDashboard();
 });
+
+function logout() {
+  localStorage.removeItem("admin_token");
+  localStorage.removeItem("admin_username");
+  window.location.href = "/admin/login";
+}
 </script>
 
 <template>
@@ -17,6 +23,7 @@ onMounted(async () => {
       <router-link to="/">游客端</router-link>
       <router-link to="/admin/knowledge">知识库</router-link>
       <router-link to="/admin/avatar">数字人配置</router-link>
+      <button type="button" @click="logout">退出</button>
     </nav>
     <section class="metric-grid">
       <div class="metric">今日服务人次<strong>{{ data.today_service_count }}</strong></div>

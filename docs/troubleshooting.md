@@ -350,3 +350,70 @@ PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\hmw20\\AppData\\Local
 ```powershell
 python scripts\run_local.py test-backend
 ```
+
+## TRB-013 后台接口返回 401 或管理页跳转登录
+
+### 错误现象
+
+管理后台请求 `/api/admin/*` 返回 `401`，前端自动跳转到 `/admin/login`。
+
+### 常见原因
+
+1. 未登录后台，`localStorage.admin_token` 不存在。
+2. `ADMIN_TOKEN_SECRET` 已修改，旧 token 签名失效。
+3. token 超过 24 小时有效期。
+4. 后端进程仍是旧版本，和新前端接口不匹配。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 登录接口 | 校验账号密码并返回 Bearer token | [login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16) |
+| token 校验 | 缺失、过期、签名错误时返回 401 | [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
+| 前端注入 | 从 localStorage 读取 token 并写入 Authorization | [http token frontend/src/api/http.ts:L8-L22](../frontend/src/api/http.ts#L8-L22) |
+| 路由守卫 | 未登录访问 `/admin/*` 时跳转登录页 | [admin router guard frontend/src/router/index.ts:L17-L27](../frontend/src/router/index.ts#L17-L27) |
+
+### 修复方式
+
+1. 打开 `http://127.0.0.1:5173/admin/login`。
+2. 使用 `.env` 中的 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录，默认是 `admin` / `123456`。
+3. 如果仍失败，重启后端，避免 8000 端口上仍运行旧代码。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\smoke_vue_full_stack.py
+```
+
+## TRB-014 知识文档上传后游客端仍不命中
+
+### 错误现象
+
+后台上传知识文档后，游客端数字人仍没有引用新资料。
+
+### 原因分析
+
+当前正式后台采用版本和发布机制。上传默认是 `draft`，草稿不会进入游客端 RAG。必须发布后才会写入本地 JSON 向量索引。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 上传草稿 | 上传后状态为 `draft` | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50) |
+| 发布文档 | 发布后重建索引 | [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282) |
+| 向量入库 | 只读取 active 文档当前版本 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201) |
+| 前端发布按钮 | 管理页发布、归档、删除操作 | [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
+
+### 修复方式
+
+1. 在 `/admin/knowledge` 登录后查看文档状态。
+2. 点击“发布”，确认状态变为“已发布”。
+3. 在“检索测试”中查询文档里的关键词。
+4. 再到 `/guide` 提问同一关键词。
+
+### 验证命令
+
+```powershell
+$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py
+```

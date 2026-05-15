@@ -4,6 +4,11 @@ const data = ref({});
 onMounted(async () => {
     data.value = await fetchDashboard();
 });
+function logout() {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_username");
+    window.location.href = "/admin/login";
+}
 debugger; /* PartiallyEnd: #3632/scriptSetup.vue */
 const __VLS_ctx = {};
 let __VLS_components;
@@ -48,6 +53,10 @@ const __VLS_10 = __VLS_9({
 }, ...__VLS_functionalComponentArgsRest(__VLS_9));
 __VLS_11.slots.default;
 var __VLS_11;
+__VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+    ...{ onClick: (__VLS_ctx.logout) },
+    type: "button",
+});
 __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
     ...{ class: "metric-grid" },
 });
@@ -192,6 +201,7 @@ const __VLS_self = (await import('vue')).defineComponent({
     setup() {
         return {
             data: data,
+            logout: logout,
         };
     },
 });

@@ -4,6 +4,8 @@ services:
       context: ../backend
     env_file:
       - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/lingtour
     ports:
       - "8000:8000"
     depends_on:

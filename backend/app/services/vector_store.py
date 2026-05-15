@@ -148,6 +148,39 @@ def read_supported_document(path: Path) -> str:
 
 
 def load_admin_document_entries() -> list[KnowledgeEntry]:
+    try:
+        from app.core.database import init_db, new_session
+        from app.models.persistence import KnowledgeDocument, KnowledgeDocumentVersion
+
+        init_db()
+        db = new_session()
+        try:
+            active_documents = db.query(KnowledgeDocument).filter(KnowledgeDocument.status == "active").all()
+            entries: list[KnowledgeEntry] = []
+            for document in active_documents:
+                version = db.get(KnowledgeDocumentVersion, document.current_version_id) if document.current_version_id else None
+                if not version:
+                    continue
+                path = ROOT_DIR / version.storage_path
+                if not path.exists() or path.suffix.lower() not in {".md", ".txt", ".csv", ".json", ".docx", ".xlsx"}:
+                    continue
+                content = read_supported_document(path)
+                for index, chunk in enumerate(chunk_text(content, chunk_size=520, overlap=100), start=1):
+                    entries.append(
+                        KnowledgeEntry(
+                            id=f"admin_{document.id}_{version.version}_{index}",
+                            text=chunk,
+                            source=version.storage_path,
+                            category="admin_knowledge",
+                            title=f"{document.title} v{version.version}#{index}",
+                        )
+                    )
+            return entries
+        finally:
+            db.close()
+    except Exception:
+        pass
+
     if not ADMIN_KNOWLEDGE_DIR.exists():
         return []
     entries: list[KnowledgeEntry] = []
