@@ -33,7 +33,7 @@
 |---|---|
 | 对应需求 | REQ-001 |
 | 测试函数 | [test_chat_with_text_uses_references_and_latency backend/tests/test_chat_service.py:L5-L12](../backend/tests/test_chat_service.py#L5-L12) |
-| 被测函数 | [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) |
+| 被测函数 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 | 预期结果 | 返回答案、引用来源、模型标记和真实延迟 |
 
 ## TEST-005 后端烟测
@@ -70,8 +70,8 @@
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-003 |
-| 烟测脚本 | [main scripts/smoke_vue_full_stack.py:L56-L94](../scripts/smoke_vue_full_stack.py#L56-L94) |
-| 进程清理 | [terminate_tree scripts/smoke_vue_full_stack.py:L43-L53](../scripts/smoke_vue_full_stack.py#L43-L53) |
+| 烟测脚本 | [main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
+| 进程清理 | [terminate_tree scripts/smoke_vue_full_stack.py:L52-L62](../scripts/smoke_vue_full_stack.py#L52-L62) |
 | 运行命令 | `python scripts\smoke_vue_full_stack.py` |
 | 预期结果 | 输出 `vue full stack ok: http://127.0.0.1:5173` |
 
@@ -99,22 +99,35 @@
 
 | 项目 | 内容 |
 |---|---|
-| 对应需求 | REQ-001、REQ-003 |
+| 对应需求 | REQ-001、REQ-003、REQ-006 |
 | 启动脚本 | [dev_vue_full_stack main scripts/dev_vue_full_stack.py:L52-L95](../scripts/dev_vue_full_stack.py#L52-L95) |
 | 前端路由 | [frontend/src/router/index.ts:L10-L20](../frontend/src/router/index.ts#L10-L20) |
-| 问答页面 | [frontend/src/pages/visitor/ChatGuide.vue:TODO-LINES](../frontend/src/pages/visitor/ChatGuide.vue) |
-| 后端问答 | [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) |
+| 问答页面 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L147](../frontend/src/pages/visitor/ChatGuide.vue#L1-L147) |
+| 数字人组件 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| 后端问答 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 | 运行命令 | `python scripts/dev_vue_full_stack.py` |
 | 测试页面 | `http://127.0.0.1:5173/guide` |
+
+## TEST-012 灵山地图和路线推荐
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-005 |
+| 测试函数 | [test_route_service backend/tests/test_route_service.py:L6-L26](../backend/tests/test_route_service.py#L6-L26) |
+| 景点数据 | [SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L225](../backend/app/services/scenic_service.py#L14-L225) |
+| 路线算法 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+| 地图组件 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
+| 运行命令 | `python scripts\run_local.py test-backend` 和 `python scripts\run_local.py build-frontend` |
+| 预期结果 | 后端返回真实灵山点位，2 小时历史拍照路线包含灵山核心景点，前端构建通过 |
 
 ## 本次验证记录
 
 ```text
 python scripts\run_local.py build-kb
-结果：entry_count = 3364
+结果：entry_count = 3377
 
 python scripts\run_local.py test-backend
-结果：4 passed
+结果：6 passed
 
 python scripts\run_local.py smoke-backend
 结果：DeepSeek 模型 deepseek-v4-flash 返回问答，知识库命中 faq_3

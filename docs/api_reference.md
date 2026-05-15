@@ -23,7 +23,7 @@
 | 请求字段 | `session_uuid`, `message`, `current_location` |
 | 响应字段 | `answer`, `intent`, `emotion`, `model_used`, `audio_url`, `lip_sync`, `cards`, `references`, `latency_ms` |
 | API 入口 | [text_chat backend/app/api/visitor.py:L20-L21](../backend/app/api/visitor.py#L20-L21) |
-| 服务函数 | [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) |
+| 服务函数 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 | 验证脚本 | [smoke_test main scripts/smoke_test.py:L41-L57](../scripts/smoke_test.py#L41-L57) |
 
 示例请求：
@@ -47,9 +47,30 @@
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `GET /api/admin/analytics/overview` |
-| 响应字段 | `today_service_count`, `week_service_count`, `avg_latency_ms`, `satisfaction_score`, `knowledge_hit_rate`, `hot_questions`, `emotion_trend` |
+| 响应字段 | `today_service_count`, `week_service_count`, `avg_latency_ms`, `satisfaction_score`, `knowledge_hit_rate`, `hot_questions`, `hot_spots`, `route_preferences`, `emotion_trend` |
 | API 入口 | [analytics_overview backend/app/api/admin.py:L42-L43](../backend/app/api/admin.py#L42-L43) |
-| 服务函数 | [dashboard_overview backend/app/services/analytics_service.py:TODO-LINES](../backend/app/services/analytics_service.py) |
+| 服务函数 | [dashboard_overview backend/app/services/analytics_service.py:L1-L31](../backend/app/services/analytics_service.py#L1-L31) |
+
+## API-005 游客景点列表
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/visitor/scenic-spots` |
+| 响应字段 | `id`, `name`, `description`, `guide_text`, `map_x`, `map_y`, `tags`, `recommended_duration`, score 字段 |
+| API 入口 | [scenic_spots backend/app/api/visitor.py:L35-L36](../backend/app/api/visitor.py#L35-L36) |
+| 服务函数 | [list_scenic_spots backend/app/services/scenic_service.py:L228-L230](../backend/app/services/scenic_service.py#L228-L230) |
+| 前端使用 | [fetchScenicSpots frontend/src/api/visitor.ts:L40-L42](../frontend/src/api/visitor.ts#L40-L42) |
+
+## API-006 游客路线推荐
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/visitor/routes/recommend` |
+| 请求字段 | `session_uuid`, `interest`, `available_time`, `physical_strength`, `start_spot_id`, `avoid_crowd` |
+| 响应字段 | `route_name`, `total_duration`, `spots`, `reason` |
+| API 入口 | [routes_recommend backend/app/api/visitor.py:L39-L40](../backend/app/api/visitor.py#L39-L40) |
+| 服务函数 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+| 前端使用 | [recommendRoute frontend/src/api/visitor.ts:L44-L53](../frontend/src/api/visitor.ts#L44-L53) |
 
 ## 验证命令
 

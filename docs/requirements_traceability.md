@@ -11,7 +11,7 @@
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
 | API 入口 | 游客文本问答接口 | [backend/app/api/visitor.py:L14-L21](../backend/app/api/visitor.py#L14-L21) |
-| 服务编排 | RAG 检索、DeepSeek 调用、降级回答、真实延迟 | [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) |
+| 服务编排 | RAG 检索、DeepSeek 调用、降级回答、真实延迟 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 | 模型客户端 | DeepSeek OpenAI 兼容接口封装 | [DeepSeekClient backend/app/services/deepseek_service.py:L9-L47](../backend/app/services/deepseek_service.py#L9-L47) |
 | 检索入口 | 后端知识库服务入口 | [retrieve_context backend/app/services/knowledge_service.py:L5-L18](../backend/app/services/knowledge_service.py#L5-L18) |
 | 向量检索 | 本地 JSON 哈希向量检索 | [retrieve_context backend/app/services/vector_store.py:L252-L273](../backend/app/services/vector_store.py#L252-L273) |
@@ -56,7 +56,7 @@ python scripts\run_local.py smoke-backend
 python scripts\run_local.py build-kb
 ```
 
-当前真实资料包构建结果为 `entry_count = 3364`。
+当前真实资料包构建结果为 `entry_count = 3377`。
 
 ## REQ-003 可复现本地运行与完整栈烟测
 
@@ -98,4 +98,52 @@ python scripts\smoke_full_stack.py
 ```powershell
 python scripts\generate_symbol_index.py
 python scripts\check_doc_links.py
+```
+
+## REQ-005 灵山真实景点地图与路线导览
+
+### 用户场景
+
+游客进入地图页或数字人问答页后，可以看到基于灵山胜境真实景点的导览地图，并根据兴趣、时间生成可视化路线。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 景点数据 | 灵山大照壁、五智门、九龙灌浴、灵山大佛、梵宫、五印坛城等真实点位 | [SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L225](../backend/app/services/scenic_service.py#L14-L225) |
+| 路线算法 | 根据兴趣、热度、文化价值、自然价值、拍照价值、设施便利度、距离成本打分 | [_score_spot backend/app/services/route_service.py:L45-L67](../backend/app/services/route_service.py#L45-L67) |
+| 路线入口 | 游客端路线推荐服务 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+| 地图组件 | SVG 地形、水系、中轴线路线和 POI 详情 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
+| 地图页面 | 兴趣和时间筛选，重新生成推荐路线 | [ScenicMap frontend/src/pages/visitor/ScenicMap.vue:L1-L62](../frontend/src/pages/visitor/ScenicMap.vue#L1-L62) |
+| 样式 | 地图视觉、路线、POI、图例、移动端适配 | [map styles frontend/src/styles.css:L438-L617](../frontend/src/styles.css#L438-L617) |
+| 测试 | 验证真实灵山景点和路线输出 | [test_route_service backend/tests/test_route_service.py:L6-L26](../backend/tests/test_route_service.py#L6-L26) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+```
+
+## REQ-006 数字人灵灵真实前端交互体验
+
+### 用户场景
+
+游客在数字人导览页看到可辨识的“灵灵”导游形象，支持文本提问、浏览器语音输入、浏览器语音播报、嘴部动画、知识引用和推荐路线展示。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 数字人状态 | 待机、倾听、思考、讲解、口型模拟和字幕 | [useAvatarStore frontend/src/store/avatar.ts:L1-L33](../frontend/src/store/avatar.ts#L1-L33) |
+| 数字人形象 | SVG 汉服导游形象、口型、状态、提示语 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| 问答页 | 快捷问题、浏览器语音识别、语音播报、引用和路线卡片 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L147](../frontend/src/pages/visitor/ChatGuide.vue#L1-L147) |
+| 聊天面板 | 文字输入、语音按钮和快捷问题 | [ChatPanel frontend/src/components/ChatPanel.vue:L1-L49](../frontend/src/components/ChatPanel.vue#L1-L49) |
+| 视觉样式 | 数字人、问答区、路线和引用区响应式布局 | [guide styles frontend/src/styles.css:L143-L437](../frontend/src/styles.css#L143-L437) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py build-frontend
+python scripts\smoke_vue_full_stack.py
 ```

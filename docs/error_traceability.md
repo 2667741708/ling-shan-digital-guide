@@ -167,12 +167,78 @@ python scripts/playwright_smoke_vue.py
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 修复位置 | 通过 `taskkill /T /F` 清理 Windows 进程树 | [terminate_tree scripts/smoke_vue_full_stack.py:L43-L53](../scripts/smoke_vue_full_stack.py#L43-L53) |
-| 烟测入口 | `finally` 中清理前后端进程 | [main scripts/smoke_vue_full_stack.py:L56-L94](../scripts/smoke_vue_full_stack.py#L56-L94) |
+| 修复位置 | 通过 `taskkill /T /F` 清理 Windows 进程树 | [terminate_tree scripts/smoke_vue_full_stack.py:L52-L62](../scripts/smoke_vue_full_stack.py#L52-L62) |
+| 烟测入口 | `finally` 中清理前后端进程 | [main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
 
 ### 验证命令
 
 ```powershell
 python scripts\smoke_vue_full_stack.py
 python scripts\run_local.py check-env
+```
+
+## ERR-0007 路线推荐单测未包含核心灵山景点
+
+### 错误现象
+
+```text
+FAILED backend/tests/test_route_service.py::test_recommend_route_returns_ling_shan_route
+assert any(name in names for name in {"灵山大佛", "九龙灌浴", "灵山梵宫"})
+```
+
+### 触发命令
+
+```powershell
+python scripts\run_local.py test-backend
+```
+
+## ERR-0008 无命中问题回退到 xlsx 行为数据
+
+### 错误现象
+
+```text
+FAILED backend/tests/test_chat_service.py::test_chat_with_text_uses_references_and_latency
+assert all(not ref["document"].lower().endswith(".xlsx") for ref in result["references"])
+```
+
+### 触发命令
+
+```powershell
+python scripts\run_local.py test-backend
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 失败测试 | 问答引用不能展示 xlsx 行为数据 | [test_chat_with_text_uses_references_and_latency backend/tests/test_chat_service.py:L5-L13](../backend/tests/test_chat_service.py#L5-L13) |
+| 过滤函数 | 判断知识片段是否可作为事实回答来源 | [_is_safe_reference backend/app/services/chat_service.py:L25-L27](../backend/app/services/chat_service.py#L25-L27) |
+| 修复位置 | 无命中时改为灵山通用安全查询，不再直接回退未过滤结果 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
+
+### 修复方案
+
+对所有问答引用统一过滤 `behavior_data` 和 `.xlsx`；当用户问题没有命中安全片段时，使用“灵山胜境、灵山大佛、九龙灌浴、梵宫、路线、服务设施”的通用查询兜底。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 失败测试 | 2 小时历史拍照路线必须包含核心灵山景点 | [test_recommend_route_returns_ling_shan_route backend/tests/test_route_service.py:L13-L26](../backend/tests/test_route_service.py#L13-L26) |
+| 原因位置 | 打分公式未给 `must` 核心景点足够权重 | [_score_spot backend/app/services/route_service.py:L45-L67](../backend/app/services/route_service.py#L45-L67) |
+| 修复位置 | 增加 `must_bonus`，并按中轴线顺序输出路线 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+
+### 修复方案
+
+对标记为 `must` 的核心景点增加权重，确保历史文化或拍照路线优先包含灵山大佛等核心节点；最终路线按中轴线顺序排序，避免地图路线来回跳转。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
 ```

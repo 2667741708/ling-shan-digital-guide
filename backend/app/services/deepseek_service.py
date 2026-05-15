@@ -11,6 +11,7 @@ class DeepSeekClient:
         self.api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("TEXT_MODEL_API_KEY")
         self.base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
         self.model = os.getenv("DEEPSEEK_MODEL", os.getenv("TEXT_MODEL_NAME", "deepseek-v4-flash"))
+        self.timeout_seconds = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "4.5"))
 
     def enabled(self) -> bool:
         return bool(self.api_key)
@@ -38,10 +39,12 @@ class DeepSeekClient:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             details = exc.read().decode("utf-8", errors="ignore")
             raise RuntimeError(f"DeepSeek HTTP {exc.code}: {details}") from exc
+        except (TimeoutError, urllib.error.URLError) as exc:
+            raise RuntimeError(f"DeepSeek request failed or timed out after {self.timeout_seconds}s") from exc
 
         return body["choices"][0]["message"]["content"].strip()

@@ -13,7 +13,7 @@
 ## 游客端
 
 - `POST /api/visitor/sessions` 创建匿名会话
-- `POST /api/visitor/chat/text` 文本问答。配置 `DEEPSEEK_API_KEY` 后使用 DeepSeek 生成回答，失败时降级为 mock。实现位置：[chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86)
+- `POST /api/visitor/chat/text` 文本问答。配置 `DEEPSEEK_API_KEY` 后使用 DeepSeek 生成回答，失败时降级为 mock。实现位置：[chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88)
 - `POST /api/visitor/chat/voice` 语音问答，multipart 上传音频
 - `POST /api/visitor/chat/image` 图片识景问答
 - `GET /api/visitor/scenic-spots` 景点列表

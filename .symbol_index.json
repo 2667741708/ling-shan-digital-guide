@@ -150,15 +150,15 @@
     "path": "backend/app/services/analytics_service.py",
     "kind": "function",
     "start_line": 1,
-    "end_line": 18,
-    "relative_link": "../backend/app/services/analytics_service.py#L1-L18"
+    "end_line": 32,
+    "relative_link": "../backend/app/services/analytics_service.py#L1-L32"
   },
   "backend/app/services/analytics_service.py::sentiment_report": {
     "path": "backend/app/services/analytics_service.py",
     "kind": "function",
-    "start_line": 21,
-    "end_line": 25,
-    "relative_link": "../backend/app/services/analytics_service.py#L21-L25"
+    "start_line": 35,
+    "end_line": 39,
+    "relative_link": "../backend/app/services/analytics_service.py#L35-L39"
   },
   "backend/app/services/avatar_service.py::get_active_avatar": {
     "path": "backend/app/services/avatar_service.py",
@@ -174,61 +174,68 @@
     "end_line": 18,
     "relative_link": "../backend/app/services/avatar_service.py#L16-L18"
   },
-  "backend/app/services/chat_service.py::create_session": {
+  "backend/app/services/chat_service.py::_is_safe_reference": {
     "path": "backend/app/services/chat_service.py",
     "kind": "function",
     "start_line": 25,
-    "end_line": 30,
-    "relative_link": "../backend/app/services/chat_service.py#L25-L30"
+    "end_line": 27,
+    "relative_link": "../backend/app/services/chat_service.py#L25-L27"
+  },
+  "backend/app/services/chat_service.py::create_session": {
+    "path": "backend/app/services/chat_service.py",
+    "kind": "function",
+    "start_line": 30,
+    "end_line": 35,
+    "relative_link": "../backend/app/services/chat_service.py#L30-L35"
   },
   "backend/app/services/chat_service.py::chat_with_text": {
     "path": "backend/app/services/chat_service.py",
     "kind": "function",
-    "start_line": 33,
-    "end_line": 86,
-    "relative_link": "../backend/app/services/chat_service.py#L33-L86"
+    "start_line": 38,
+    "end_line": 87,
+    "relative_link": "../backend/app/services/chat_service.py#L38-L87"
   },
   "backend/app/services/chat_service.py::voice_chat": {
     "path": "backend/app/services/chat_service.py",
     "kind": "function",
-    "start_line": 89,
-    "end_line": 93,
-    "relative_link": "../backend/app/services/chat_service.py#L89-L93"
+    "start_line": 90,
+    "end_line": 94,
+    "relative_link": "../backend/app/services/chat_service.py#L90-L94"
   },
   "backend/app/services/chat_service.py::image_chat": {
     "path": "backend/app/services/chat_service.py",
     "kind": "function",
-    "start_line": 96,
-    "end_line": 103,
-    "relative_link": "../backend/app/services/chat_service.py#L96-L103"
+    "start_line": 97,
+    "end_line": 104,
+    "relative_link": "../backend/app/services/chat_service.py#L97-L104"
   },
   "backend/app/services/deepseek_service.py::DeepSeekClient": {
     "path": "backend/app/services/deepseek_service.py",
     "kind": "class",
     "start_line": 9,
-    "end_line": 47,
-    "relative_link": "../backend/app/services/deepseek_service.py#L9-L47"
+    "end_line": 50,
+    "relative_link": "../backend/app/services/deepseek_service.py#L9-L50"
   },
   "backend/app/services/deepseek_service.py::__init__": {
     "path": "backend/app/services/deepseek_service.py",
     "kind": "function",
     "start_line": 10,
-    "end_line": 13,
-    "relative_link": "../backend/app/services/deepseek_service.py#L10-L13"
+    "end_line": 14,
+    "relative_link": "../backend/app/services/deepseek_service.py#L10-L14"
   },
   "backend/app/services/deepseek_service.py::enabled": {
     "path": "backend/app/services/deepseek_service.py",
     "kind": "function",
-    "start_line": 15,
-    "end_line": 16,
-    "relative_link": "../backend/app/services/deepseek_service.py#L15-L16"
+    "start_line": 16,
+    "end_line": 17,
+    "relative_link": "../backend/app/services/deepseek_service.py#L16-L17"
   },
   "backend/app/services/deepseek_service.py::chat": {
     "path": "backend/app/services/deepseek_service.py",
     "kind": "function",
-    "start_line": 18,
-    "end_line": 47,
-    "relative_link": "../backend/app/services/deepseek_service.py#L18-L47"
+    "start_line": 19,
+    "end_line": 50,
+    "relative_link": "../backend/app/services/deepseek_service.py#L19-L50"
   },
   "backend/app/services/knowledge_service.py::retrieve_context": {
     "path": "backend/app/services/knowledge_service.py",
@@ -251,26 +258,61 @@
     "end_line": 39,
     "relative_link": "../backend/app/services/knowledge_service.py#L38-L39"
   },
+  "backend/app/services/route_service.py::_distance_cost": {
+    "path": "backend/app/services/route_service.py",
+    "kind": "function",
+    "start_line": 20,
+    "end_line": 23,
+    "relative_link": "../backend/app/services/route_service.py#L20-L23"
+  },
+  "backend/app/services/route_service.py::_interest_score": {
+    "path": "backend/app/services/route_service.py",
+    "kind": "function",
+    "start_line": 26,
+    "end_line": 33,
+    "relative_link": "../backend/app/services/route_service.py#L26-L33"
+  },
+  "backend/app/services/route_service.py::_physical_penalty": {
+    "path": "backend/app/services/route_service.py",
+    "kind": "function",
+    "start_line": 36,
+    "end_line": 42,
+    "relative_link": "../backend/app/services/route_service.py#L36-L42"
+  },
+  "backend/app/services/route_service.py::_score_spot": {
+    "path": "backend/app/services/route_service.py",
+    "kind": "function",
+    "start_line": 45,
+    "end_line": 61,
+    "relative_link": "../backend/app/services/route_service.py#L45-L61"
+  },
+  "backend/app/services/route_service.py::_route_name": {
+    "path": "backend/app/services/route_service.py",
+    "kind": "function",
+    "start_line": 64,
+    "end_line": 77,
+    "relative_link": "../backend/app/services/route_service.py#L64-L77"
+  },
   "backend/app/services/route_service.py::recommend_route": {
     "path": "backend/app/services/route_service.py",
     "kind": "function",
-    "start_line": 5,
-    "end_line": 25,
-    "relative_link": "../backend/app/services/route_service.py#L5-L25"
+    "start_line": 80,
+    "end_line": 116,
+    "relative_link": "../backend/app/services/route_service.py#L80-L116"
   },
   "backend/app/services/route_service.py::quick_route_card": {
     "path": "backend/app/services/route_service.py",
     "kind": "function",
-    "start_line": 28,
-    "end_line": 29,
-    "relative_link": "../backend/app/services/route_service.py#L28-L29"
+    "start_line": 119,
+    "end_line": 120,
+    "relative_link": "../backend/app/services/route_service.py#L119-L120"
   },
   "backend/app/services/scenic_service.py::list_scenic_spots": {
     "path": "backend/app/services/scenic_service.py",
     "kind": "function",
-    "start_line": 41,
-    "end_line": 42,
-    "relative_link": "../backend/app/services/scenic_service.py#L41-L42"
+    "start_line": 228,
+    "end_line": 230,
+    "relative_link": "../backend/app/services/scenic_service.py#L228-L230"
   },
   "backend/app/services/vector_store.py::KnowledgeEntry": {
     "path": "backend/app/services/vector_store.py",
@@ -397,6 +439,20 @@
     "start_line": 6,
     "end_line": 10,
     "relative_link": "../backend/tests/test_health.py#L6-L10"
+  },
+  "backend/tests/test_route_service.py::test_scenic_spots_use_ling_shan_real_names": {
+    "path": "backend/tests/test_route_service.py",
+    "kind": "function",
+    "start_line": 6,
+    "end_line": 10,
+    "relative_link": "../backend/tests/test_route_service.py#L6-L10"
+  },
+  "backend/tests/test_route_service.py::test_recommend_route_returns_ling_shan_route": {
+    "path": "backend/tests/test_route_service.py",
+    "kind": "function",
+    "start_line": 13,
+    "end_line": 26,
+    "relative_link": "../backend/tests/test_route_service.py#L13-L26"
   },
   "backend/tests/test_vector_store.py::test_build_knowledge_base_creates_entries": {
     "path": "backend/tests/test_vector_store.py",
@@ -720,19 +776,26 @@
     "end_line": 40,
     "relative_link": "../scripts/smoke_vue_full_stack.py#L30-L40"
   },
-  "scripts/smoke_vue_full_stack.py::terminate_tree": {
+  "scripts/smoke_vue_full_stack.py::is_url_ready": {
     "path": "scripts/smoke_vue_full_stack.py",
     "kind": "function",
     "start_line": 43,
-    "end_line": 53,
-    "relative_link": "../scripts/smoke_vue_full_stack.py#L43-L53"
+    "end_line": 49,
+    "relative_link": "../scripts/smoke_vue_full_stack.py#L43-L49"
+  },
+  "scripts/smoke_vue_full_stack.py::terminate_tree": {
+    "path": "scripts/smoke_vue_full_stack.py",
+    "kind": "function",
+    "start_line": 52,
+    "end_line": 64,
+    "relative_link": "../scripts/smoke_vue_full_stack.py#L52-L64"
   },
   "scripts/smoke_vue_full_stack.py::main": {
     "path": "scripts/smoke_vue_full_stack.py",
     "kind": "function",
-    "start_line": 56,
-    "end_line": 94,
-    "relative_link": "../scripts/smoke_vue_full_stack.py#L56-L94"
+    "start_line": 67,
+    "end_line": 118,
+    "relative_link": "../scripts/smoke_vue_full_stack.py#L67-L118"
   },
   "ai_service/analytics/report_generator.py::generate_report": {
     "path": "ai_service/analytics/report_generator.py",

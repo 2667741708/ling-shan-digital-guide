@@ -78,7 +78,7 @@ python scripts\smoke_vue_full_stack.py
 
 - [前端安装 scripts/run_local.py:L70-L71](../scripts/run_local.py#L70-L71)
 - [前端构建 scripts/run_local.py:L74-L75](../scripts/run_local.py#L74-L75)
-- [Vue 完整栈烟测 scripts/smoke_vue_full_stack.py:L56-L94](../scripts/smoke_vue_full_stack.py#L56-L94)
+- [Vue 完整栈烟测 scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122)
 - [Git Bash runner scripts/run_local.sh:L1-L5](../scripts/run_local.sh#L1-L5)
 - [Git Bash Vue 烟测 scripts/smoke_vue_full_stack.sh:L1-L5](../scripts/smoke_vue_full_stack.sh#L1-L5)
 

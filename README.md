@@ -2,6 +2,8 @@
 
 面向中国软件杯 A5「景区导览服务 AI 数字人」赛题的工程骨架。项目采用游客交互端 + 管理后台 + FastAPI 后端 + AI/RAG 服务层的可落地架构，优先完成文本/语音问答、数字人状态、景区知识库、路线推荐、游客感受度报告和数据大屏闭环。
 
+当前 Git 基线：`v0.0` 保存了第一版可运行骨架；`codex/optimize-map-avatar-v0.1` 用于继续优化灵山真实地图、数字人“灵灵”和前端可演示体验。
+
 ## 参考项目
 
 - [uezo/aiavatarkit](https://github.com/uezo/aiavatarkit)：参考数字人语音对话与角色编排思路。
@@ -33,6 +35,20 @@ docs/generated/
 ```
 
 ## 快速启动
+
+推荐本地演示方式：
+
+```powershell
+python scripts\dev_vue_full_stack.py
+```
+
+启动后访问：
+
+- 数字人导览：`http://127.0.0.1:5173/guide`
+- 灵山地图：`http://127.0.0.1:5173/map`
+- 管理大屏：`http://127.0.0.1:5173/admin`
+
+更多运行方式见 [项目交互与运行指南 docs/user_interaction_guide.md:L1-L128](docs/user_interaction_guide.md#L1-L128)。
 
 ```powershell
 Copy-Item .env.example .env

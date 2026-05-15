@@ -12,9 +12,9 @@ bash scripts/dev_vue_full_stack.sh
 
 | 页面 | 地址 | 用途 |
 |---|---|---|
-| 数字人导游 | http://127.0.0.1:5173/guide | 测试游客问答、数字人状态、DeepSeek RAG |
-| 景区地图 | http://127.0.0.1:5173/map | 查看景点点位 |
-| 管理大屏 | http://127.0.0.1:5173/admin | 查看运营指标 |
+| 数字人导游 | http://127.0.0.1:5173/guide | 测试灵灵数字人、文本问答、浏览器语音输入、语音播报、RAG 引用和路线卡片 |
+| 景区地图 | http://127.0.0.1:5173/map | 查看灵山胜境真实点位、地图路线、兴趣和时间筛选 |
+| 管理大屏 | http://127.0.0.1:5173/admin | 查看热门问答、热门景点、路线偏好、情绪趋势 |
 | 知识库管理 | http://127.0.0.1:5173/admin/knowledge | 查看知识文档 |
 | 数字人配置 | http://127.0.0.1:5173/admin/avatar | 查看数字人配置 |
 
@@ -35,7 +35,7 @@ bash scripts/smoke_vue_full_stack.sh
 用途：自动启动后端和 Vue，检查页面和 API 后自动退出。
 
 - [Git Bash 烟测脚本 scripts/smoke_vue_full_stack.sh:L1-L5](../scripts/smoke_vue_full_stack.sh#L1-L5)
-- [Vue 完整栈烟测 scripts/smoke_vue_full_stack.py:L56-L94](../scripts/smoke_vue_full_stack.py#L56-L94)
+- [Vue 完整栈烟测 scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122)
 
 ### 方式 C：PowerShell / CMD 手动体验
 
@@ -115,20 +115,45 @@ docker compose -f deploy/docker-compose.yml up --build
 
    ```text
    我只有两个小时，喜欢历史和拍照，怎么逛？
-   古建筑群有什么特色？
+   灵山大佛有什么历史故事？
+   梵宫和五印坛城有什么特色？
    附近哪里有洗手间？
    下雨天怎么玩？
    ```
 
 4. 预期表现：
 
-   - 左侧显示数字人形象。
+   - 左侧显示“灵灵”数字人形象，包含状态、字幕和口型动画。
    - 提交问题后，数字人状态先显示“思考中”，回答后进入“讲解中”。
-   - 回答由后端 [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) 生成。
+   - 点击语音按钮时，支持浏览器 SpeechRecognition 的环境会尝试语音识别；不支持时会提示改用文字输入。
+   - 回答后浏览器 SpeechSynthesis 会进行中文语音播报，同时驱动嘴部动画。
+   - 回答由后端 [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) 生成。
    - 有 DeepSeek Key 时，响应中 `model_used` 应为 `deepseek-v4-flash`。
    - 回答应引用本地知识库片段。
 
-## 3. 后端 API 直接测试
+## 3. 地图和路线测试流程
+
+1. 打开：
+
+   ```text
+   http://127.0.0.1:5173/map
+   ```
+
+2. 修改兴趣和时间：
+
+   ```text
+   历史文化 / 拍照打卡 / 亲子互动 / 自然慢行 / 研学深度
+   1 小时 / 2 小时 / 3 小时 / 5 小时
+   ```
+
+3. 预期表现：
+
+   - 地图展示太湖水系、山体、中轴线、灵山大照壁、五智门、九龙灌浴、灵山大佛、梵宫、五印坛城等 POI。
+   - 点击 POI 后显示景点简介、讲解词、标签和建议停留时间。
+   - 路线根据后端 [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) 返回的景点顺序绘制。
+   - 地图组件实现位置为 [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101)。
+
+## 4. 后端 API 直接测试
 
 ### 文本问答
 
@@ -160,7 +185,7 @@ POST /api/admin/knowledge/search-test
 - [knowledge_search_test backend/app/api/admin.py:L27-L28](../backend/app/api/admin.py#L27-L28)
 - [search_test backend/app/services/knowledge_service.py:L38-L39](../backend/app/services/knowledge_service.py#L38-L39)
 
-## 4. Git Bash 路径规则
+## 5. Git Bash 路径规则
 
 Git Bash / MINGW64 中必须使用 `/`：
 
@@ -175,4 +200,3 @@ python scripts\run_local.py check-env
 ```
 
 原因和修复记录见 [TRB-008 Git Bash 中使用反斜杠导致 Python 找不到脚本](./troubleshooting.md#trb-008-git-bash-中使用反斜杠导致-python-找不到脚本)。
-

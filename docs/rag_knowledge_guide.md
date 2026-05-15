@@ -15,7 +15,7 @@
 当前构建结果：
 
 ```text
-entry_count = 3364
+entry_count = 3377
 ```
 
 ## 2. 当前向量库如何生成？
@@ -49,7 +49,7 @@ vectorize 生成哈希向量
 
 实现位置：
 
-- [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86)
+- [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88)
 - [retrieve_context backend/app/services/knowledge_service.py:L5-L18](../backend/app/services/knowledge_service.py#L5-L18)
 
 示例：
@@ -110,7 +110,7 @@ RAG 是 Retrieval-Augmented Generation，完整链路包括：
 
 过滤位置：
 
-- [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86)
+- [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88)
 
 ## 7. 如何验证 RAG 使用了知识库？
 
@@ -132,4 +132,3 @@ search_top
 chat_model: deepseek-v4-flash
 chat_answer_preview
 ```
-

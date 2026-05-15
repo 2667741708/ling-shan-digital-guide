@@ -24,9 +24,52 @@ onMounted(async () => {
       <div class="metric">满意度<strong>{{ data.satisfaction_score }}</strong></div>
       <div class="metric">知识命中率<strong>{{ Math.round((data.knowledge_hit_rate || 0) * 100) }}%</strong></div>
     </section>
-    <section class="panel">
-      <h2>热门问答</h2>
-      <p v-for="item in data.hot_questions" :key="item.topic">{{ item.topic }}：{{ item.count }}</p>
+    <section class="dashboard-grid">
+      <div class="panel">
+        <div class="section-heading">
+          <span>热门问答</span>
+          <strong>Top {{ data.hot_questions?.length || 0 }}</strong>
+        </div>
+        <div v-for="item in data.hot_questions" :key="item.topic" class="bar-row">
+          <span>{{ item.topic }}</span>
+          <div><i :style="{ width: `${Math.min(item.count, 100)}%` }" /></div>
+          <strong>{{ item.count }}</strong>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-heading">
+          <span>热门景点</span>
+          <strong>灵山胜境</strong>
+        </div>
+        <div v-for="item in data.hot_spots" :key="item.name" class="rank-row">
+          <span>{{ item.name }}</span>
+          <strong>{{ item.count }}</strong>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-heading">
+          <span>路线偏好</span>
+          <strong>游客画像</strong>
+        </div>
+        <div class="preference-grid">
+          <div v-for="item in data.route_preferences" :key="item.name">
+            <strong>{{ item.value }}%</strong>
+            <span>{{ item.name }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-heading">
+          <span>情绪趋势</span>
+          <strong>近三日</strong>
+        </div>
+        <div v-for="item in data.emotion_trend" :key="item.date" class="emotion-row">
+          <span>{{ item.date }}</span>
+          <b class="positive" :style="{ width: `${item.positive}%` }" />
+          <b class="neutral" :style="{ width: `${item.neutral}%` }" />
+          <b class="negative" :style="{ width: `${item.negative}%` }" />
+        </div>
+      </div>
     </section>
   </main>
 </template>

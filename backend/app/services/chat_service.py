@@ -22,6 +22,11 @@ GUIDE_SYSTEM_PROMPT = """你是景区 AI 数字人导游，名字叫“灵灵”
 """
 
 
+def _is_safe_reference(item: dict) -> bool:
+    """Return True when a retrieved item can be shown as a factual answer source."""
+    return item.get("category") != "behavior_data" and not item["source"].lower().endswith(".xlsx")
+
+
 def create_session(payload: CreateSessionRequest) -> dict:
     return {
         "session_uuid": f"s_{datetime.now().strftime('%Y%m%d')}_{uuid4().hex[:8]}",
@@ -34,23 +39,19 @@ def chat_with_text(payload: ChatTextRequest) -> dict:
     started_at = perf_counter()
     need_route = any(word in payload.message for word in ["路线", "怎么逛", "两个小时", "2小时"])
     if need_route:
-        route_query = "景区入口 古建筑群 文化展馆 观景台 推荐路线 历史 拍照"
-        context = [
-            item
-            for item in retrieve_context(route_query, top_k=30)
-            if item.get("category") != "behavior_data" and not item["source"].lower().endswith(".xlsx")
-        ][:5]
+        route_query = "灵山胜境 灵山大照壁 五智门 菩提大道 九龙灌浴 灵山大佛 灵山梵宫 五印坛城 推荐路线 历史 拍照"
+        context = [item for item in retrieve_context(route_query, top_k=30) if _is_safe_reference(item)][:5]
     else:
+        context = [item for item in retrieve_context(payload.message, top_k=30) if _is_safe_reference(item)][:3]
+    if not context:
         context = [
             item
-            for item in retrieve_context(payload.message, top_k=30)
-            if item.get("category") != "behavior_data" and not item["source"].lower().endswith(".xlsx")
+            for item in retrieve_context("灵山胜境 灵山大佛 九龙灌浴 灵山梵宫 游览路线 服务设施", top_k=20)
+            if _is_safe_reference(item)
         ][:3]
-    if not context:
-        context = retrieve_context(payload.message)
     fallback_answer = (
-        "建议您选择 2 小时历史文化路线，从景区入口出发，依次参观古建筑群、文化展馆和观景台。"
-        "这条路线步行距离适中，兼顾历史讲解和拍照体验。"
+        "建议您走 2 小时灵山历史文化路线：南门游客中心出发，先看灵山大照壁和五智门，"
+        "再沿菩提大道到九龙灌浴，最后重点参观灵山大佛。时间更充裕时可增加灵山梵宫。"
         if need_route
         else f"灵灵为您查到：{context[0]['text']} 具体开放信息请以景区现场公告为准。"
     )
@@ -95,9 +96,9 @@ async def voice_chat(session_uuid: str, audio_file: UploadFile) -> dict:
 
 async def image_chat(session_uuid: str, question: str, image_file: UploadFile) -> dict:
     return {
-        "recognized_spot": {"id": 3, "name": "古建筑群"},
-        "answer": "这张图片很可能是古建筑群区域。这里是景区最具历史特色的区域之一，适合安排 20 到 30 分钟讲解和拍照。",
+        "recognized_spot": {"id": 11, "name": "灵山大佛"},
+        "answer": "这张图片很可能对应灵山大佛或其周边核心朝圣区。灵山大佛是灵山胜境标志性建筑，适合安排重点讲解和拍照打卡。",
         "confidence": 0.88,
         "audio_url": "/static/audio/demo-image-answer.mp3",
-        "references": [{"document": "示范景区资料包-历史文化篇", "chunk_id": 3}],
+        "references": [{"document": "灵山胜境：历史、文化、景点特色与个性化游览指南.docx", "chunk_id": 3}],
     }

@@ -5,7 +5,7 @@
 本项目文档中定位代码必须使用文件和行号绑定在一起的 Markdown 链接：
 
 ```md
-[说明 backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86)
+[说明 backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88)
 ```
 
 ## TODO-LINES

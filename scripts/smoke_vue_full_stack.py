@@ -40,7 +40,18 @@ def wait_url(url: str, expected: str, timeout_seconds: int = 45) -> str:
     raise TimeoutError(url)
 
 
-def terminate_tree(process: subprocess.Popen) -> None:
+def is_url_ready(url: str, expected: str) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=2) as response:
+            body = response.read().decode("utf-8")
+            return response.status == 200 and expected in body
+    except Exception:
+        return False
+
+
+def terminate_tree(process: subprocess.Popen | None) -> None:
+    if process is None:
+        return
     if process.poll() is not None:
         return
     if os.name == "nt":
@@ -56,36 +67,49 @@ def terminate_tree(process: subprocess.Popen) -> None:
 def main() -> int:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(BACKEND)
-    backend = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "app.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(BACKEND_PORT),
-        ],
-        cwd=BACKEND,
-        env=env,
-    )
-    frontend = subprocess.Popen(
-        [
-            resolve_command("npm"),
-            "run",
-            "dev",
-            "--",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(FRONTEND_PORT),
-        ],
-        cwd=FRONTEND,
-    )
+    backend_url = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
+    frontend_url = f"http://127.0.0.1:{FRONTEND_PORT}/"
+    backend: subprocess.Popen | None = None
+    frontend: subprocess.Popen | None = None
+
+    if is_url_ready(backend_url, '"status":"ok"'):
+        print(f"reuse backend: {backend_url}", flush=True)
+    else:
+        backend = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "app.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(BACKEND_PORT),
+            ],
+            cwd=BACKEND,
+            env=env,
+        )
+
+    if is_url_ready(frontend_url, '<div id="app"></div>'):
+        print(f"reuse frontend: {frontend_url}", flush=True)
+    else:
+        frontend = subprocess.Popen(
+            [
+                resolve_command("npm"),
+                "run",
+                "dev",
+                "--",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(FRONTEND_PORT),
+                "--strictPort",
+            ],
+            cwd=FRONTEND,
+        )
     try:
-        wait_url(f"http://127.0.0.1:{BACKEND_PORT}/api/health", '"status":"ok"')
-        wait_url(f"http://127.0.0.1:{FRONTEND_PORT}/", '<div id="app"></div>')
+        wait_url(backend_url, '"status":"ok"')
+        wait_url(frontend_url, '<div id="app"></div>')
         subprocess.run([sys.executable, "scripts/smoke_test.py"], cwd=ROOT, check=True)
         print(f"vue full stack ok: http://127.0.0.1:{FRONTEND_PORT}", flush=True)
     finally:

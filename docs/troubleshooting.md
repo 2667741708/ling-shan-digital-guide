@@ -46,11 +46,13 @@ python scripts\smoke_full_stack.py
 |---|---|---|
 | 端口检查 | 检查 8000/5173 是否忙 | [port_is_busy scripts/run_local.py:L45-L48](../scripts/run_local.py#L45-L48) |
 | 环境检查 | 输出端口占用状态 | [check_env scripts/run_local.py:L51-L63](../scripts/run_local.py#L51-L63) |
+| Vue 烟测复用 | 如果 8000/5173 已有健康服务则复用，否则再启动 | [is_url_ready scripts/smoke_vue_full_stack.py:L43-L50](../scripts/smoke_vue_full_stack.py#L43-L50), [main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
 
 ### 验证命令
 
 ```powershell
 python scripts\run_local.py check-env
+python scripts\smoke_vue_full_stack.py
 ```
 
 ## TRB-003 DeepSeek API Key 缺失或调用失败
@@ -63,9 +65,9 @@ python scripts\run_local.py check-env
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 配置 | DeepSeek Key 与模型配置 | [.env.example:L25-L27](../.env.example#L25-L27) |
-| 客户端 | 判断 Key 是否存在并调用 API | [DeepSeekClient backend/app/services/deepseek_service.py:L9-L47](../backend/app/services/deepseek_service.py#L9-L47) |
-| 降级逻辑 | API 异常时回退到本地回答 | [chat_with_text backend/app/services/chat_service.py:L47-L59](../backend/app/services/chat_service.py#L47-L59) |
+| 配置 | DeepSeek Key、模型和超时配置 | [.env.example:L25-L28](../.env.example#L25-L28) |
+| 客户端 | 判断 Key 是否存在、设置超时并调用 API | [DeepSeekClient backend/app/services/deepseek_service.py:L9-L50](../backend/app/services/deepseek_service.py#L9-L50) |
+| 降级逻辑 | API 异常时回退到本地回答 | [chat_with_text backend/app/services/chat_service.py:L53-L69](../backend/app/services/chat_service.py#L53-L69) |
 
 ### 验证命令
 
@@ -110,7 +112,7 @@ python scripts\run_local.py test-backend
 |---|---|---|
 | xlsx 抽取 | 仅抽取文本/含中文内容并限制单元格数量 | [extract_xlsx_text backend/app/services/vector_store.py:L151-L188](../backend/app/services/vector_store.py#L151-L188) |
 | 资料包读取 | xlsx 标记为 `behavior_data`，路线问答默认排除 | [load_scenic_pack_entries backend/app/services/vector_store.py:L191-L216](../backend/app/services/vector_store.py#L191-L216) |
-| 路线上下文过滤 | 路线问题排除 xlsx 行为数据，避免回答其他景区 | [chat_with_text backend/app/services/chat_service.py:L33-L86](../backend/app/services/chat_service.py#L33-L86) |
+| 路线上下文过滤 | 路线问题排除 xlsx 行为数据，避免回答其他景区 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 
 ### 验证命令
 
@@ -158,8 +160,8 @@ Windows 下 `npm run dev` 会启动子进程，直接 `terminate()` 父进程不
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 修复位置 | Windows 下使用 `taskkill /T /F` 清理进程树 | [terminate_tree scripts/smoke_vue_full_stack.py:L43-L53](../scripts/smoke_vue_full_stack.py#L43-L53) |
-| 烟测入口 | 启动 FastAPI 与 Vite 并最终清理 | [main scripts/smoke_vue_full_stack.py:L56-L94](../scripts/smoke_vue_full_stack.py#L56-L94) |
+| 修复位置 | Windows 下使用 `taskkill /T /F` 清理进程树 | [terminate_tree scripts/smoke_vue_full_stack.py:L52-L62](../scripts/smoke_vue_full_stack.py#L52-L62) |
+| 烟测入口 | 复用健康服务或启动 FastAPI 与 Vite 并最终清理 | [main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
 
 ### 验证命令
 
