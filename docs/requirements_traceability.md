@@ -147,3 +147,26 @@ python scripts\run_local.py build-frontend
 python scripts\run_local.py build-frontend
 python scripts\smoke_vue_full_stack.py
 ```
+
+## REQ-009 GitHub 发布与版本交付
+
+### 用户场景
+
+开发者需要把“灵山数字导游”当前本地项目发布到自己的 GitHub 仓库，并保留 `v0.0` baseline tag，便于参赛交付、协作和回滚。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布脚本 | 检查工作区、配置 GitHub remote、推送分支和 tags | [publish_github main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
+| 工作区保护 | 防止未提交改动被意外发布 | [ensure_clean_worktree scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44) |
+| 远程配置 | 新增或更新 `origin` 地址 | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
+| 发布文档 | GitHub 发布命令和 Git Bash 注意事项 | [docs/DEPLOY.md:L110-L132](./DEPLOY.md#L110-L132) |
+| 测试文档 | 帮助命令验证方式 | [docs/test_reference.md:L148-L157](./test_reference.md#L148-L157) |
+
+### 验证命令
+
+```powershell
+python scripts\publish_github.py --help
+python scripts\publish_github.py --remote-url https://github.com/<your-name>/<repo>.git --branch main --push-tags
+```

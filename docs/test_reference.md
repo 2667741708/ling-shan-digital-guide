@@ -144,3 +144,14 @@ python scripts\run_local.py build-frontend
 python scripts\smoke_vue_full_stack.py
 结果：Vue dev server + FastAPI + DeepSeek 问答完整栈通过
 ```
+
+## TEST-013 GitHub 发布脚本帮助命令
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-009 |
+| 测试命令 | `python scripts\publish_github.py --help` |
+| 被测入口 | [main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
+| 远程配置逻辑 | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
+| 工作区保护 | [ensure_clean_worktree scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44) |
+| 预期结果 | 输出 `--remote-url`、`--branch`、`--push-tags` 等参数说明，不修改远程仓库 |

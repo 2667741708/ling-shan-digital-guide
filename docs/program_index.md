@@ -24,6 +24,7 @@
 | Vue 完整栈烟测 | 复用健康服务或启动 FastAPI 与 Vite，验证真实 Vue 工程 | [main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
 | 静态前端服务 | 用 Python http.server 服务无依赖演示端 | [main scripts/serve_static_frontend.py:L14-L23](../scripts/serve_static_frontend.py#L14-L23) |
 | DeepSeek 多智能体生成器 | 生成架构、后端、前端、AI/RAG、测试文档建议 | [main scripts/deepseek_multi_agent.py:L203-L240](../scripts/deepseek_multi_agent.py#L203-L240) |
+| GitHub 发布脚本 | 配置远程仓库、检查工作区、推送分支和 tag | [main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
 
 ## 前端入口
 
@@ -44,3 +45,4 @@
 - 修改 [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) 会影响问答路线卡片、地图路线和路线推荐接口。
 - 修改 [retrieve_context backend/app/services/vector_store.py:L252-L273](../backend/app/services/vector_store.py#L252-L273) 会影响知识库命中率和回答依据。
 - 修改 [run_local.py 命令分发 scripts/run_local.py:L149-L189](../scripts/run_local.py#L149-L189) 会影响部署、测试和服务器运行流程。
+- 修改 [publish_github.py 发布流程 scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) 会影响 GitHub 远程发布、分支映射和 tag 推送。

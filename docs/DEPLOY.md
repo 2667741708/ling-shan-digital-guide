@@ -106,3 +106,23 @@ python scripts\smoke_full_stack.py
 
 - [完整栈烟测 scripts/smoke_full_stack.py:L30-L61](../scripts/smoke_full_stack.py#L30-L61)
 - [静态演示端 frontend_static/index.html:L170-L218](../frontend_static/index.html#L170-L218)
+
+## GitHub 发布
+
+当前项目本地版本已经保留 `v0.0` baseline tag，最新优化分支为 `codex/optimize-map-avatar-v0.1`。发布到 GitHub 时优先使用可复现 Python 脚本：
+
+```powershell
+python scripts\publish_github.py --remote-url https://github.com/<your-name>/<repo>.git --branch main --push-tags
+```
+
+Git Bash / MINGW64 使用：
+
+```bash
+python scripts/publish_github.py --remote-url https://github.com/<your-name>/<repo>.git --branch main --push-tags
+```
+
+脚本会检查工作区是否干净，自动新增或更新 `origin`，并把当前分支推送到 GitHub 的 `main` 分支。实现位置：
+
+- [GitHub 发布 CLI scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84)
+- [工作区保护 scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44)
+- [远程仓库配置 scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53)
