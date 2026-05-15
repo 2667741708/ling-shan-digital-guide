@@ -225,6 +225,48 @@ python scripts\run_local.py test-backend
 python scripts\run_local.py test-backend
 ```
 
+## ERR-0009 GitHub 推送连接被中断
+
+### 错误现象
+
+```text
+fatal: unable to access 'https://github.com/2667741708/ling-shan-digital-guide.git/': Recv failure: Connection was aborted
+kex_exchange_identification: read: Connection aborted
+banner exchange: Connection to 198.18.0.25 port 22: Connection aborted
+```
+
+### 触发命令
+
+```powershell
+python scripts\publish_github.py --remote-url https://github.com/2667741708/ling-shan-digital-guide.git --branch main --push-tags
+git push -u origin codex/optimize-map-avatar-v0.1:main
+ssh -T git@github.com
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布脚本 | 配置 remote 后执行 `git push` | [publish_github main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
+| 远程配置 | `origin` 指向 GitHub 仓库 | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
+| 发布文档 | GitHub 发布命令 | [docs/DEPLOY.md:L110-L128](./DEPLOY.md#L110-L128) |
+
+### 原因分析
+
+HTTPS 和 SSH 都在连接阶段被中断，且 SSH 目标显示 `198.18.0.25`，说明当前机器到 GitHub 的网络或代理链路不可用；尚未进入 GitHub 账号认证阶段。
+
+### 修复方案
+
+恢复可访问 GitHub 的网络、关闭或修复代理后，重新执行发布脚本。若 HTTPS 仍不稳定，可使用 SSH remote，但需要先确保 `ssh -T git@github.com` 能返回 GitHub 认证提示。
+
+### 验证命令
+
+```powershell
+python scripts\publish_github.py --help
+git remote -v
+python scripts\publish_github.py --remote-url https://github.com/2667741708/ling-shan-digital-guide.git --branch main --push-tags
+```
+
 ### 错误定位
 
 | 类型 | 说明 | 跳转链接 |

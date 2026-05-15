@@ -239,3 +239,58 @@ python scripts/playwright_smoke_vue.py
 ```bash
 python scripts/smoke_vue_full_stack.py
 ```
+
+## TRB-010 GitHub push 连接中断
+
+### 错误现象
+
+```text
+fatal: unable to access 'https://github.com/2667741708/ling-shan-digital-guide.git/': Recv failure: Connection was aborted
+```
+
+SSH 检查也可能出现：
+
+```text
+kex_exchange_identification: read: Connection aborted
+banner exchange: Connection to 198.18.0.25 port 22: Connection aborted
+```
+
+### 常见原因
+
+1. 当前网络或代理阻断 GitHub HTTPS/SSH。
+2. GitHub 域名被解析到代理虚拟网段，连接在认证前被中断。
+3. 本机 Git 凭据并未进入认证流程，因此不是代码或仓库内容问题。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布脚本 | 推送当前分支和 tag 到 GitHub | [publish_github main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
+| 远程配置 | 新增或更新 `origin` | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
+| 发布文档 | 可复现发布命令 | [docs/DEPLOY.md:L110-L128](./DEPLOY.md#L110-L128) |
+| 错误记录 | 本次连接中断记录 | [ERR-0009 docs/error_traceability.md:L228-L268](./error_traceability.md#L228-L268) |
+
+### 排查命令
+
+```powershell
+git remote -v
+git status --short --branch
+ssh -T git@github.com
+python scripts\publish_github.py --help
+```
+
+### 修复方式
+
+先恢复可访问 GitHub 的网络或代理，再执行：
+
+```powershell
+python scripts\publish_github.py --remote-url https://github.com/2667741708/ling-shan-digital-guide.git --branch main --push-tags
+```
+
+如果 HTTPS 仍失败，可以先确认 SSH 可用，再切换 remote：
+
+```powershell
+git remote set-url origin git@github.com:2667741708/ling-shan-digital-guide.git
+git push -u origin codex/optimize-map-avatar-v0.1:main
+git push origin --tags
+```
