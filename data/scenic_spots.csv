@@ -1,0 +1,5 @@
+id,name,tags,recommended_duration,map_x,map_y,description
+1,景区入口,"service;start",5,12,78,游客服务中心和检票入口所在地
+3,古建筑群,"history;photo",30,42,48,集中展示传统建筑风貌和历史文化故事
+5,文化展馆,"history;research",25,62,44,展示地方文史和研学内容
+8,观景台,"nature;photo",35,82,26,适合远眺全景和拍照打卡
