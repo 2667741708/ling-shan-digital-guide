@@ -39,8 +39,52 @@
 | 方法与路径 | `POST /api/admin/knowledge/search-test` |
 | 请求字段 | `query` |
 | 响应字段 | `query`, `chunks` |
-| API 入口 | [knowledge_search_test backend/app/api/admin.py:L27-L28](../backend/app/api/admin.py#L27-L28) |
-| 服务函数 | [search_test backend/app/services/knowledge_service.py:L38-L39](../backend/app/services/knowledge_service.py#L38-L39) |
+| API 入口 | [knowledge_search_test backend/app/api/admin.py:L64-L66](../backend/app/api/admin.py#L64-L66) |
+| 服务函数 | [search_test backend/app/services/knowledge_service.py:L169-L170](../backend/app/services/knowledge_service.py#L169-L170) |
+
+## API-007 后台知识文档上传
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/admin/knowledge/upload` |
+| 请求字段 | `multipart/form-data`: `file`, `title` |
+| 响应字段 | `id`, `title`, `file_name`, `source`, `editable`, `chunk_count`, `index_result` |
+| API 入口 | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36) |
+| 服务函数 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90) |
+| 前端使用 | [uploadKnowledgeDocument frontend/src/api/admin.ts:L11-L16](../frontend/src/api/admin.ts#L11-L16) |
+
+## API-008 后台知识文档更新
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `PUT /api/admin/knowledge/documents/{document_id}` |
+| 请求字段 | `title`, `content` |
+| 响应字段 | `id`, `title`, `source`, `editable`, `index_result` |
+| API 入口 | [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47) |
+| 服务函数 | [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105) |
+| 前端使用 | [updateKnowledgeDocument frontend/src/api/admin.ts:L18-L20](../frontend/src/api/admin.ts#L18-L20) |
+
+## API-009 后台知识文档删除
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `DELETE /api/admin/knowledge/documents/{document_id}` |
+| 请求字段 | path 参数 `document_id` |
+| 响应字段 | `id`, `title`, `status`, `index_result` |
+| API 入口 | [knowledge_delete backend/app/api/admin.py:L50-L56](../backend/app/api/admin.py#L50-L56) |
+| 服务函数 | [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) |
+| 前端使用 | [deleteKnowledgeDocument frontend/src/api/admin.ts:L22-L24](../frontend/src/api/admin.ts#L22-L24) |
+
+## API-010 后台知识库重建索引
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/admin/knowledge/reindex` |
+| 请求字段 | 无 |
+| 响应字段 | `path`, `entry_count` |
+| API 入口 | [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61) |
+| 服务函数 | [rebuild_index backend/app/services/knowledge_service.py:L68-L70](../backend/app/services/knowledge_service.py#L68-L70) |
+| 前端使用 | [reindexKnowledgeBase frontend/src/api/admin.ts:L26-L28](../frontend/src/api/admin.ts#L26-L28) |
 
 ## API-004 管理后台数据大屏
 

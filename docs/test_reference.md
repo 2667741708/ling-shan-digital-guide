@@ -127,7 +127,7 @@ python scripts\run_local.py build-kb
 结果：entry_count = 3377
 
 python scripts\run_local.py test-backend
-结果：6 passed
+结果：7 passed
 
 python scripts\run_local.py smoke-backend
 结果：DeepSeek 模型 deepseek-v4-flash 返回问答，知识库命中 faq_3
@@ -143,6 +143,9 @@ python scripts\run_local.py build-frontend
 
 python scripts\smoke_vue_full_stack.py
 结果：Vue dev server + FastAPI + DeepSeek 问答完整栈通过
+
+后台知识库上传 API 验证：
+结果：`POST /api/admin/knowledge/upload` 返回 200，检索来源命中 `data/admin_knowledge/临时验证资料.md`，随后 `DELETE /api/admin/knowledge/documents/{id}` 返回 deleted
 ```
 
 ## TEST-013 GitHub 发布脚本帮助命令
@@ -155,3 +158,23 @@ python scripts\smoke_vue_full_stack.py
 | 远程配置逻辑 | [configure_remote scripts/publish_github.py:L47-L53](../scripts/publish_github.py#L47-L53) |
 | 工作区保护 | [ensure_clean_worktree scripts/publish_github.py:L38-L44](../scripts/publish_github.py#L38-L44) |
 | 预期结果 | 输出 `--remote-url`、`--branch`、`--push-tags` 等参数说明，不修改远程仓库 |
+
+## TEST-014 后台知识库文档维护
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-007 |
+| 测试函数 | [test_save_update_delete_admin_knowledge_document backend/tests/test_knowledge_management.py:L7-L30](../backend/tests/test_knowledge_management.py#L7-L30) |
+| 被测函数 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90), [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105), [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) |
+| 运行命令 | `python scripts\run_local.py test-backend` |
+| 预期结果 | 后台知识文档可保存、改名/改正文、删除，且每次操作都会触发索引重建 |
+
+## TEST-015 后台知识库页面构建验证
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-007 |
+| 页面入口 | [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L132-L211](../frontend/src/pages/admin/KnowledgeManage.vue#L132-L211) |
+| API 客户端 | [admin api frontend/src/api/admin.ts:L7-L32](../frontend/src/api/admin.ts#L7-L32) |
+| 运行命令 | `python scripts\run_local.py build-frontend` |
+| 预期结果 | Vue 构建通过，知识库页面包含上传、编辑、删除、重建索引和检索测试控件 |

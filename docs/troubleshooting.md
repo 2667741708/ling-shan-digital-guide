@@ -294,3 +294,59 @@ git remote set-url origin git@github.com:2667741708/ling-shan-digital-guide.git
 git push -u origin codex/optimize-map-avatar-v0.1:main
 git push origin --tags
 ```
+
+## TRB-011 后台知识文档上传后检索不到
+
+### 错误现象
+
+后台上传资料成功，但“检索测试”或游客端问答没有命中新资料。
+
+### 常见原因
+
+1. 上传文件为空或扩展名不在 `.md/.txt/.csv/.json/.docx/.xlsx` 范围内。
+2. `data/admin_knowledge` 中有文件，但未重建本地向量库。
+3. 查询词与资料内容差距过大，需要补充 FAQ 式关键词。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 上传入口 | 上传后保存文件并重建索引 | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36) |
+| 保存逻辑 | 检查空文件和支持类型 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90) |
+| 入库逻辑 | 读取后台上传资料并切片 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L170](../backend/app/services/vector_store.py#L150-L170) |
+| 手动重建 | 后台重建索引 API | [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61) |
+
+### 修复方式
+
+1. 在 `http://127.0.0.1:5173/admin/knowledge` 点击“重建索引”。
+2. 运行：
+
+   ```powershell
+   python scripts\run_local.py build-kb
+   ```
+
+3. 在检索测试中输入资料中的关键词，确认结果来源包含 `data/admin_knowledge`。
+
+## TRB-012 pytest 默认临时目录权限拒绝
+
+### 错误现象
+
+```text
+PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\hmw20\\AppData\\Local\\Temp\\pytest-of-hmw20'
+```
+
+### 原因分析
+
+当前机器的 pytest 默认临时目录权限异常，使用 `tmp_path` fixture 可能在测试 setup 阶段失败。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 修复测试 | 使用项目内临时目录并在 finally 中清理 | [test_save_update_delete_admin_knowledge_document backend/tests/test_knowledge_management.py:L7-L30](../backend/tests/test_knowledge_management.py#L7-L30) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+```

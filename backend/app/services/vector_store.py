@@ -16,6 +16,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 DATA_DIR = ROOT_DIR / "data"
 VECTOR_DB_DIR = DATA_DIR / "vector_db"
 VECTOR_STORE_PATH = VECTOR_DB_DIR / "scenic_vector_store.json"
+ADMIN_KNOWLEDGE_DIR = DATA_DIR / "admin_knowledge"
 VECTOR_DIMENSION = 256
 
 
@@ -135,6 +136,38 @@ def load_raw_document_entries() -> list[KnowledgeEntry]:
     return entries
 
 
+def read_supported_document(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix in {".md", ".txt", ".csv", ".json"}:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    if suffix == ".docx":
+        return extract_docx_text(path)
+    if suffix == ".xlsx":
+        return extract_xlsx_text(path)
+    return ""
+
+
+def load_admin_document_entries() -> list[KnowledgeEntry]:
+    if not ADMIN_KNOWLEDGE_DIR.exists():
+        return []
+    entries: list[KnowledgeEntry] = []
+    for path in sorted(ADMIN_KNOWLEDGE_DIR.glob("*")):
+        if path.suffix.lower() not in {".md", ".txt", ".csv", ".json", ".docx", ".xlsx"}:
+            continue
+        content = read_supported_document(path)
+        for index, chunk in enumerate(chunk_text(content, chunk_size=520, overlap=100), start=1):
+            entries.append(
+                KnowledgeEntry(
+                    id=f"admin_{path.stem}_{index}",
+                    text=chunk,
+                    source=f"data/admin_knowledge/{path.name}",
+                    category="admin_knowledge",
+                    title=f"{path.stem}#{index}",
+                )
+            )
+    return entries
+
+
 def xml_text(path: Path, member: str) -> str:
     with zipfile.ZipFile(path) as archive:
         if member not in archive.namelist():
@@ -217,7 +250,13 @@ def load_scenic_pack_entries() -> list[KnowledgeEntry]:
 
 
 def load_knowledge_entries() -> list[KnowledgeEntry]:
-    return load_faq_entries() + load_spot_entries() + load_raw_document_entries() + load_scenic_pack_entries()
+    return (
+        load_faq_entries()
+        + load_spot_entries()
+        + load_raw_document_entries()
+        + load_scenic_pack_entries()
+        + load_admin_document_entries()
+    )
 
 
 def build_knowledge_base(output_path: Path = VECTOR_STORE_PATH) -> dict:

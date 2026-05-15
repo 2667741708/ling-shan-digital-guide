@@ -170,3 +170,38 @@ python scripts\smoke_vue_full_stack.py
 python scripts\publish_github.py --help
 python scripts\publish_github.py --remote-url https://github.com/<your-name>/<repo>.git --branch main --push-tags
 ```
+
+## REQ-007 后台知识库管理闭环
+
+### 用户场景
+
+管理员可以在后台上传、更新、删除景区讲解词、文史资料、FAQ 和数据表资料；系统保存资料后立即重建本地向量索引，游客端数字人问答可检索到新增内容。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| API 上传 | 接收 `multipart/form-data` 文件并保存入库 | [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36) |
+| API 更新 | 修改可编辑文本资料并重建索引 | [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47) |
+| API 删除 | 删除后台上传资料并重建索引 | [knowledge_delete backend/app/api/admin.py:L50-L56](../backend/app/api/admin.py#L50-L56) |
+| API 重建 | 手动触发知识库重建 | [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61) |
+| 服务层 | 保存、更新、删除和列出后台资料 | [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90), [update_document backend/app/services/knowledge_service.py:L93-L105](../backend/app/services/knowledge_service.py#L93-L105), [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116), [list_documents backend/app/services/knowledge_service.py:L143-L166](../backend/app/services/knowledge_service.py#L143-L166) |
+| 向量入库 | 读取 `data/admin_knowledge` 中的后台资料并切片入向量库 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L170](../backend/app/services/vector_store.py#L150-L170) |
+| 前端页面 | 上传表单、文本维护、文档列表、重建索引和检索测试 | [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L25-L118](../frontend/src/pages/admin/KnowledgeManage.vue#L25-L118), [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L132-L211](../frontend/src/pages/admin/KnowledgeManage.vue#L132-L211) |
+| 测试 | 保存、更新、删除后台知识文档 | [test_save_update_delete_admin_knowledge_document backend/tests/test_knowledge_management.py:L7-L30](../backend/tests/test_knowledge_management.py#L7-L30) |
+
+### 配置项
+
+- 后台上传资料固定保存到 [ADMIN_KNOWLEDGE_DIR backend/app/services/vector_store.py:L15-L19](../backend/app/services/vector_store.py#L15-L19)，当前路径为 `data/admin_knowledge`。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-kb
+python scripts\run_local.py build-frontend
+```
+
+### 影响范围
+
+影响管理后台知识库页面、后台知识库 API、本地向量库构建、游客端 RAG 回答依据和文档检索测试。

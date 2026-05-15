@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.schemas.admin import LoginRequest
 from app.services.analytics_service import dashboard_overview, sentiment_report
 from app.services.avatar_service import get_active_avatar, save_avatar_config
-from app.services.knowledge_service import list_documents, search_test
+from app.services.knowledge_service import delete_document, list_documents, rebuild_index, save_document, search_test
+from app.services.knowledge_service import update_document
 from app.services.scenic_service import list_scenic_spots
 
 router = APIRouter()
@@ -23,6 +24,41 @@ def scenic_spots():
 @router.get("/knowledge/documents")
 def knowledge_documents():
     return {"code": 0, "message": "success", "data": list_documents()}
+
+
+@router.post("/knowledge/upload")
+async def knowledge_upload(file: UploadFile = File(...), title: str = Form("")):
+    try:
+        data = await file.read()
+        document = save_document(file.filename or "knowledge.md", data, title or None)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": document}
+
+
+@router.put("/knowledge/documents/{document_id}")
+def knowledge_update(document_id: str, payload: dict):
+    try:
+        document = update_document(document_id, payload.get("title"), payload.get("content"))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": document}
+
+
+@router.delete("/knowledge/documents/{document_id}")
+def knowledge_delete(document_id: str):
+    try:
+        document = delete_document(document_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": document}
+
+
+@router.post("/knowledge/reindex")
+def knowledge_reindex():
+    return {"code": 0, "message": "success", "data": rebuild_index()}
 
 
 @router.post("/knowledge/search-test")

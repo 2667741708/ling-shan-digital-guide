@@ -15,7 +15,7 @@ bash scripts/dev_vue_full_stack.sh
 | 数字人导游 | http://127.0.0.1:5173/guide | 测试灵灵数字人、文本问答、浏览器语音输入、语音播报、RAG 引用和路线卡片 |
 | 景区地图 | http://127.0.0.1:5173/map | 查看灵山胜境真实点位、地图路线、兴趣和时间筛选 |
 | 管理大屏 | http://127.0.0.1:5173/admin | 查看热门问答、热门景点、路线偏好、情绪趋势 |
-| 知识库管理 | http://127.0.0.1:5173/admin/knowledge | 查看知识文档 |
+| 知识库管理 | http://127.0.0.1:5173/admin/knowledge | 上传、维护、删除知识文档，重建索引并检索验证 |
 | 数字人配置 | http://127.0.0.1:5173/admin/avatar | 查看数字人配置 |
 
 对应实现：
@@ -182,10 +182,46 @@ POST /api/admin/knowledge/search-test
 
 实现位置：
 
-- [knowledge_search_test backend/app/api/admin.py:L27-L28](../backend/app/api/admin.py#L27-L28)
-- [search_test backend/app/services/knowledge_service.py:L38-L39](../backend/app/services/knowledge_service.py#L38-L39)
+- [knowledge_search_test backend/app/api/admin.py:L64-L66](../backend/app/api/admin.py#L64-L66)
+- [search_test backend/app/services/knowledge_service.py:L169-L170](../backend/app/services/knowledge_service.py#L169-L170)
 
-## 5. Git Bash 路径规则
+## 5. 知识库管理测试流程
+
+1. 打开：
+
+   ```text
+   http://127.0.0.1:5173/admin/knowledge
+   ```
+
+2. 上传资料：
+
+   - 在“上传知识文档”中填写标题；
+   - 选择 `.md/.txt/.csv/.json/.docx/.xlsx` 文件；
+   - 点击“上传并入库”。
+
+   对应后端入口为 [knowledge_upload backend/app/api/admin.py:L29-L36](../backend/app/api/admin.py#L29-L36)，保存后会调用 [save_document backend/app/services/knowledge_service.py:L73-L90](../backend/app/services/knowledge_service.py#L73-L90) 并重建向量库。
+
+3. 新增或更新文本资料：
+
+   - 在“维护文本资料”中填写标题和正文；
+   - 点击“新增文本资料”或在文档列表中选择可维护资料后点击“更新资料”。
+
+   对应前端逻辑为 [updateDoc frontend/src/pages/admin/KnowledgeManage.vue:L87-L95](../frontend/src/pages/admin/KnowledgeManage.vue#L87-L95)，后端更新入口为 [knowledge_update backend/app/api/admin.py:L39-L47](../backend/app/api/admin.py#L39-L47)。
+
+4. 验证是否进入知识库：
+
+   - 在“检索测试”中输入新增资料相关问题；
+   - 结果列表应出现 `data/admin_knowledge/...` 来源；
+   - 再到数字人页 `http://127.0.0.1:5173/guide` 提问同一问题，回答引用应包含新增资料。
+
+5. 删除和重建：
+
+   - 后台上传资料可点击“删除”；
+   - 如手动改了 `data/admin_knowledge` 文件，可点击“重建索引”。
+
+   对应实现为 [delete_document backend/app/services/knowledge_service.py:L108-L116](../backend/app/services/knowledge_service.py#L108-L116) 和 [knowledge_reindex backend/app/api/admin.py:L59-L61](../backend/app/api/admin.py#L59-L61)。
+
+## 6. Git Bash 路径规则
 
 Git Bash / MINGW64 中必须使用 `/`：
 
