@@ -197,6 +197,10 @@ def smoke_docker_postgres() -> None:
     run([sys.executable, "scripts/smoke_docker_postgres.py"], cwd=ROOT)
 
 
+def smoke_docker_allinone() -> None:
+    run([sys.executable, "scripts/smoke_docker_allinone.py"], cwd=ROOT)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="LingTour AI reproducible local runner")
     parser.add_argument(
@@ -211,6 +215,7 @@ def main() -> int:
             "serve-backend",
             "smoke-backend",
             "smoke-docker-postgres",
+            "smoke-docker-allinone",
             "all",
         ],
     )
@@ -234,6 +239,8 @@ def main() -> int:
         smoke_backend()
     elif args.command == "smoke-docker-postgres":
         smoke_docker_postgres()
+    elif args.command == "smoke-docker-allinone":
+        smoke_docker_allinone()
     elif args.command == "all":
         check_env()
         install_backend_deps()

@@ -24,11 +24,14 @@
 
 | 程序 | 文件职责 | 核心符号 |
 |---|---|---|
-| 本地 runner | 环境检查、依赖安装、自动拉起 PostgreSQL、构建知识库、测试、服务启动和 Docker pgvector 烟测分发 | [main scripts/run_local.py:L200-L247](../scripts/run_local.py#L200-L247), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86) |
+| 本地 runner | 环境检查、依赖安装、自动拉起 PostgreSQL、构建知识库、测试、服务启动和 Docker 烟测分发 | [main scripts/run_local.py:L204-L254](../scripts/run_local.py#L204-L254), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86) |
 | 后端烟测 | 登录后台、上传草稿、发布、检索命中、游客问答引用、删除后不命中 | [main scripts/smoke_test.py:L77-L123](../scripts/smoke_test.py#L77-L123) |
 | 完整栈烟测 | 启动后端和静态前端后运行 API 烟测 | [main scripts/smoke_full_stack.py:L32-L64](../scripts/smoke_full_stack.py#L32-L64) |
 | Vue 完整栈烟测 | 复用健康服务或启动 FastAPI 与 Vite，验证真实 Vue 工程 | [main scripts/smoke_vue_full_stack.py:L69-L121](../scripts/smoke_vue_full_stack.py#L69-L121) |
-| Docker pgvector 烟测 | 构建前端后启动 Compose，校验 `/guide` 和 `/api/v1/admin/system/status` | [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| Docker pgvector 烟测 | 直接从 Git 仓库源码构建 Compose，校验 `/guide` 和 `/api/v1/admin/system/status` | [main scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100) |
+| Docker All-in-One 烟测 | 构建单容器镜像，校验 `/guide`、后台系统状态和 `5433` 端口 | [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114) |
+| All-in-One 启动编排 | 在单容器内初始化 PostgreSQL、启用 pgvector 并启动 FastAPI | [main deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240) |
+| GHCR 发布脚本 | 本地构建前端、构建 all-in-one 发布镜像并推送到 GHCR | [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
 | 静态前端服务 | 用 Python http.server 服务无依赖演示端 | [main scripts/serve_static_frontend.py:L14-L23](../scripts/serve_static_frontend.py#L14-L23) |
 | DeepSeek 多智能体生成器 | 生成架构、后端、前端、AI/RAG、测试文档建议 | [main scripts/deepseek_multi_agent.py:L203-L240](../scripts/deepseek_multi_agent.py#L203-L240) |
 | GitHub 发布脚本 | 配置远程仓库、检查工作区、推送分支和 tag | [main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) |
@@ -58,5 +61,6 @@
 - 修改 [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) 会影响问答路线卡片、地图路线和路线推荐接口。
 - 修改 [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596) 会影响知识库命中率、PostgreSQL pgvector 查询和游客端问答依据。
 - 修改 [embed_document backend/app/services/vector_store.py:L436-L466](../backend/app/services/vector_store.py#L436-L466) 会影响后台文档切片是否真正落入 `knowledge_chunk`。
-- 修改 [run_local.py 命令分发 scripts/run_local.py:L200-L247](../scripts/run_local.py#L200-L247) 会影响部署、测试、Docker pgvector 烟测和服务器运行流程。
+- 修改 [run_local.py 命令分发 scripts/run_local.py:L204-L254](../scripts/run_local.py#L204-L254) 会影响部署、测试、Docker pgvector 烟测、Docker All-in-One 烟测和服务器运行流程。
 - 修改 [publish_github.py 发布流程 scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) 会影响 GitHub 远程发布、分支映射和 tag 推送。
+- 修改 [publish_ghcr_allinone.py 发布流程 scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) 会影响 GHCR 镜像标签、本地构建和容器仓库推送。

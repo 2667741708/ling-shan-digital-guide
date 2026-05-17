@@ -382,7 +382,7 @@ python scripts\smoke_vue_full_stack.py
 | 当前测试集 | 目前仅有 3 条示例题 | [data/test_questions.csv:L1-L4](../data/test_questions.csv#L1-L4) |
 | 现有问答单测 | 当前只覆盖基本返回结构 | [backend/tests/test_chat_service.py:L5-L12](../backend/tests/test_chat_service.py#L5-L12) |
 | 当前烟测报告字段 | 已输出问答延迟，可复用为评测基础 | [scripts/smoke_test.py:L77-L123](../scripts/smoke_test.py#L77-L123) |
-| 参考方案 | 仓库已有生成的评测脚本草案 | [docs/generated/05_test_and_submission_plan.md:L38-L170](./generated/05_test_and_submission_plan.md#L38-L170) |
+| 参考方案 | 仓库已有历史生成的评测脚本草案 | [docs/archive/generated/05_test_and_submission_plan.md:L38-L170](./archive/generated/05_test_and_submission_plan.md#L38-L170) |
 
 ### 计划交付结果
 
@@ -421,11 +421,11 @@ python scripts\run_local.py smoke-backend
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| Compose 配置 | `app` 单容器托管 FastAPI + Vue 静态资源，`postgres` 使用 `pgvector/pgvector:pg16` | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44) |
-| 镜像构建 | 单容器镜像复制后端、知识库数据和 `frontend/dist` | [deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18) |
+| Compose 配置 | `app` 单容器托管 FastAPI + Vue 静态资源，`postgres` 使用 `pgvector/pgvector:pg16`，未提供 `.env` 时也可使用默认值启动 | [deploy/docker-compose.yml:L1-L50](../deploy/docker-compose.yml#L1-L50) |
+| 镜像构建 | 多阶段镜像从 `frontend/` 源码直接构建 `dist`，不依赖仓库提交前端产物 | [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) |
 | 前端托管 | FastAPI 在容器内直接提供 `/guide`、`/map`、`/admin/*` SPA 入口 | [backend/app/main.py:L66-L78](../backend/app/main.py#L66-L78) |
 | pgvector 初始化 | PostgreSQL 启动时自动执行 `CREATE EXTENSION IF NOT EXISTS vector` | [backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
-| 验收脚本 | 自动构建前端、启动 Compose、校验游客页和后台系统状态 | [scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107), [scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197) |
+| 验收脚本 | 直接从 Git 仓库源码执行 Compose 构建，校验游客页和后台系统状态 | [scripts/smoke_docker_postgres.py:L58-L99](../scripts/smoke_docker_postgres.py#L58-L99), [scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197) |
 
 ### 交付结果
 
@@ -434,6 +434,7 @@ python scripts\run_local.py smoke-backend
 - 新增 `python scripts\run_local.py smoke-docker-postgres` 作为标准验收命令。
 - 宿主机暴露 PostgreSQL 端口固定为 `5433`，避免误连本机已有的 `5432` 数据库实例。
 - 明确容器化访问地址为 `http://127.0.0.1:8000/guide`、`/map`、`/admin/login`。
+- Docker 镜像构建已内置前端打包步骤，GitHub 仓库不需要提交 `frontend/dist` 也能完成 Compose 启动。
 
 ### 验收标准
 
@@ -444,13 +445,92 @@ python scripts\run_local.py smoke-backend
 ### 验证命令
 
 ```powershell
-Copy-Item .env.example .env
 python scripts\run_local.py smoke-docker-postgres
 ```
 
 ### 影响范围
 
 影响统一部署、比赛现场复现、PostgreSQL 环境一致性、前端访问路径和新同事接手成本。
+
+## REQ-019 Docker All-in-One 单容器交付
+
+### 用户场景
+
+项目需要提供一套“单容器镜像同时承载 FastAPI 与 PostgreSQL/pgvector”的交付方案，便于在资源受限或只接受单容器交付的环境中快速演示和部署。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| Compose 配置 | 单服务 `allinone` 暴露 `8000` 和 `5433`，挂载数据库卷与知识库卷 | [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36) |
+| 镜像构建 | 多阶段镜像同时内置前端构建、Python 运行时和 PostgreSQL/pgvector | [deploy/Dockerfile.allinone:L1-L43](../deploy/Dockerfile.allinone#L1-L43) |
+| 容器启动编排 | 初始化 PostgreSQL cluster、创建数据库、启用 `vector` 扩展并拉起 FastAPI | [initialize_cluster deploy/start_allinone.py:L117-L132](../deploy/start_allinone.py#L117-L132), [ensure_database_objects deploy/start_allinone.py:L176-L191](../deploy/start_allinone.py#L176-L191), [start_backend deploy/start_allinone.py:L206-L225](../deploy/start_allinone.py#L206-L225), [main deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240) |
+| 烟测脚本 | 构建单容器、校验页面、后台登录和系统状态 | [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114), [smoke_docker_allinone scripts/run_local.py:L200-L201](../scripts/run_local.py#L200-L201) |
+| 运行约束 | 仍保留双容器正式方案，单容器是交付增强而非默认推荐部署 | [docs/DEPLOY.md:L38-L56](./DEPLOY.md#L38-L56) |
+
+### 交付结果
+
+- 新增 `deploy/Dockerfile.allinone` 和 `deploy/docker-compose.allinone.yml`。
+- 单容器内可同时运行 PostgreSQL、pgvector 和 FastAPI。
+- 新增 `python scripts\run_local.py smoke-docker-allinone` 统一验收入口。
+- 保留现有双容器正式部署方案，不破坏当前推荐运行链路。
+
+### 验收标准
+
+- `docker compose -f deploy/docker-compose.allinone.yml up --build` 后，游客端和后台页面可访问。
+- 后台登录、知识库读取和系统状态接口能正常工作。
+- 宿主机 `127.0.0.1:5433` 能连到单容器内 PostgreSQL。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py smoke-docker-allinone
+```
+
+### 影响范围
+
+影响交付形态、容器资源分配、数据库与应用进程编排，以及演示环境下的部署选择。
+
+## REQ-020 GHCR All-in-One 镜像发布
+
+### 用户场景
+
+项目需要把 all-in-one 单容器镜像发布到 GitHub Container Registry，便于其他环境直接 `docker pull` + `docker run`，不必从源码重新构建。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布镜像 | 使用本地前端构建产物的 GHCR 发布镜像 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
+| 发布脚本 | 构建前端、构建镜像、登录 GHCR、推送标签 | [build_frontend scripts/publish_ghcr_allinone.py:L65-L66](../scripts/publish_ghcr_allinone.py#L65-L66), [docker_login scripts/publish_ghcr_allinone.py:L89-L101](../scripts/publish_ghcr_allinone.py#L89-L101), [build_image scripts/publish_ghcr_allinone.py:L104-L117](../scripts/publish_ghcr_allinone.py#L104-L117), [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
+| 配置 | GHCR token 环境变量说明 | [docs/config_reference.md:L22-L24](./config_reference.md#L22-L24) |
+| 部署文档 | `docker run` 和 GHCR 发布命令 | [docs/DEPLOY.md:L59-L103](./DEPLOY.md#L59-L103) |
+| 验证文档 | GHCR 发布脚本测试入口 | [docs/test_reference.md:L242-L250](./test_reference.md#L242-L250) |
+
+### 交付结果
+
+- 新增 `deploy/Dockerfile.allinone.release`，用于 GHCR 发布镜像。
+- 新增 `scripts/publish_ghcr_allinone.py`，统一处理前端构建、镜像打标和推送。
+- 新增 `docker run` 直接运行文档。
+- 默认镜像名为 `ghcr.io/2667741708/ling-shan-digital-guide-allinone`。
+
+### 验收标准
+
+- `python scripts\publish_ghcr_allinone.py --help` 正常输出参数说明。
+- `python scripts\publish_ghcr_allinone.py --no-push --tag latest` 能本地构建发布镜像。
+- 具备 `write:packages` 权限的 token 时，`docker login ghcr.io` 和 `docker push` 能成功。
+
+### 验证命令
+
+```powershell
+python scripts\publish_ghcr_allinone.py --help
+python scripts\publish_ghcr_allinone.py --no-push --tag latest
+python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-digital-guide-allinone --tag latest
+```
+
+### 影响范围
+
+影响镜像发布流程、容器分发方式、GitHub 凭据管理，以及外部环境对单容器方案的接入方式。
 
 ## REQ-015 演示视频与最终交付物
 
@@ -468,7 +548,7 @@ python scripts\run_local.py smoke-docker-postgres
 |---|---|---|
 | 运行与演示路径 | 当前已有完整人工演示步骤 | [docs/user_interaction_guide.md:L3-L140](./user_interaction_guide.md#L3-L140) |
 | 当前推荐演示路径 | 已给出地图、数字人、后台大屏的串讲顺序 | [docs/implementation_gap_audit.md:L45-L52](./implementation_gap_audit.md#L45-L52) |
-| 参考交付方案 | 仓库已有演示视频与提交物草案 | [docs/generated/05_test_and_submission_plan.md:L176-L266](./generated/05_test_and_submission_plan.md#L176-L266) |
+| 参考交付方案 | 仓库已有历史演示视频与提交物草案 | [docs/archive/generated/05_test_and_submission_plan.md:L176-L266](./archive/generated/05_test_and_submission_plan.md#L176-L266) |
 | 当前验证记录 | 可作为交付报告基础 | [docs/test_reference.md:L118-L192](./test_reference.md#L118-L192) |
 
 ### 计划交付结果

@@ -92,7 +92,6 @@ python scripts\smoke_full_stack.py
 ### 方式 H：Docker Compose
 
 ```powershell
-Copy-Item .env.example .env
 python scripts\run_local.py smoke-docker-postgres
 ```
 
@@ -100,6 +99,7 @@ python scripts\run_local.py smoke-docker-postgres
 
 - `app` 容器同时承载 FastAPI 和构建后的 Vue 静态资源；
 - `postgres` 服务提供真实 PostgreSQL + pgvector；
+- 不提交 `frontend/dist` 也可直接从源码构建镜像；
 - 宿主机访问 PostgreSQL 时使用 `127.0.0.1:5433`；
 - 默认访问地址切到 `http://127.0.0.1:8000/guide`、`http://127.0.0.1:8000/map`、`http://127.0.0.1:8000/admin/login`；
 - 烟测脚本会自动在结束后执行 `docker compose down`。
@@ -107,9 +107,29 @@ python scripts\run_local.py smoke-docker-postgres
 对应实现：
 
 - [Compose 编排 deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44)
-- [单容器镜像 deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18)
+- [单容器镜像 deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31)
 - [SPA 静态托管 backend/app/main.py:L66-L78](../backend/app/main.py#L66-L78)
-- [Docker pgvector 烟测 scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107)
+- [Docker pgvector 烟测 scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100)
+
+### 方式 I：Docker All-in-One
+
+```powershell
+python scripts\run_local.py smoke-docker-allinone
+```
+
+当前单容器路径适合只接受一个容器镜像的演示或交付环境：
+
+- 单个 `allinone` 容器同时提供 FastAPI 和 PostgreSQL + pgvector；
+- 宿主机访问页面仍使用 `http://127.0.0.1:8000/guide`、`/map`、`/admin/login`；
+- 宿主机访问数据库仍使用 `127.0.0.1:5433`；
+- 该方案用于交付增强，不替代更可维护的双容器正式方案。
+
+对应实现：
+
+- [All-in-One Compose deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36)
+- [All-in-One 镜像 deploy/Dockerfile.allinone:L1-L43](../deploy/Dockerfile.allinone#L1-L43)
+- [单容器启动编排 deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240)
+- [Docker All-in-One 烟测 scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114)
 
 ## 2. 数字人导游测试流程
 

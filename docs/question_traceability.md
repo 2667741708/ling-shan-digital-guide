@@ -259,14 +259,14 @@ python -m pytest backend/tests -q
 6. [REQ-015 演示视频与最终交付物](./requirements_traceability.md#req-015-演示视频与最终交付物)
 7. `OPS-001` 统一 pytest 直接运行入口，减少对手工 `PYTHONPATH` 的依赖。
 
-可直接使用 [交接文档 docs/handoffs/2026-05-17-待补齐需求交接.md:L1-L59](./handoffs/2026-05-17-待补齐需求交接.md#L1-L59) 给同事分派任务。
+可直接使用 [交接文档 docs/archive/2026-05-17-待补齐需求交接.md:L1-L59](./archive/2026-05-17-待补齐需求交接.md#L1-L59) 给同事分派任务。
 
 ### 对应实现位置
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
 | 需求总表 | 新增待完成需求列表 | [docs/requirements_traceability.md:L236-L490](./requirements_traceability.md#L236-L490) |
-| 交接文档 | 优先级、建议负责人类型、关键入口 | [docs/handoffs/2026-05-17-待补齐需求交接.md:L1-L59](./handoffs/2026-05-17-待补齐需求交接.md#L1-L59) |
+| 交接文档 | 优先级、建议负责人类型、关键入口 | [docs/archive/2026-05-17-待补齐需求交接.md:L1-L59](./archive/2026-05-17-待补齐需求交接.md#L1-L59) |
 | 工程约束 | pytest 直接运行入口问题 | [docs/test_reference.md:L197-L206](./test_reference.md#L197-L206), [docs/troubleshooting.md:L455-L496](./troubleshooting.md#L455-L496) |
 
 ### 验证命令
@@ -378,7 +378,7 @@ python scripts\run_local.py smoke-docker-postgres
 | code | 当前活动数据库 URL 跟踪、PostgreSQL 后端识别和 pgvector 扩展初始化 | [current_database_url backend/app/core/database.py:L30-L34](../backend/app/core/database.py#L30-L34), [configure_database backend/app/core/database.py:L42-L55](../backend/app/core/database.py#L42-L55), [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
 | code | 单应用容器托管前端静态资源 | [frontend_spa backend/app/main.py:L73-L78](../backend/app/main.py#L73-L78) |
 | deploy | 单应用容器 + PostgreSQL/pgvector Compose 编排 | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44), [deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18) |
-| test | Docker pgvector 烟测入口 | [smoke_docker_postgres scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197), [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| test | Docker pgvector 烟测入口 | [smoke_docker_postgres scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197), [main scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100) |
 | doc | 部署和运行说明 | [docs/DEPLOY.md:L3-L29](./DEPLOY.md#L3-L29), [docs/user_interaction_guide.md:L92-L110](./user_interaction_guide.md#L92-L110), [docs/requirements_traceability.md:L410-L449](./requirements_traceability.md#L410-L449) |
 
 ### 验证命令
@@ -425,4 +425,205 @@ python scripts\run_local.py test-backend
 python scripts\run_local.py build-frontend
 python scripts\check_doc_links.py
 python scripts\run_local.py smoke-docker-postgres
+```
+
+## Q-0014 `docs/` 目录下哪些文档应该保留、归档或删除？
+
+### 用户原始问题
+
+`docs/` 文件夹下哪些可归档，哪些可删除？哪些需要保留？
+
+### 回答摘要
+
+当前 `docs/` 可以按三层处理：
+
+1. 核心保留：`api_reference.md`、`config_reference.md`、`data_schema_reference.md`、`DEPLOY.md`、`program_index.md`、`project_onboarding.md`、`question_traceability.md`、`requirements_traceability.md`、`test_reference.md`、`troubleshooting.md` 等，这些文档仍被新同事阅读路径和现有实现直接依赖。
+2. 建议归档：`API.md`、`DESIGN.md`、`DEEPSEEK_MULTI_AGENT.md`、`TEST_REPORT.md`、`generated/`、`handoffs/2026-05-17-待补齐需求交接.md`、`TEAM_HANDOFF.md`，它们主要提供历史方案、阶段交接或旧版说明，不应继续作为当前事实来源。
+3. 本轮先不做硬删除，统一归档到 `docs/archive/`，等确认完全不再引用后再物理删除。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| doc | 当前统一 API 真相已经迁移到 `/api/v1` 说明，旧 `API.md` 仍保留旧 `/api/visitor` 和 `/api/admin` 路径 | [docs/archive/API.md:L13-L30](./archive/API.md#L13-L30), [docs/api_reference.md:L18-L89](./api_reference.md#L18-L89) |
+| doc | `DESIGN.md` 仍写有 `Redis` 和泛化数据层描述，未体现 PostgreSQL-only 当前状态 | [docs/archive/DESIGN.md:L1-L15](./archive/DESIGN.md#L1-L15) |
+| doc | `DEEPSEEK_MULTI_AGENT.md` 和 `generated/README.md` 说明这些文件属于多智能体生成产物 | [docs/archive/DEEPSEEK_MULTI_AGENT.md:L18-L39](./archive/DEEPSEEK_MULTI_AGENT.md#L18-L39), [docs/archive/generated/README.md:L1-L7](./archive/generated/README.md#L1-L7) |
+| doc | `TEAM_HANDOFF.md` 指向过期目录和旧职责分工 | [docs/archive/TEAM_HANDOFF.md:L1-L25](./archive/TEAM_HANDOFF.md#L1-L25) |
+| doc | `TEST_REPORT.md` 是静态阶段性报告，内容已和当前测试体系分离 | [docs/archive/TEST_REPORT.md:L1-L21](./archive/TEST_REPORT.md#L1-L21), [docs/test_reference.md:L1-L227](./test_reference.md#L1-L227) |
+| doc | 当前新同事阅读路径和核心入口文档清单 | [docs/project_onboarding.md:L27-L38](./project_onboarding.md#L27-L38) |
+| doc | 归档 `generated/` 前需要先处理现有引用，避免断链 | [docs/requirements_traceability.md:L382-L385](./requirements_traceability.md#L382-L385), [docs/requirements_traceability.md:L468-L472](./requirements_traceability.md#L468-L472) |
+
+### 建议操作顺序
+
+1. 先保留所有核心文档不动。
+2. 把 `generated/`、`API.md`、`DESIGN.md`、`DEEPSEEK_MULTI_AGENT.md`、`TEST_REPORT.md`、`handoffs/2026-05-17-待补齐需求交接.md`、`TEAM_HANDOFF.md` 移到 `docs/archive/`。
+3. 修正 [docs/requirements_traceability.md:L382-L385](./requirements_traceability.md#L382-L385) 和 [docs/requirements_traceability.md:L468-L472](./requirements_traceability.md#L468-L472) 对 `docs/generated/05_test_and_submission_plan.md` 的引用。
+4. 保持历史文档可追溯，但不再把它们作为当前真相来源。
+
+### 验证命令
+
+```powershell
+python scripts\check_doc_links.py
+```
+
+## Q-0015 归档后 GitHub 仓库里是否包含 Docker 容器本身？
+
+### 用户原始问题
+
+帮我归档，并告诉我我们目前提交到 GitHub 的项目包括了 Docker 容器本身吗？
+
+### 回答摘要
+
+已经把历史文档统一归档到 `docs/archive/`，当前核心文档继续保留在 `docs/` 根目录。
+
+GitHub 仓库当前包含的是 Docker 相关定义，不包含已经构建好的容器本身：
+
+1. 仓库里有 [deploy/docker-compose.yml](../deploy/docker-compose.yml#L1-L44) 和 [deploy/Dockerfile](../deploy/Dockerfile#L1-L18)，所以别人可以据此构建镜像并启动容器。
+2. 仓库里不包含已经 build 完成的 Docker image，也不包含运行中的 container、PostgreSQL volume 数据。
+3. 仓库里也不包含 `frontend/dist` 构建产物，因为它被 [.gitignore:L5-L11](../.gitignore#L5-L11) 忽略；当前标准做法是先执行前端构建，再执行 Compose 验收。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| doc | 归档目录说明和当前文档入口 | [docs/archive/README.md:L1-L15](./archive/README.md#L1-L15), [docs/project_onboarding.md:L27-L38](./project_onboarding.md#L27-L38) |
+| deploy | Docker Compose 编排定义在仓库内 | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44) |
+| deploy | 应用镜像构建定义在仓库内 | [deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18) |
+| build | Docker 镜像依赖本地 `frontend/dist` 进入 build context | [deploy/Dockerfile:L11-L14](../deploy/Dockerfile#L11-L14), [build_frontend scripts/run_local.py:L134-L143](../scripts/run_local.py#L134-L143) |
+| vcs | `frontend/dist`、`.env`、数据库文件和日志都不会进入 Git 仓库 | [.gitignore:L1-L11](../.gitignore#L1-L11) |
+| doc | 部署说明已补充“仓库不包含已构建镜像/容器”说明 | [docs/DEPLOY.md:L3-L14](./DEPLOY.md#L3-L14) |
+
+### 验证命令
+
+```powershell
+python scripts\check_doc_links.py
+```
+
+## Q-0016 GitHub 仓库是否已经包含完整项目，两个 Docker 是否够用，能否只用一个 Docker？
+
+### 用户原始问题
+
+我需要 GitHub 上传我们的完整项目，不要排除必要的文件，我们本地的这二个 docker 完整的包含了我们的项目了吗？是否可以一个 docker 到处运行？
+
+### 回答摘要
+
+当前已经把 Docker 构建链路改成“仓库源码可直接构建”：
+
+1. GitHub 仓库现在不需要提交 `frontend/dist`，因为 [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) 会在镜像构建阶段从 `frontend/` 源码直接执行前端打包。
+2. 当前两容器方案是完整且合理的：`app` 容器承载前端静态资源 + FastAPI，`postgres` 容器承载 PostgreSQL/pgvector；这已经覆盖项目运行所需的两个核心进程。
+3. “一个 Docker 到处运行”分两种理解：
+   - 如果指“一个镜像文件就能在任何环境部署应用”，当前 `app` 镜像已经满足，但它仍需要一个 PostgreSQL 服务可连接。
+   - 如果指“单容器内同时包含应用和 PostgreSQL 并一键运行”，当前项目没有这样做，也不建议这样做，因为数据库和应用生命周期、持久化、健康检查、升级策略应拆开。
+4. 仓库里仍不会包含运行中的容器、已构建 image、PostgreSQL volume 数据，这些本来就不应进入 GitHub。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| deploy | 多阶段 Dockerfile 直接从前端源码构建 `dist` | [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) |
+| deploy | Compose 仍采用 `app + postgres` 两服务结构，且无 `.env` 时也可用默认值启动 | [deploy/docker-compose.yml:L1-L50](../deploy/docker-compose.yml#L1-L50) |
+| build | Docker 烟测已不再依赖宿主机预构建前端 | [scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100) |
+| vcs | Git 仍排除运行产物和敏感文件，但不再需要排除项参与镜像构建 | [.gitignore:L1-L11](../.gitignore#L1-L11), [.dockerignore:L1-L11](../.dockerignore#L1-L11) |
+| doc | 部署说明已更新为“源码可直接构建容器” | [docs/DEPLOY.md:L3-L36](./DEPLOY.md#L3-L36) |
+| test | Docker 验收说明已更新 | [docs/test_reference.md:L218-L228](./test_reference.md#L218-L228) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py smoke-docker-postgres
+python scripts\check_doc_links.py
+```
+
+## Q-0017 如何把 PostgreSQL 也封到同一个 Docker 里，做成单容器 all-in-one？
+
+### 用户原始问题
+
+继续做一个“单容器 all-in-one 运行版”，把 PostgreSQL 也封到同一个容器里。
+
+### 回答摘要
+
+已经新增一套独立的 all-in-one 方案，并保留原来的双容器正式方案：
+
+1. 新增 [deploy/Dockerfile.allinone:L1-L43](../deploy/Dockerfile.allinone#L1-L43)，在一个镜像里同时打包前端静态资源、Python 运行时和 PostgreSQL/pgvector 基础环境。
+2. 新增 [deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240)，容器启动时会初始化 PostgreSQL cluster、创建数据库、启用 `vector` 扩展，再拉起 FastAPI。
+3. 新增 [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36)，只启动一个 `allinone` 服务，对外暴露 `8000` 和 `5433`。
+4. 新增 [scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114) 和 [scripts/run_local.py:L200-L243](../scripts/run_local.py#L200-L243) 作为统一验收入口。
+5. 当前单容器方案是“可交付增强版”，不是默认推荐部署版；默认推荐仍然是更可维护的 `app + postgres` 双容器方案。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| deploy | All-in-One 镜像 | [deploy/Dockerfile.allinone:L1-L43](../deploy/Dockerfile.allinone#L1-L43) |
+| deploy | All-in-One Compose | [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36) |
+| code | 单容器内 PostgreSQL 初始化、数据库创建、扩展启用和 FastAPI 启动 | [initialize_cluster deploy/start_allinone.py:L117-L132](../deploy/start_allinone.py#L117-L132), [ensure_database_objects deploy/start_allinone.py:L176-L191](../deploy/start_allinone.py#L176-L191), [start_backend deploy/start_allinone.py:L206-L225](../deploy/start_allinone.py#L206-L225), [main deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240) |
+| test | 单容器烟测和 runner 入口 | [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114), [smoke_docker_allinone scripts/run_local.py:L200-L201](../scripts/run_local.py#L200-L201) |
+| doc | 部署、测试和需求说明 | [docs/DEPLOY.md:L38-L56](./DEPLOY.md#L38-L56), [docs/test_reference.md:L229-L239](./test_reference.md#L229-L239), [docs/requirements_traceability.md:L456-L495](./requirements_traceability.md#L456-L495) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py smoke-docker-allinone
+python scripts\check_doc_links.py
+```
+
+## Q-0018 如何把 all-in-one 做成可直接 `docker run` 的发布方式，并推送到 GHCR？
+
+### 用户原始问题
+
+把这套 all-in-one 改成可直接 docker run 的发布说明和命令。构建并推送这个单容器镜像到 GitHub Container Registry。
+
+### 回答摘要
+
+已经补齐 GHCR 发布链路：
+
+1. 新增 [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29)，它直接打包本地构建好的 `frontend/dist`，用于发布成可 `docker run` 的单容器镜像。
+2. 新增 [scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160)，统一处理前端构建、镜像打标、GHCR 登录和推送。
+3. [docs/DEPLOY.md:L59-L103](./DEPLOY.md#L59-L103) 已新增 `docker run` 命令和 GHCR 发布命令。
+4. 已使用具备 `write:packages` 权限的用户级环境变量 `GHCR_TOKEN` 完成 GHCR 推送，发布标签为 `latest` 和 `9564147`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| deploy | GHCR 发布镜像 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
+| script | GHCR 发布脚本 | [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
+| doc | `docker run` 和 GHCR 发布说明 | [docs/DEPLOY.md:L59-L103](./DEPLOY.md#L59-L103) |
+| config | GHCR token 配置说明 | [docs/config_reference.md:L22-L24](./config_reference.md#L22-L24) |
+| error | GHCR 推送权限不足与修复记录 | [docs/error_traceability.md:L234-L270](./error_traceability.md#L234-L270) |
+
+## Q-0019 为什么 GitHub 仓库没有看到 all-in-one 更新？
+
+### 用户原始问题
+
+为什么我到github没有更新？
+
+### 回答摘要
+
+GHCR 容器镜像和 GitHub 源码仓库是两个不同的发布目标。上一轮已经成功推送 `ghcr.io/2667741708/ling-shan-digital-guide-allinone:latest` 和 `:9564147`，但源码仓库 `origin/main` 仍停在提交 `9564147`，因为 all-in-one Dockerfile、发布脚本、归档文档和部署说明当时还只是本地工作区改动，尚未创建新的 Git commit，也尚未 push 到 GitHub 仓库。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| deploy | all-in-one 发布镜像定义 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
+| script | GHCR 发布脚本 | [scripts/publish_ghcr_allinone.py:L132-L168](../scripts/publish_ghcr_allinone.py#L132-L168) |
+| doc | GitHub 源码发布脚本说明 | [docs/DEPLOY.md:L241-L257](./DEPLOY.md#L241-L257) |
+| doc | GHCR 镜像发布说明 | [docs/DEPLOY.md:L110-L141](./DEPLOY.md#L110-L141) |
+
+### 验证命令
+
+```powershell
+git status --short
+git rev-parse HEAD
+git rev-parse origin/main
+docker manifest inspect ghcr.io/2667741708/ling-shan-digital-guide-allinone:latest
+```
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py build-frontend
+python scripts\publish_ghcr_allinone.py --help
+python scripts\publish_ghcr_allinone.py --no-push --tag latest
 ```

@@ -1,11 +1,15 @@
+name: lingtour-allinone
+
 services:
-  app:
+  allinone:
     build:
       context: ..
-      dockerfile: deploy/Dockerfile
+      dockerfile: deploy/Dockerfile.allinone
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/lingtour
+      POSTGRES_DB: ${POSTGRES_DB:-lingtour}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123456}
       ADMIN_TOKEN_SECRET: ${ADMIN_TOKEN_SECRET:-lingtour-dev-admin-token-secret}
@@ -15,36 +19,18 @@ services:
       DEEPSEEK_TIMEOUT_SECONDS: ${DEEPSEEK_TIMEOUT_SECONDS:-4.5}
     ports:
       - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - "5433:5432"
     restart: unless-stopped
     volumes:
-      - app_admin_knowledge:/workspace/data/admin_knowledge
+      - allinone_postgres_data:/var/lib/postgresql/data
+      - allinone_admin_knowledge:/workspace/data/admin_knowledge
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status == 200 else 1)"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 20s
-
-  postgres:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_DB: lingtour
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d lingtour"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
+      retries: 18
+      start_period: 35s
 
 volumes:
-  postgres_data:
-  app_admin_knowledge:
+  allinone_postgres_data:
+  allinone_admin_knowledge:

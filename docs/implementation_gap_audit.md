@@ -34,7 +34,7 @@
 | 多模态大模型图片识景 | `/chat/image` 仍是固定识别灵山大佛 | 在 [image_chat backend/app/services/chat_service.py:L97-L103](../backend/app/services/chat_service.py#L97-L103) 接入 Qwen-VL 或其他视觉模型 |
 | 后台运营大屏真实聚合 | `/api/admin/analytics/*` 已接前端，但 [dashboard_overview backend/app/services/analytics_service.py:L1-L39](../backend/app/services/analytics_service.py#L1-L39) 仍返回静态演示数据 | 让 [analytics_overview backend/app/api/admin.py:L135-L142](../backend/app/api/admin.py#L135-L142) 基于真实问答、路线和情绪日志聚合，并补充大屏接口测试 |
 | 150 条准确率测试集 | 当前有基础测试，不足 150 条标准问答评测 | 扩充 [data/test_questions.csv:L1-L4](../data/test_questions.csv#L1-L4) 并增加评测脚本 |
-| Docker Compose 全链路验证 | 已完成单应用容器 + PostgreSQL/pgvector 烟测，不再是当前缺口 | 继续沿用 [scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) 作为部署回归基线 |
+| Docker Compose 全链路验证 | 已完成单应用容器 + PostgreSQL/pgvector 烟测，不再是当前缺口 | 继续沿用 [scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100) 作为部署回归基线 |
 | 7 分钟演示视频 | 文档有脚本方向，视频文件未生成 | 基于 [docs/user_interaction_guide.md:L1-L120](./user_interaction_guide.md#L1-L120) 录制 |
 
 ## 3. 赛题风险排序

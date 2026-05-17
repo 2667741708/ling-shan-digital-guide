@@ -1,6 +1,6 @@
 # DeepSeek 为核心文本模型的 AI 服务层实现方案
 
-> 2026-05-15 落地更新：当前仓库已优先采用“CSV/Markdown 资料 + Python 标准库哈希向量索引 + DeepSeek RAG”的轻量方案，避免 `chromadb`、`sentence-transformers`、`pandas` 等重依赖阻塞比赛演示。原文中的 ChromaDB 方案保留为 P1/P2 增强参考，P0 实现以 [backend/app/services/vector_store.py:L140-L190](../../backend/app/services/vector_store.py#L223-L273) 为准。
+> 2026-05-15 落地更新：当前仓库已优先采用“CSV/Markdown 资料 + Python 标准库哈希向量索引 + DeepSeek RAG”的轻量方案，避免 `chromadb`、`sentence-transformers`、`pandas` 等重依赖阻塞比赛演示。原文中的 ChromaDB 方案保留为 P1/P2 增强参考，P0 实现以 [backend/app/services/vector_store.py:L223-L273](../../../backend/app/services/vector_store.py#L223-L273) 为准。
 
 ## 结论
 

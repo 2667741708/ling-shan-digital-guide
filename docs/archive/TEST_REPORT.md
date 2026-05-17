@@ -13,8 +13,8 @@
 - 文本问答返回答案、表情、引用来源和路线卡片
 - 路线推荐根据兴趣和时间返回路线
 - 管理后台大屏返回服务指标
-- 本地知识库已读取 FAQ、景点 CSV、demo Markdown 和灵山公开资料包，构建结果 `entry_count = 3377`；构建入口：[build_knowledge_base backend/app/services/vector_store.py:L223-L243](../backend/app/services/vector_store.py#L223-L243)
-- 完整栈烟测已通过，启动入口：[main scripts/smoke_full_stack.py:L30-L61](../scripts/smoke_full_stack.py#L30-L61)
+- 本地知识库已读取 FAQ、景点 CSV、demo Markdown 和灵山公开资料包，构建结果 `entry_count = 3377`；构建入口：[build_knowledge_base backend/app/services/vector_store.py:L223-L243](../../backend/app/services/vector_store.py#L223-L243)
+- 完整栈烟测已通过，启动入口：[main scripts/smoke_full_stack.py:L30-L61](../../scripts/smoke_full_stack.py#L30-L61)
 
 ## 后续补充
 

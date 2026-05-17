@@ -222,6 +222,31 @@ python scripts\run_local.py smoke-docker-postgres
 | 对应需求 | REQ-014、REQ-017 |
 | 运行命令 | `python scripts\run_local.py smoke-docker-postgres` |
 | 命令入口 | [smoke_docker_postgres scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197) |
-| 烟测脚本 | [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| 烟测脚本 | [main scripts/smoke_docker_postgres.py:L58-L99](../scripts/smoke_docker_postgres.py#L58-L99) |
 | Compose 编排 | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44) |
-| 预期结果 | 自动构建前端、启动单应用容器和 PostgreSQL/pgvector，`GET /api/health` 返回 200，`/guide` 页面包含 `id=\"app\"`，后台系统状态返回 `database_backend=postgresql`、`vector_backend=pgvector` |
+| 镜像构建 | [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) |
+| 预期结果 | 直接从 Git 仓库源码构建单应用容器和 PostgreSQL/pgvector，无需预先提交 `frontend/dist`；`GET /api/health` 返回 200，`/guide` 页面包含 `id=\"app\"`，后台系统状态返回 `database_backend=postgresql`、`vector_backend=pgvector` |
+
+## TEST-020 Docker All-in-One 单容器烟测
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-019 |
+| 运行命令 | `python scripts\run_local.py smoke-docker-allinone` |
+| 命令入口 | [smoke_docker_allinone scripts/run_local.py:L200-L201](../scripts/run_local.py#L200-L201) |
+| 烟测脚本 | [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114) |
+| Compose 编排 | [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36) |
+| 镜像构建 | [deploy/Dockerfile.allinone:L1-L43](../deploy/Dockerfile.allinone#L1-L43) |
+| 启动编排 | [main deploy/start_allinone.py:L228-L240](../deploy/start_allinone.py#L228-L240) |
+| 预期结果 | 单容器镜像启动后，`GET /api/health` 返回 200，`/guide` 页面可访问，`/api/v1/admin/system/status` 返回 `database_backend=postgresql`、`vector_backend=pgvector`，且宿主机 `5433` 可连到容器内 PostgreSQL |
+
+## TEST-021 GHCR All-in-One 发布脚本
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-020 |
+| 帮助命令 | `python scripts\publish_ghcr_allinone.py --help` |
+| 本地构建命令 | `python scripts\publish_ghcr_allinone.py --no-push --tag latest` |
+| 被测脚本 | [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
+| 发布镜像 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
+| 预期结果 | `--help` 能输出参数说明；`--no-push` 可在本地构建 GHCR 发布镜像；真实推送需要有效 `GHCR_TOKEN` |

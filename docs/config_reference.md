@@ -21,6 +21,7 @@
 | `ADMIN_USERNAME` | string | `admin` | 否 | 启动时初始化或校验的后台管理员账号 | [.env.example:L32-L34](../.env.example#L32-L34), [ensure_admin_user backend/app/services/auth_service.py:L55-L74](../backend/app/services/auth_service.py#L55-L74) | 修改后旧账号不会自动重命名；新数据库会按新值初始化 |
 | `ADMIN_PASSWORD` | string | `123456` | 否 | 后台管理员初始密码，入库前使用 PBKDF2-HMAC 哈希 | [.env.example:L32-L34](../.env.example#L32-L34), [hash_password backend/app/services/auth_service.py:L32-L41](../backend/app/services/auth_service.py#L32-L41) | 生产演示前必须修改；已存在用户不会因环境变量改变而自动重置密码 |
 | `ADMIN_TOKEN_SECRET` | string | `lingtour-dev-admin-token-secret` | 否 | 后台 Bearer token HMAC 签名密钥 | [.env.example:L32-L34](../.env.example#L32-L34), [create_admin_token backend/app/services/auth_service.py:L82-L94](../backend/app/services/auth_service.py#L82-L94), [decode_admin_token backend/app/services/auth_service.py:L97-L107](../backend/app/services/auth_service.py#L97-L107) | 修改会让旧 token 立即失效；生产环境必须使用长随机值 |
+| `GHCR_TOKEN` | string | 无 | GHCR 发布时必填 | `scripts/publish_ghcr_allinone.py` 优先读取的容器仓库推送 token；需要具备 `write:packages` | [scripts/publish_ghcr_allinone.py:L68-L93](../scripts/publish_ghcr_allinone.py#L68-L93), [scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) | 权限不足会导致 `docker login ghcr.io` 或 `docker push` 失败；不要提交到仓库 |
 | `frontend/.npmrc registry` | string | `https://registry.npmmirror.com` | 否 | 前端依赖安装镜像 | [frontend/.npmrc:L1-L4](../frontend/.npmrc#L1-L4) | 本机网络仍可能 ECONNRESET，可用静态前端兜底 |
 
 ## 验证命令

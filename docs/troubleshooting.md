@@ -543,7 +543,7 @@ python scripts\run_local.py smoke-docker-postgres
 
 常见原因：
 
-1. 容器镜像里没有复制 `frontend/dist`；
+1. 容器镜像里没有生成或复制前端静态产物；
 2. FastAPI 没有启用 SPA 静态资源回退；
 3. 前端构建产物过旧，和当前 API 路由不匹配。
 
@@ -551,21 +551,97 @@ python scripts\run_local.py smoke-docker-postgres
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 镜像构建 | 单应用容器复制 `frontend/dist` | [deploy/Dockerfile:L11-L18](../deploy/Dockerfile#L11-L18) |
+| 镜像构建 | 单应用容器在镜像构建阶段直接从前端源码产出 `dist` | [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) |
 | SPA 托管 | `/guide`、`/map`、`/admin/*` 统一回退到 `index.html` | [frontend_index backend/app/main.py:L69-L71](../backend/app/main.py#L69-L71), [frontend_spa backend/app/main.py:L73-L78](../backend/app/main.py#L73-L78) |
-| 烟测脚本 | 直接检查 `/guide` 页面是否包含 `id=\"app\"` | [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| 烟测脚本 | 直接检查 `/guide` 页面是否包含 `id=\"app\"` | [main scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100) |
 
 ### 修复方式
 
-1. 先执行 `python scripts\run_local.py build-frontend`，确保本地已有最新 `frontend/dist`。
-2. 重新运行 `python scripts\run_local.py smoke-docker-postgres`，由脚本自动重建镜像并复验。
-3. 如果仍失败，检查 [deploy/Dockerfile:L11-L18](../deploy/Dockerfile#L11-L18) 是否保留了 `COPY frontend/dist /workspace/frontend/dist`。
+1. 直接执行 `python scripts\run_local.py smoke-docker-postgres`，确认 Docker 能在镜像构建阶段完成前端打包。
+2. 如果仍失败，检查 [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) 是否仍包含前端多阶段构建和 `COPY --from=frontend-builder`。
+3. 再检查 [frontend/package.json:L6-L10](../frontend/package.json#L6-L10) 的 `build` 命令是否可在容器环境运行。
 
 ### 验证命令
 
 ```powershell
-python scripts\run_local.py build-frontend
 python scripts\run_local.py smoke-docker-postgres
+```
+
+## TRB-018 Docker Compose 构建时无法拉取基础镜像
+
+### 错误现象
+
+执行 `python scripts\run_local.py smoke-docker-postgres`、`python scripts\run_local.py smoke-docker-allinone` 或 `docker compose up --build` 时，Docker 在拉取 `node:20-bookworm-slim`、`python:3.12-slim` 等基础镜像阶段失败，常见错误类似：
+
+```text
+failed to fetch oauth token
+read tcp ... wsarecv: An established connection was aborted by the software in your host machine
+```
+
+### 原因分析
+
+这类错误通常不是项目代码错误，而是本机到 Docker Hub 的网络、代理、证书或安全软件链路中断。当前项目的多阶段镜像构建依赖从 Docker Hub 拉取 `node` 和 `python` 基础镜像，因此外网拉取被阻断时 Compose 会在构建前就失败。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 镜像定义 | 前端和后端基础镜像来源 | [deploy/Dockerfile:L1-L31](../deploy/Dockerfile#L1-L31) |
+| Compose 入口 | 双容器和单容器 Compose 构建入口 | [deploy/docker-compose.yml:L1-L50](../deploy/docker-compose.yml#L1-L50), [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36) |
+| 烟测脚本 | 实际触发 `docker compose up -d --build` 的脚本 | [main scripts/smoke_docker_postgres.py:L58-L100](../scripts/smoke_docker_postgres.py#L58-L100), [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114) |
+
+### 修复方式
+
+1. 先确认 Docker Desktop 能正常访问 Docker Hub。
+2. 如果公司网络有限制，配置镜像代理或预拉取基础镜像。
+3. 网络恢复后重新执行 `python scripts\run_local.py smoke-docker-postgres` 或 `python scripts\run_local.py smoke-docker-allinone`。
+
+### 验证命令
+
+```powershell
+docker pull node:20-bookworm-slim
+docker pull python:3.12-slim
+python scripts\run_local.py smoke-docker-postgres
+python scripts\run_local.py smoke-docker-allinone
+```
+
+## TRB-019 GHCR 推送返回 `permission_denied: The token provided does not match expected scopes`
+
+### 错误现象
+
+执行 `python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-digital-guide-allinone --tag latest` 时，本地镜像构建成功，但 `docker push` 失败：
+
+```text
+permission_denied: The token provided does not match expected scopes
+```
+
+### 原因分析
+
+当前 GitHub 登录 token 可以用于基础 Git 操作，也可以完成 `docker login ghcr.io`，但不具备 GHCR 所需的 `write:packages` 权限，所以推送镜像时被仓库侧拒绝。
+
+### 当前状态
+
+已使用具备 `write:packages` 权限的用户级环境变量 `GHCR_TOKEN` 重新推送成功，镜像标签为 `latest` 和 `9564147`。该 token 只应保存在本机环境变量或密钥管理器中，不应写入仓库。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布脚本 | 读取 token、执行 `docker login` 和 `docker push` | [ghcr_token scripts/publish_ghcr_allinone.py:L68-L87](../scripts/publish_ghcr_allinone.py#L68-L87), [docker_login scripts/publish_ghcr_allinone.py:L89-L101](../scripts/publish_ghcr_allinone.py#L89-L101), [push_image scripts/publish_ghcr_allinone.py:L119-L121](../scripts/publish_ghcr_allinone.py#L119-L121), [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
+| 配置说明 | GHCR token 环境变量 | [docs/config_reference.md:L22-L24](./config_reference.md#L22-L24) |
+| 部署说明 | GHCR 发布命令和 `docker run` 用法 | [docs/DEPLOY.md:L82-L103](./DEPLOY.md#L82-L103) |
+
+### 修复方式
+
+1. 改用具备 `write:packages` 权限的 GHCR token。
+2. 在当前会话中设置环境变量，例如 `GHCR_TOKEN`。
+3. 重新执行发布脚本。
+
+### 验证命令
+
+```powershell
+$env:GHCR_TOKEN = "<token-with-write-packages>"
+python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-digital-guide-allinone --tag latest
 ```
 
 ## TRB-014 知识文档上传后游客端仍不命中

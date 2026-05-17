@@ -192,6 +192,86 @@ assert any(name in names for name in {"灵山大佛", "九龙灌浴", "灵山梵
 python scripts\run_local.py test-backend
 ```
 
+## ERR-0012 Docker All-in-One 构建时无法拉取 `node:20-bookworm-slim`
+
+### 错误现象
+
+```text
+failed to fetch oauth token
+read tcp ... wsarecv: An established connection was aborted by the software in your host machine
+```
+
+### 触发命令
+
+```powershell
+python scripts\run_local.py smoke-docker-allinone
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 单容器镜像 | All-in-One 构建起点就是 `node:20-bookworm-slim` 前端构建阶段 | [deploy/Dockerfile.allinone:L1-L13](../deploy/Dockerfile.allinone#L1-L13) |
+| 单容器 Compose | 触发 `Dockerfile.allinone` 构建 | [deploy/docker-compose.allinone.yml:L1-L36](../deploy/docker-compose.allinone.yml#L1-L36) |
+| 烟测脚本 | 实际执行 `docker compose up -d --build` | [main scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114) |
+| runner 入口 | 统一命令分发 | [smoke_docker_allinone scripts/run_local.py:L200-L201](../scripts/run_local.py#L200-L201) |
+
+### 原因分析
+
+这次失败发生在 Docker 从 Docker Hub 拉取 `node:20-bookworm-slim` 基础镜像阶段，还没有进入项目代码执行、PostgreSQL 初始化或 FastAPI 启动阶段，因此根因仍是本机到 Docker Hub 的网络链路被中断，而不是 all-in-one 容器编排逻辑错误。
+
+### 修复方案
+
+先修复 Docker Hub 访问能力或配置镜像代理，再重新执行单容器烟测。若希望同时验证双容器和单容器链路，两个烟测命令都会受到同一基础镜像拉取问题影响。
+
+### 验证命令
+
+```powershell
+docker pull node:20-bookworm-slim
+python scripts\run_local.py smoke-docker-allinone
+```
+
+## ERR-0013 GHCR 推送镜像时权限不足
+
+### 错误现象
+
+```text
+permission_denied: The token provided does not match expected scopes
+```
+
+### 触发命令
+
+```powershell
+python scripts\publish_ghcr_allinone.py --skip-frontend-build --tag latest --extra-tag pushcheck
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 发布镜像 | GHCR 发布镜像定义 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
+| 发布脚本 | 读取 token、登录 GHCR 并执行 `docker push` | [ghcr_token scripts/publish_ghcr_allinone.py:L68-L87](../scripts/publish_ghcr_allinone.py#L68-L87), [docker_login scripts/publish_ghcr_allinone.py:L89-L101](../scripts/publish_ghcr_allinone.py#L89-L101), [push_image scripts/publish_ghcr_allinone.py:L119-L121](../scripts/publish_ghcr_allinone.py#L119-L121), [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
+| 配置 | GHCR token 说明 | [docs/config_reference.md:L22-L24](./config_reference.md#L22-L24) |
+
+### 原因分析
+
+这次失败发生在镜像已经完成本地构建、并开始执行 `docker push` 之后。说明构建链路没有问题，真正的根因是当前 GitHub token 缺少 GHCR 的 `write:packages` scope，因此注册表拒绝写入镜像。
+
+### 修复状态
+
+已使用具备 `write:packages` 权限的用户级环境变量 `GHCR_TOKEN` 重新执行发布脚本，`latest` 和 `9564147` 两个标签均已推送成功。后续不应把 token 写入仓库、文档或日志。
+
+### 修复方案
+
+使用具备 `write:packages` 权限的 GHCR token，例如通过 `GHCR_TOKEN` 环境变量传入，然后重新执行发布脚本。
+
+### 验证命令
+
+```powershell
+$env:GHCR_TOKEN = "<token-with-write-packages>"
+python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-digital-guide-allinone --tag latest
+```
+
 ## ERR-0011 宿主机 5432 PostgreSQL 缺少 pgvector，导致项目误连失败
 
 ### 错误现象
