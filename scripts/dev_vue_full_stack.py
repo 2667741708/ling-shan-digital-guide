@@ -15,6 +15,8 @@ FRONTEND = ROOT / "frontend"
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
 
+from run_local import ensure_postgres_service  # noqa: E402
+
 
 def resolve_command(command: str) -> str:
     candidates = [command]
@@ -54,6 +56,7 @@ def terminate_tree(process: subprocess.Popen) -> None:
 
 
 def main() -> int:
+    ensure_postgres_service()
     env = os.environ.copy()
     env["PYTHONPATH"] = str(BACKEND)
     backend = subprocess.Popen(

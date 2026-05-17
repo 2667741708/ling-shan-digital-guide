@@ -16,8 +16,18 @@ ROOT = Path(__file__).resolve().parents[1]
 BACKEND = ROOT / "backend"
 FRONTEND = ROOT / "frontend"
 DATA = ROOT / "data"
+COMPOSE_FILE = ROOT / "deploy" / "docker-compose.yml"
+DEFAULT_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg://postgres:postgres@127.0.0.1:5433/lingtour",
+)
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
+POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5433"))
+POSTGRES_DB = os.getenv("POSTGRES_DB", "lingtour")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+
+os.environ["DATABASE_URL"] = DEFAULT_DATABASE_URL
 
 
 def resolve_command(command: str) -> str:
@@ -37,6 +47,10 @@ def run(cmd: list[str], cwd: Path = ROOT, check: bool = True) -> subprocess.Comp
     return subprocess.run(resolved, cwd=cwd, check=check)
 
 
+def run_compose(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
+    return run(["docker", "compose", "-f", str(COMPOSE_FILE), *args], cwd=ROOT, check=check)
+
+
 def require_file(path: Path) -> None:
     if not path.exists():
         raise FileNotFoundError(str(path))
@@ -46,6 +60,30 @@ def port_is_busy(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(0.3)
         return sock.connect_ex(("127.0.0.1", port)) == 0
+
+
+def wait_for_port(port: int, timeout_seconds: int = 30) -> None:
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        if port_is_busy(port):
+            return
+        time.sleep(0.5)
+    raise TimeoutError(f"Timed out waiting for TCP port {port}.")
+
+
+def ensure_postgres_service() -> None:
+    run_compose(["up", "-d", "postgres"])
+    wait_for_port(POSTGRES_PORT, timeout_seconds=60)
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        result = run_compose(
+            ["exec", "-T", "postgres", "pg_isready", "-U", POSTGRES_USER, "-d", POSTGRES_DB],
+            check=False,
+        )
+        if result.returncode == 0:
+            return
+        time.sleep(1)
+    raise TimeoutError("Timed out waiting for PostgreSQL health check.")
 
 
 def check_env() -> None:
@@ -59,6 +97,7 @@ def check_env() -> None:
         "python": sys.version.split()[0],
         "backend_port_busy": port_is_busy(BACKEND_PORT),
         "frontend_port_busy": port_is_busy(FRONTEND_PORT),
+        "postgres_port_busy": port_is_busy(POSTGRES_PORT),
         "deepseek_key_present": bool(os.getenv("DEEPSEEK_API_KEY")),
     }, ensure_ascii=False, indent=2))
 
@@ -76,18 +115,26 @@ def build_frontend() -> None:
 
 
 def build_knowledge_base() -> None:
-    run([sys.executable, "scripts/build_knowledge_base.py"], cwd=ROOT)
+    ensure_postgres_service()
+    env = os.environ.copy()
+    env["DATABASE_URL"] = DEFAULT_DATABASE_URL
+    print(f"$ {sys.executable} scripts/build_knowledge_base.py  (cwd={ROOT})")
+    subprocess.run([sys.executable, "scripts/build_knowledge_base.py"], cwd=ROOT, env=env, check=True)
 
 
 def test_backend() -> None:
+    ensure_postgres_service()
     env = os.environ.copy()
+    env["DATABASE_URL"] = DEFAULT_DATABASE_URL
     env["PYTHONPATH"] = str(BACKEND)
     print(f"$ {sys.executable} -m pytest backend/tests -q  (cwd={ROOT})")
     subprocess.run([sys.executable, "-m", "pytest", "backend/tests", "-q"], cwd=ROOT, env=env, check=True)
 
 
 def start_backend() -> subprocess.Popen:
+    ensure_postgres_service()
     env = os.environ.copy()
+    env["DATABASE_URL"] = DEFAULT_DATABASE_URL
     env["PYTHONPATH"] = str(BACKEND)
     return subprocess.Popen(
         [
@@ -146,6 +193,10 @@ def smoke_backend() -> None:
             process.wait(timeout=10)
 
 
+def smoke_docker_postgres() -> None:
+    run([sys.executable, "scripts/smoke_docker_postgres.py"], cwd=ROOT)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="LingTour AI reproducible local runner")
     parser.add_argument(
@@ -159,6 +210,7 @@ def main() -> int:
             "test-backend",
             "serve-backend",
             "smoke-backend",
+            "smoke-docker-postgres",
             "all",
         ],
     )
@@ -180,6 +232,8 @@ def main() -> int:
         serve_backend()
     elif args.command == "smoke-backend":
         smoke_backend()
+    elif args.command == "smoke-docker-postgres":
+        smoke_docker_postgres()
     elif args.command == "all":
         check_env()
         install_backend_deps()

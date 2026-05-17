@@ -45,7 +45,7 @@ python scripts\smoke_full_stack.py
 | 持续运行脚本 | 启动 FastAPI 和 Vite 并保持运行 | [dev_vue_full_stack main scripts/dev_vue_full_stack.py:L52-L95](../scripts/dev_vue_full_stack.py#L52-L95) |
 | Git Bash 包装脚本 | 在 Git Bash 下启动持续运行脚本 | [scripts/dev_vue_full_stack.sh:L1-L5](../scripts/dev_vue_full_stack.sh#L1-L5) |
 | 前端路由 | `/guide`、`/map`、`/admin` 页面定义 | [frontend/src/router/index.ts:L10-L20](../frontend/src/router/index.ts#L10-L20) |
-| 数字人问答页 | 游客端 ChatGuide 页面 | [frontend/src/pages/visitor/ChatGuide.vue:TODO-LINES](../frontend/src/pages/visitor/ChatGuide.vue) |
+| 数字人问答页 | 游客端 ChatGuide 页面 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L147](../frontend/src/pages/visitor/ChatGuide.vue#L1-L147) |
 | 后端问答服务 | RAG + DeepSeek 问答编排 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 
 ### 手动测试问题
@@ -152,26 +152,26 @@ python scripts\smoke_vue_full_stack.py
 
 ### 回答摘要
 
-已完成：本地默认 SQLite、Docker 使用 PostgreSQL；后台管理员登录返回 Bearer token；后台写接口需要 token；知识文档上传默认 draft，更新生成新版本，发布后进入 RAG，归档/删除后退出 RAG，版本和历史可查；数字人配置持久化到数据库。
+已完成：后台管理员登录返回 Bearer token；后台写接口需要 token；知识文档上传默认 draft，更新生成新版本，发布后进入 RAG，归档/删除后退出 RAG，版本和历史可查；数字人配置统一持久化到 PostgreSQL。
 
 ### 对应实现位置
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 数据库配置 | SQLAlchemy engine/session、SQLite/PostgreSQL 切换 | [configure_database backend/app/core/database.py:L33-L46](../backend/app/core/database.py#L33-L46) |
-| 数据表模型 | 管理员、知识文档、版本、操作日志、数字人配置 | [persistence models backend/app/models/persistence.py:L16-L112](../backend/app/models/persistence.py#L16-L112) |
+| 数据库配置 | SQLAlchemy engine/session、PostgreSQL 扩展初始化、测试库重置 | [configure_database backend/app/core/database.py:L42-L55](../backend/app/core/database.py#L42-L55), [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66), [reset_database backend/app/core/database.py:L69-L86](../backend/app/core/database.py#L69-L86) |
+| 数据表模型 | 管理员、知识文档、版本、操作日志、数字人配置 | [persistence models backend/app/models/persistence.py:L51-L213](../backend/app/models/persistence.py#L51-L213) |
 | 鉴权服务 | 密码哈希、登录、token 校验 | [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
-| 知识库状态流转 | 上传 draft、发布 active、归档、软删除、版本/历史 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [list_history backend/app/services/knowledge_service.py:L372-L396](../backend/app/services/knowledge_service.py#L372-L396) |
-| 向量库约束 | 只把 active 文档当前版本加入 RAG 索引 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201) |
+| 知识库状态流转 | 上传 draft、发布 active、归档、软删除、版本/历史 | [save_document backend/app/services/knowledge_service.py:L187-L259](../backend/app/services/knowledge_service.py#L187-L259), [publish_document backend/app/services/knowledge_service.py:L328-L353](../backend/app/services/knowledge_service.py#L328-L353), [list_history backend/app/services/knowledge_service.py:L456-L490](../backend/app/services/knowledge_service.py#L456-L490) |
+| 向量库约束 | 只把 active 文档当前版本加入 PostgreSQL `knowledge_chunk` 检索集 | [embed_document backend/app/services/vector_store.py:L432-L460](../backend/app/services/vector_store.py#L432-L460), [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596) |
 | 后台页面 | 登录、知识库版本/历史、数字人配置 | [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265), [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
-| 测试 | 权限、版本化知识库、数字人配置持久化 | [auth tests backend/tests/test_auth_service.py:L18-L50](../backend/tests/test_auth_service.py#L18-L50), [knowledge lifecycle backend/tests/test_knowledge_management.py:L18-L58](../backend/tests/test_knowledge_management.py#L18-L58), [avatar test backend/tests/test_avatar_service.py:L8-L17](../backend/tests/test_avatar_service.py#L8-L17) |
+| 测试 | 权限、版本化知识库、数字人配置持久化 | [auth tests backend/tests/test_auth_service.py:L15-L48](../backend/tests/test_auth_service.py#L15-L48), [knowledge lifecycle backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63), [avatar test backend/tests/test_avatar_service.py:L6-L14](../backend/tests/test_avatar_service.py#L6-L14) |
 
 ### 验证命令
 
 ```powershell
 python scripts\run_local.py test-backend
 python scripts\run_local.py build-frontend
-$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py
+python scripts\smoke_vue_full_stack.py
 ```
 
 ## Q-0007 为什么之前提交失败，后来提交成功？
@@ -204,4 +204,225 @@ git status --short --branch
 git ls-remote --heads origin main
 git ls-remote --tags origin v0.0
 python scripts\publish_github.py --help
+```
+
+## Q-0008 当前项目还有哪些具体没完成？
+
+### 用户原始问题
+
+检索下我当前的项目，是否具体还没有完成？
+
+### 回答摘要
+
+当前项目的 P0 演示闭环已经具备，但仍有两类明确缺口：
+
+1. 赛题功能缺口：后端真实 ASR、后端真实 TTS、多模态图片识景、后台运营大屏真实聚合、150 条标准测试集、Docker Compose 全链路验收、演示视频产物仍未完成。
+2. 工程使用缺口：后端测试虽然可以通过 [test_backend scripts/run_local.py:L82-L86](../scripts/run_local.py#L82-L86) 跑通，但直接在仓库根目录执行 `python -m pytest backend/tests -q` 会因为缺少 `PYTHONPATH=backend` 在测试收集阶段失败。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| code | 文本问答仍返回演示音频路径 | [chat_with_text backend/app/services/chat_service.py:L77-L87](../backend/app/services/chat_service.py#L77-L87) |
+| code | 语音问答仍返回固定 ASR 文本再复用文本问答 | [voice_chat backend/app/services/chat_service.py:L90-L94](../backend/app/services/chat_service.py#L90-L94) |
+| code | 图片识景仍固定识别“灵山大佛” | [image_chat backend/app/services/chat_service.py:L97-L103](../backend/app/services/chat_service.py#L97-L103) |
+| code | 后台大屏接口已存在，但依赖静态演示统计数据 | [analytics_overview backend/app/api/admin.py:L135-L142](../backend/app/api/admin.py#L135-L142), [dashboard_overview backend/app/services/analytics_service.py:L1-L39](../backend/app/services/analytics_service.py#L1-L39) |
+| code | 后台大屏前端当前只是展示接口返回结果 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L8-L80](../frontend/src/pages/admin/AdminDashboard.vue#L8-L80), [fetchDashboard frontend/src/api/admin.ts:L3-L5](../frontend/src/api/admin.ts#L3-L5) |
+| test | 官方后端测试入口会注入 `PYTHONPATH=backend` | [test_backend scripts/run_local.py:L82-L86](../scripts/run_local.py#L82-L86) |
+| test | 测试文件直接从 `app.*` 导入，根目录裸跑 pytest 会失败 | [test_auth_service imports backend/tests/test_auth_service.py:L7-L10](../backend/tests/test_auth_service.py#L7-L10) |
+| doc | 当前缺口核查总表 | [implementation_gap_audit docs/implementation_gap_audit.md:L28-L43](./implementation_gap_audit.md#L28-L43) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\smoke_vue_full_stack.py
+python -m pytest backend/tests -q
+```
+
+## Q-0009 如何把当前未完成项拆成可交付计划给别人继续做？
+
+### 用户原始问题
+
+现在你逐步的帮我补齐我们需要完成的地方，并提出一个待完成计划清单，点出需求来，我可交付给别人完成。
+
+### 回答摘要
+
+已把剩余工作拆成 6 个可分派需求和 1 个工程化任务：
+
+1. [REQ-010 真实语音问答闭环](./requirements_traceability.md#req-010-真实语音问答闭环)
+2. [REQ-011 多模态图片识景问答](./requirements_traceability.md#req-011-多模态图片识景问答)
+3. [REQ-012 后台运营大屏真实聚合](./requirements_traceability.md#req-012-后台运营大屏真实聚合)
+4. [REQ-013 150 条标准测试集与自动评测](./requirements_traceability.md#req-013-150-条标准测试集与自动评测)
+5. [REQ-014 Docker Compose 全链路部署验收](./requirements_traceability.md#req-014-docker-compose-全链路部署验收)
+6. [REQ-015 演示视频与最终交付物](./requirements_traceability.md#req-015-演示视频与最终交付物)
+7. `OPS-001` 统一 pytest 直接运行入口，减少对手工 `PYTHONPATH` 的依赖。
+
+可直接使用 [交接文档 docs/handoffs/2026-05-17-待补齐需求交接.md:L1-L59](./handoffs/2026-05-17-待补齐需求交接.md#L1-L59) 给同事分派任务。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 需求总表 | 新增待完成需求列表 | [docs/requirements_traceability.md:L236-L490](./requirements_traceability.md#L236-L490) |
+| 交接文档 | 优先级、建议负责人类型、关键入口 | [docs/handoffs/2026-05-17-待补齐需求交接.md:L1-L59](./handoffs/2026-05-17-待补齐需求交接.md#L1-L59) |
+| 工程约束 | pytest 直接运行入口问题 | [docs/test_reference.md:L197-L206](./test_reference.md#L197-L206), [docs/troubleshooting.md:L455-L496](./troubleshooting.md#L455-L496) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\smoke_vue_full_stack.py
+```
+
+## Q-0010 `/api/v1` 方案是否齐全，当前先该落哪一批？
+
+### 用户原始问题
+
+数据库向量库和知识库，我们使用 PostgreSQL 以及 pgvector 完成，api 部分我们使用 FastAPI，我希望优先完成前端和后端功能。比如这里的 API 列表，你看是否齐全，如果齐全了帮我先完成这个列表的功能调用。
+
+### 回答摘要
+
+这份 API 分层方案作为架构清单是齐全的，但当前仓库不适合一次性把 18 类接口全部做完。已先落地 MVP 所需的 `/api/v1` 兼容层和前后端调用：
+
+1. 游客端：`/guide/sessions`、`/guide/ask`、`/scenic/spots`、`/scenic/facilities`、`/route/recommend`
+2. AI 能力：`/asr/transcribe`、`/tts/synthesize`、`/avatar/speak`、`/rag/retrieve`
+3. 管理端：`/auth/login`、`/auth/me`、`/admin/knowledge-bases/default/documents`、`/admin/documents/{id}/embed`、`/admin/avatar/profiles`、`/admin/system/status`
+
+当时需要明确：虽然 `/api/v1` 调用已经落地，但那一轮尚未完成 pgvector 迁移，系统状态中的 `vector_backend` 仍是 `local_json`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| code | `/api/v1` 路由兼容层 | [backend/app/api/v1.py:L39-L381](../backend/app/api/v1.py#L39-L381) |
+| code | FastAPI 注册 `/api/v1` 入口 | [create_app backend/app/main.py:L38-L80](../backend/app/main.py#L38-L80) |
+| code | 游客前端 API 已切到 `/api/v1` | [frontend/src/api/visitor.ts:L28-L55](../frontend/src/api/visitor.ts#L28-L55) |
+| code | 管理前端 API 已切到 `/api/v1` | [frontend/src/api/admin.ts:L3-L66](../frontend/src/api/admin.ts#L3-L66) |
+| code | 当时系统状态仍声明 `vector_backend = local_json` | [backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
+| test | `/api/v1` 路由测试 | [backend/tests/test_api_v1.py:L1-L94](../backend/tests/test_api_v1.py#L1-L94) |
+| doc | 新增需求说明 | [docs/requirements_traceability.md:L492-L525](./requirements_traceability.md#L492-L525) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\smoke_vue_full_stack.py
+```
+
+## Q-0011 pgvector 迁移是否已经完成，具体落在哪？
+
+### 用户原始问题
+
+设计知识库表、chunk 表、embedding/pgvector 字段；把当前 `local_json` 检索切到 PostgreSQL + pgvector；把 `/api/v1/admin/documents/{id}/embed` 和 `/api/v1/rag/retrieve` 改成真实 pgvector 实现；更新对应测试和文档。
+
+### 回答摘要
+
+已完成主链路迁移：
+
+1. 新增 `knowledge_base`、`knowledge_chunk` 两张持久化表；
+2. PostgreSQL 环境初始化时自动创建 `vector` 扩展；
+3. `/api/v1/admin/documents/{id}/embed` 改为真实文档切片入库；
+4. `/api/v1/rag/retrieve` 改为数据库 chunk 检索；
+5. 测试、部署和运行链路统一切到 PostgreSQL，系统状态返回 `vector_backend = pgvector`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| code | `knowledge_base` 表模型 | [KnowledgeBase backend/app/models/persistence.py:L130-L145](../backend/app/models/persistence.py#L130-L145) |
+| code | `knowledge_chunk` 表模型和 `embedding` 字段 | [KnowledgeChunk backend/app/models/persistence.py:L148-L179](../backend/app/models/persistence.py#L148-L179) |
+| code | PostgreSQL `vector` 扩展初始化 | [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
+| code | 知识库重建和 chunk 入库 | [build_knowledge_base backend/app/services/vector_store.py:L465-L503](../backend/app/services/vector_store.py#L465-L503) |
+| code | 单文档嵌入 | [embed_document backend/app/services/vector_store.py:L432-L460](../backend/app/services/vector_store.py#L432-L460), [embed_document backend/app/services/knowledge_service.py:L174-L184](../backend/app/services/knowledge_service.py#L174-L184) |
+| code | RAG 检索 | [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596), [retrieve_context backend/app/services/knowledge_service.py:L32-L53](../backend/app/services/knowledge_service.py#L32-L53) |
+| code | `/api/v1` 管理端嵌入接口 | [admin_document_embed_v1 backend/app/api/v1.py:L359-L372](../backend/app/api/v1.py#L359-L372) |
+| code | `/api/v1` RAG 检索接口 | [rag_retrieve_v1 backend/app/api/v1.py:L220-L222](../backend/app/api/v1.py#L220-L222) |
+| code | 系统状态返回向量后端类型 | [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
+| test | chunk 表和检索验证 | [backend/tests/test_vector_store.py:L6-L25](../backend/tests/test_vector_store.py#L6-L25) |
+| test | 文档版本与启用状态验证 | [backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63) |
+| test | `/api/v1` embed/rag 路由验证 | [backend/tests/test_api_v1.py:L66-L95](../backend/tests/test_api_v1.py#L66-L95) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\run_local.py smoke-docker-postgres
+```
+
+## Q-0012 如何改成只依赖 PostgreSQL，并用单应用容器运行项目？
+
+### 用户原始问题
+
+搭建一套真实的 PostgreSQL 环境，仅仅依赖 PostgreSQL，不再依赖 SQLite，希望可以使用一个容器来运行我们的这个项目。
+
+### 回答摘要
+
+已经把默认运行路径切到 PostgreSQL，并完成了“单应用容器 + PostgreSQL/pgvector 服务”的 Compose 验收：
+
+1. `Settings.database_url` 和 `.env.example` 默认值都改为 PostgreSQL。
+2. `app` 容器同时托管 FastAPI 和 `frontend/dist`，游客端与管理端都走 `http://127.0.0.1:8000/*`。
+3. `postgres` 服务使用 `pgvector/pgvector:pg16`，启动时自动创建 `vector` 扩展。
+4. 宿主机 PostgreSQL 入口固定改为 `127.0.0.1:5433`，避免误连本机已有的 `5432` 数据库实例。
+5. 新增 `python scripts\run_local.py smoke-docker-postgres`，会自动校验 `/guide`、后台登录和 `/api/v1/admin/system/status` 的 `database_backend=postgresql`、`vector_backend=pgvector`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| config | 默认数据库连接改为 PostgreSQL | [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [.env.example:L5-L15](../.env.example#L5-L15) |
+| code | 当前活动数据库 URL 跟踪、PostgreSQL 后端识别和 pgvector 扩展初始化 | [current_database_url backend/app/core/database.py:L30-L34](../backend/app/core/database.py#L30-L34), [configure_database backend/app/core/database.py:L42-L55](../backend/app/core/database.py#L42-L55), [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
+| code | 单应用容器托管前端静态资源 | [frontend_spa backend/app/main.py:L73-L78](../backend/app/main.py#L73-L78) |
+| deploy | 单应用容器 + PostgreSQL/pgvector Compose 编排 | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44), [deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18) |
+| test | Docker pgvector 烟测入口 | [smoke_docker_postgres scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197), [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| doc | 部署和运行说明 | [docs/DEPLOY.md:L3-L29](./DEPLOY.md#L3-L29), [docs/user_interaction_guide.md:L92-L110](./user_interaction_guide.md#L92-L110), [docs/requirements_traceability.md:L410-L449](./requirements_traceability.md#L410-L449) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\run_local.py smoke-docker-postgres
+python scripts\check_doc_links.py
+```
+
+## Q-0013 现在如何彻底移除 SQLite 依赖，并清理无效文件？
+
+### 用户原始问题
+
+现在重构一下我们的项目，彻底去除对 SQLite 的依赖，对于一些我们不需要的文件和程序可以删除。
+
+### 回答摘要
+
+已经把项目收口到 PostgreSQL-only：
+
+1. 运行时数据库 URL 只接受 PostgreSQL，SQLite URL 会在启动时直接报错。
+2. 本地 runner、知识库构建脚本和全链路烟测都会先自动拉起 `postgres` 服务。
+3. 所有核心测试改为创建 PostgreSQL 临时数据库，不再生成新的 SQLite 测试库。
+4. 宿主机 PostgreSQL 入口固定为 `127.0.0.1:5433`，避免误连本机已有的 `5432`。
+5. 已把 `frontend/tsconfig.json` 改成 `noEmit`，并删除历史 `frontend/src/*.js(.map)` 产物、仓库中的 SQLite `.db` 测试文件，以及未使用的 `redis` 依赖与 `VECTOR_DB_TYPE` 配置。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| code | PostgreSQL-only URL 校验和测试库重置 | [_parse_postgres_url backend/app/core/database.py:L21-L27](../backend/app/core/database.py#L21-L27), [reset_database backend/app/core/database.py:L69-L86](../backend/app/core/database.py#L69-L86) |
+| config | 默认数据库 URL、宿主机端口和精简后的环境变量模板 | [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [.env.example:L5-L34](../.env.example#L5-L34) |
+| deploy | 宿主机 `5433 -> 容器 5432` 的 PostgreSQL/pgvector 编排 | [deploy/docker-compose.yml:L25-L40](../deploy/docker-compose.yml#L25-L40) |
+| runner | 本地脚本自动拉起 PostgreSQL 并复用统一 `DATABASE_URL` | [scripts/run_local.py:L20-L30](../scripts/run_local.py#L20-L30), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86), [test_backend scripts/run_local.py:L125-L131](../scripts/run_local.py#L125-L131) |
+| test | 核心测试统一改走 PostgreSQL 临时数据库 | [postgres_test_database_url backend/tests/postgres_test_utils.py:L10-L17](../backend/tests/postgres_test_utils.py#L10-L17), [backend/tests/test_auth_service.py:L11-L48](../backend/tests/test_auth_service.py#L11-L48), [backend/tests/test_api_v1.py:L8-L95](../backend/tests/test_api_v1.py#L8-L95) |
+| cleanup | `vue-tsc` 改为 `noEmit`，仅保留 TypeScript/Vue 源文件入口 | [frontend/tsconfig.json:L1-L16](../frontend/tsconfig.json#L1-L16), [frontend/src/main.ts:L1-L9](../frontend/src/main.ts#L1-L9), [frontend/src/api/admin.ts:L1-L66](../frontend/src/api/admin.ts#L1-L66), [frontend/src/api/visitor.ts:L1-L55](../frontend/src/api/visitor.ts#L1-L55) |
+| deps | 后端依赖收敛到 PostgreSQL 驱动，无 `redis` | [backend/requirements.txt:L1-L8](../backend/requirements.txt#L1-L8) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\check_doc_links.py
+python scripts\run_local.py smoke-docker-postgres
 ```

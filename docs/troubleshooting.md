@@ -452,6 +452,122 @@ python scripts\run_local.py test-backend
 python scripts\smoke_vue_full_stack.py
 ```
 
+## TRB-015 仓库根目录直接运行 pytest 导致 `ModuleNotFoundError: No module named 'app'`
+
+### 错误现象
+
+```text
+ImportError while importing test module '...\\backend\\tests\\test_auth_service.py'
+ModuleNotFoundError: No module named 'app'
+```
+
+### 原因分析
+
+后端测试文件直接从 `app.*` 导入模块；官方测试入口会在运行前设置 `PYTHONPATH=backend`，但直接在仓库根目录执行 `python -m pytest backend/tests -q` 时不会自动注入这个路径。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 官方测试入口 | 运行 pytest 前注入 `PYTHONPATH` | [test_backend scripts/run_local.py:L82-L86](../scripts/run_local.py#L82-L86) |
+| 服务启动入口 | 启动 Uvicorn 时同样依赖 `PYTHONPATH=backend` | [start_backend scripts/run_local.py:L89-L105](../scripts/run_local.py#L89-L105) |
+| 测试导入 | 后端测试直接导入 `app.main` / `app.services.*` | [test_auth_service imports backend/tests/test_auth_service.py:L7-L10](../backend/tests/test_auth_service.py#L7-L10) |
+
+### 修复方式
+
+优先使用项目封装好的测试入口：
+
+```powershell
+python scripts\run_local.py test-backend
+```
+
+如果必须直接运行 pytest，请先设置环境变量：
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path .\backend)
+python -m pytest backend/tests -q
+```
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+$env:PYTHONPATH = (Resolve-Path .\backend); python -m pytest backend/tests -q
+```
+
+## TRB-016 PostgreSQL 已启用但 pgvector 检索没有生效
+
+### 错误现象
+
+`/api/v1/admin/system/status` 中 `database_backend = postgresql`，但 `vector_backend` 不是 `pgvector`，或者 PostgreSQL 启动时报 `type "vector" does not exist`。
+
+### 原因分析
+
+常见原因：
+
+1. `DATABASE_URL` 仍指向了错误的 PostgreSQL 实例，或者宿主机 `5432` 上有旧数据库导致误连；
+2. PostgreSQL 数据库没有创建 `vector` 扩展；
+3. 当前进程没有使用实际配置过的 engine URL，导致系统状态判断错了后端类型。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 配置 | 默认数据库 URL 和宿主机 PostgreSQL 连接参数 | [.env.example:L5-L15](../.env.example#L5-L15), [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [scripts/run_local.py:L20-L28](../scripts/run_local.py#L20-L28) |
+| 数据库初始化 | 当前活动数据库 URL 跟踪和 PostgreSQL 自动创建 `vector` 扩展 | [current_database_url backend/app/core/database.py:L30-L34](../backend/app/core/database.py#L30-L34), [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
+| 向量后端识别 | PostgreSQL 主路径与 pgvector 检索实现 | [vector_backend_name backend/app/services/vector_store.py:L80-L81](../backend/app/services/vector_store.py#L80-L81), [_retrieve_pgvector_chunks backend/app/services/vector_store.py:L506-L529](../backend/app/services/vector_store.py#L506-L529) |
+| 系统状态 | 后台查看当前数据库和向量后端 | [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
+
+### 修复方式
+
+1. 确认当前启动进程的 `DATABASE_URL` 指向 `127.0.0.1:5433` 或 Compose 内的 `postgres:5432`，不要误连宿主机已有的 `5432` 数据库。
+2. 重启后端，让 [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) 自动创建扩展。
+3. 使用后台系统状态接口确认 `database_backend=postgresql`、`vector_backend=pgvector`。
+4. 重新调用知识库重建或文档嵌入接口。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\run_local.py smoke-docker-postgres
+```
+
+## TRB-017 Docker Compose 下 `/guide` 返回 404 或空白页
+
+### 错误现象
+
+`docker compose up --build` 后健康检查可通过，但打开 `http://127.0.0.1:8000/guide` 返回 404，或只看到空白页。
+
+### 原因分析
+
+常见原因：
+
+1. 容器镜像里没有复制 `frontend/dist`；
+2. FastAPI 没有启用 SPA 静态资源回退；
+3. 前端构建产物过旧，和当前 API 路由不匹配。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 镜像构建 | 单应用容器复制 `frontend/dist` | [deploy/Dockerfile:L11-L18](../deploy/Dockerfile#L11-L18) |
+| SPA 托管 | `/guide`、`/map`、`/admin/*` 统一回退到 `index.html` | [frontend_index backend/app/main.py:L69-L71](../backend/app/main.py#L69-L71), [frontend_spa backend/app/main.py:L73-L78](../backend/app/main.py#L73-L78) |
+| 烟测脚本 | 直接检查 `/guide` 页面是否包含 `id=\"app\"` | [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+
+### 修复方式
+
+1. 先执行 `python scripts\run_local.py build-frontend`，确保本地已有最新 `frontend/dist`。
+2. 重新运行 `python scripts\run_local.py smoke-docker-postgres`，由脚本自动重建镜像并复验。
+3. 如果仍失败，检查 [deploy/Dockerfile:L11-L18](../deploy/Dockerfile#L11-L18) 是否保留了 `COPY frontend/dist /workspace/frontend/dist`。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py build-frontend
+python scripts\run_local.py smoke-docker-postgres
+```
+
 ## TRB-014 知识文档上传后游客端仍不命中
 
 ### 错误现象
@@ -481,5 +597,38 @@ python scripts\smoke_vue_full_stack.py
 ### 验证命令
 
 ```powershell
-$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py
+python scripts\smoke_vue_full_stack.py
+```
+
+## TRB-017 宿主机 5432 已有 PostgreSQL，项目误连到不带 pgvector 的旧库
+
+### 错误现象
+
+后端启动或测试时连接成功，但执行 `CREATE EXTENSION IF NOT EXISTS vector` 失败，或者系统状态始终不是 `vector_backend = pgvector`。
+
+### 常见原因
+
+1. Windows 本机已经有一个监听 `127.0.0.1:5432` 的 PostgreSQL；
+2. 该实例没有安装 `pgvector` 扩展；
+3. 本项目的 `.env` 或 shell 环境变量还在指向 `5432`。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| runner 默认值 | 本地 runner 强制默认使用 `127.0.0.1:5433` | [scripts/run_local.py:L20-L30](../scripts/run_local.py#L20-L30) |
+| Compose 端口映射 | 宿主机 `5433 -> 容器 5432` | [deploy/docker-compose.yml:L25-L40](../deploy/docker-compose.yml#L25-L40) |
+| 默认配置 | `.env.example` 中宿主机 PostgreSQL 端口 | [.env.example:L5-L15](../.env.example#L5-L15) |
+
+### 修复方式
+
+1. 删除或覆盖旧的 `DATABASE_URL` 环境变量。
+2. 使用 `python scripts\run_local.py test-backend` 或 `python scripts\run_local.py smoke-docker-postgres`，让脚本自动拉起 `5433` 的容器数据库。
+3. 如果必须手动运行，确认 URL 使用 `postgresql+psycopg://postgres:postgres@127.0.0.1:5433/lingtour`。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py smoke-docker-postgres
 ```

@@ -13,11 +13,11 @@
 | 浏览器语音输入 | 部分完成 | [handleListen frontend/src/pages/visitor/ChatGuide.vue:L74-L98](../frontend/src/pages/visitor/ChatGuide.vue#L74-L98) |
 | 浏览器语音播报 | 部分完成 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L62-L72](../frontend/src/pages/visitor/ChatGuide.vue#L62-L72) |
 | 口型动画 | 已完成 MVP | [simulateSpeaking frontend/src/store/avatar.ts:L16-L32](../frontend/src/store/avatar.ts#L16-L32) |
-| 景区知识库问答 | 已完成 | [retrieve_context backend/app/services/vector_store.py:L252-L273](../backend/app/services/vector_store.py#L252-L273) |
-| 用户提供资料入库 | 已完成 | [load_scenic_pack_entries backend/app/services/vector_store.py:L191-L216](../backend/app/services/vector_store.py#L191-L216) |
+| 景区知识库问答 | 已完成 | [retrieve_context backend/app/services/vector_store.py:L591-L614](../backend/app/services/vector_store.py#L591-L614) |
+| 用户提供资料入库 | 已完成 | [load_scenic_pack_entries backend/app/services/vector_store.py:L268-L292](../backend/app/services/vector_store.py#L268-L292) |
 | 管理后台知识库维护 | 已升级为版本化后台 | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
 | 后台登录和写权限 | 已完成 | [login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16), [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145), [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46) |
-| 数据库持久化 | 已完成本地 SQLite / Docker PostgreSQL 切换 | [configure_database backend/app/core/database.py:L33-L46](../backend/app/core/database.py#L33-L46), [persistence models backend/app/models/persistence.py:L16-L112](../backend/app/models/persistence.py#L16-L112), [deploy/docker-compose.yml:L5-L11](../deploy/docker-compose.yml#L5-L11) |
+| 数据库持久化 | 已完成默认 PostgreSQL + pgvector 运行链路，SQLite 依赖已从运行和测试主链路移除 | [configure_database backend/app/core/database.py:L42-L55](../backend/app/core/database.py#L42-L55), [persistence models backend/app/models/persistence.py:L51-L213](../backend/app/models/persistence.py#L51-L213), [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44) |
 | 数字人配置持久化 | 已完成 | [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
 | 真实景区地图 | 本轮增强 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 个性化路线推荐 | 已增强 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
@@ -32,14 +32,15 @@
 | 后端真实 ASR | 当前语音识别主要依赖浏览器 SpeechRecognition，后端 `/chat/voice` 仍是演示返回 | 在 [voice_chat backend/app/services/chat_service.py:L90-L94](../backend/app/services/chat_service.py#L90-L94) 接入 Whisper/FunASR 或云 ASR |
 | 后端真实 TTS 音频文件 | 当前前端用浏览器 SpeechSynthesis，后端 `audio_url` 是演示路径 | 新增 TTS 服务并替换 [chat_with_text backend/app/services/chat_service.py:L82-L87](../backend/app/services/chat_service.py#L82-L87) |
 | 多模态大模型图片识景 | `/chat/image` 仍是固定识别灵山大佛 | 在 [image_chat backend/app/services/chat_service.py:L97-L103](../backend/app/services/chat_service.py#L97-L103) 接入 Qwen-VL 或其他视觉模型 |
+| 后台运营大屏真实聚合 | `/api/admin/analytics/*` 已接前端，但 [dashboard_overview backend/app/services/analytics_service.py:L1-L39](../backend/app/services/analytics_service.py#L1-L39) 仍返回静态演示数据 | 让 [analytics_overview backend/app/api/admin.py:L135-L142](../backend/app/api/admin.py#L135-L142) 基于真实问答、路线和情绪日志聚合，并补充大屏接口测试 |
 | 150 条准确率测试集 | 当前有基础测试，不足 150 条标准问答评测 | 扩充 [data/test_questions.csv:L1-L4](../data/test_questions.csv#L1-L4) 并增加评测脚本 |
-| Docker Compose 全链路验证 | Compose 文件存在但本轮主要验证 Python runner | 验证 [deploy/docker-compose.yml:L1-L39](../deploy/docker-compose.yml#L1-L39) 并补充部署测试 |
+| Docker Compose 全链路验证 | 已完成单应用容器 + PostgreSQL/pgvector 烟测，不再是当前缺口 | 继续沿用 [scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) 作为部署回归基线 |
 | 7 分钟演示视频 | 文档有脚本方向，视频文件未生成 | 基于 [docs/user_interaction_guide.md:L1-L120](./user_interaction_guide.md#L1-L120) 录制 |
 
 ## 3. 赛题风险排序
 
 1. 最高风险：真实多模态图片识景和后端 TTS/ASR 仍是部分实现。
-2. 中风险：Docker Compose 全链路和 150 条准确率评测仍需补齐；知识库版本化、权限和数据库持久化已完成。
+2. 中风险：150 条准确率评测和后台运营大屏真实聚合仍需补齐；知识库版本化、权限、Docker Compose 和数据库持久化已完成。
 3. 低风险：前端展示、RAG 问答、路线地图、本地运行和烟测已具备演示闭环。
 
 ## 4. 当前推荐演示路径

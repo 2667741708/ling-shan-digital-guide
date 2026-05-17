@@ -118,6 +118,244 @@
     "end_line": 142,
     "relative_link": "../backend/app/api/admin.py#L141-L142"
   },
+  "backend/app/api/v1.py::_message_id": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 53,
+    "end_line": 54,
+    "relative_link": "../backend/app/api/v1.py#L53-L54"
+  },
+  "backend/app/api/v1.py::_resolve_session_id": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 57,
+    "end_line": 66,
+    "relative_link": "../backend/app/api/v1.py#L57-L66"
+  },
+  "backend/app/api/v1.py::_route_payload_from_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 69,
+    "end_line": 80,
+    "relative_link": "../backend/app/api/v1.py#L69-L80"
+  },
+  "backend/app/api/v1.py::_avatar_directive": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 83,
+    "end_line": 91,
+    "relative_link": "../backend/app/api/v1.py#L83-L91"
+  },
+  "backend/app/api/v1.py::_find_document_or_404": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 94,
+    "end_line": 98,
+    "relative_link": "../backend/app/api/v1.py#L94-L98"
+  },
+  "backend/app/api/v1.py::create_guide_session_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 102,
+    "end_line": 110,
+    "relative_link": "../backend/app/api/v1.py#L102-L110"
+  },
+  "backend/app/api/v1.py::guide_ask_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 114,
+    "end_line": 127,
+    "relative_link": "../backend/app/api/v1.py#L114-L127"
+  },
+  "backend/app/api/v1.py::guide_voice_ask_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 131,
+    "end_line": 148,
+    "relative_link": "../backend/app/api/v1.py#L131-L148"
+  },
+  "backend/app/api/v1.py::transcribe_audio_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 152,
+    "end_line": 162,
+    "relative_link": "../backend/app/api/v1.py#L152-L162"
+  },
+  "backend/app/api/v1.py::synthesize_tts_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 166,
+    "end_line": 179,
+    "relative_link": "../backend/app/api/v1.py#L166-L179"
+  },
+  "backend/app/api/v1.py::avatar_speak_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 183,
+    "end_line": 201,
+    "relative_link": "../backend/app/api/v1.py#L183-L201"
+  },
+  "backend/app/api/v1.py::scenic_spots_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 205,
+    "end_line": 206,
+    "relative_link": "../backend/app/api/v1.py#L205-L206"
+  },
+  "backend/app/api/v1.py::scenic_facilities_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 210,
+    "end_line": 211,
+    "relative_link": "../backend/app/api/v1.py#L210-L211"
+  },
+  "backend/app/api/v1.py::route_recommend_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 215,
+    "end_line": 217,
+    "relative_link": "../backend/app/api/v1.py#L215-L217"
+  },
+  "backend/app/api/v1.py::rag_retrieve_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 221,
+    "end_line": 222,
+    "relative_link": "../backend/app/api/v1.py#L221-L222"
+  },
+  "backend/app/api/v1.py::auth_login_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 226,
+    "end_line": 227,
+    "relative_link": "../backend/app/api/v1.py#L226-L227"
+  },
+  "backend/app/api/v1.py::auth_me_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 231,
+    "end_line": 232,
+    "relative_link": "../backend/app/api/v1.py#L231-L232"
+  },
+  "backend/app/api/v1.py::admin_system_status_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 236,
+    "end_line": 237,
+    "relative_link": "../backend/app/api/v1.py#L236-L237"
+  },
+  "backend/app/api/v1.py::admin_analytics_overview_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 241,
+    "end_line": 242,
+    "relative_link": "../backend/app/api/v1.py#L241-L242"
+  },
+  "backend/app/api/v1.py::admin_knowledge_bases_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 246,
+    "end_line": 247,
+    "relative_link": "../backend/app/api/v1.py#L246-L247"
+  },
+  "backend/app/api/v1.py::admin_knowledge_base_documents_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 251,
+    "end_line": 252,
+    "relative_link": "../backend/app/api/v1.py#L251-L252"
+  },
+  "backend/app/api/v1.py::admin_upload_document_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 256,
+    "end_line": 268,
+    "relative_link": "../backend/app/api/v1.py#L256-L268"
+  },
+  "backend/app/api/v1.py::admin_reindex_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 272,
+    "end_line": 273,
+    "relative_link": "../backend/app/api/v1.py#L272-L273"
+  },
+  "backend/app/api/v1.py::admin_test_retrieve_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 277,
+    "end_line": 278,
+    "relative_link": "../backend/app/api/v1.py#L277-L278"
+  },
+  "backend/app/api/v1.py::admin_update_document_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 282,
+    "end_line": 295,
+    "relative_link": "../backend/app/api/v1.py#L282-L295"
+  },
+  "backend/app/api/v1.py::admin_delete_document_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 299,
+    "end_line": 304,
+    "relative_link": "../backend/app/api/v1.py#L299-L304"
+  },
+  "backend/app/api/v1.py::admin_document_versions_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 308,
+    "end_line": 313,
+    "relative_link": "../backend/app/api/v1.py#L308-L313"
+  },
+  "backend/app/api/v1.py::admin_document_history_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 317,
+    "end_line": 322,
+    "relative_link": "../backend/app/api/v1.py#L317-L322"
+  },
+  "backend/app/api/v1.py::admin_document_publish_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 326,
+    "end_line": 331,
+    "relative_link": "../backend/app/api/v1.py#L326-L331"
+  },
+  "backend/app/api/v1.py::admin_document_archive_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 335,
+    "end_line": 340,
+    "relative_link": "../backend/app/api/v1.py#L335-L340"
+  },
+  "backend/app/api/v1.py::admin_document_chunks_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 344,
+    "end_line": 355,
+    "relative_link": "../backend/app/api/v1.py#L344-L355"
+  },
+  "backend/app/api/v1.py::admin_document_embed_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 359,
+    "end_line": 372,
+    "relative_link": "../backend/app/api/v1.py#L359-L372"
+  },
+  "backend/app/api/v1.py::admin_avatar_profiles_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 376,
+    "end_line": 377,
+    "relative_link": "../backend/app/api/v1.py#L376-L377"
+  },
+  "backend/app/api/v1.py::admin_create_avatar_profile_v1": {
+    "path": "backend/app/api/v1.py",
+    "kind": "function",
+    "start_line": 381,
+    "end_line": 382,
+    "relative_link": "../backend/app/api/v1.py#L381-L382"
+  },
   "backend/app/api/visitor.py::create_visitor_session": {
     "path": "backend/app/api/visitor.py",
     "kind": "function",
@@ -164,8 +402,8 @@
     "path": "backend/app/core/config.py",
     "kind": "class",
     "start_line": 4,
-    "end_line": 16,
-    "relative_link": "../backend/app/core/config.py#L4-L16"
+    "end_line": 20,
+    "relative_link": "../backend/app/core/config.py#L4-L20"
   },
   "backend/app/core/database.py::Base": {
     "path": "backend/app/core/database.py",
@@ -188,103 +426,208 @@
     "end_line": 30,
     "relative_link": "../backend/app/core/database.py#L26-L30"
   },
-  "backend/app/core/database.py::configure_database": {
+  "backend/app/core/database.py::_is_postgres_url": {
     "path": "backend/app/core/database.py",
     "kind": "function",
     "start_line": 33,
-    "end_line": 46,
-    "relative_link": "../backend/app/core/database.py#L33-L46"
+    "end_line": 34,
+    "relative_link": "../backend/app/core/database.py#L33-L34"
+  },
+  "backend/app/core/database.py::configure_database": {
+    "path": "backend/app/core/database.py",
+    "kind": "function",
+    "start_line": 37,
+    "end_line": 50,
+    "relative_link": "../backend/app/core/database.py#L37-L50"
   },
   "backend/app/core/database.py::init_db": {
     "path": "backend/app/core/database.py",
     "kind": "function",
-    "start_line": 49,
-    "end_line": 55,
-    "relative_link": "../backend/app/core/database.py#L49-L55"
+    "start_line": 53,
+    "end_line": 62,
+    "relative_link": "../backend/app/core/database.py#L53-L62"
   },
   "backend/app/core/database.py::reset_database": {
     "path": "backend/app/core/database.py",
     "kind": "function",
-    "start_line": 58,
-    "end_line": 64,
-    "relative_link": "../backend/app/core/database.py#L58-L64"
+    "start_line": 65,
+    "end_line": 71,
+    "relative_link": "../backend/app/core/database.py#L65-L71"
   },
   "backend/app/core/database.py::new_session": {
     "path": "backend/app/core/database.py",
     "kind": "function",
-    "start_line": 67,
-    "end_line": 69,
-    "relative_link": "../backend/app/core/database.py#L67-L69"
+    "start_line": 74,
+    "end_line": 76,
+    "relative_link": "../backend/app/core/database.py#L74-L76"
   },
   "backend/app/core/database.py::get_db": {
     "path": "backend/app/core/database.py",
     "kind": "function",
-    "start_line": 72,
-    "end_line": 78,
-    "relative_link": "../backend/app/core/database.py#L72-L78"
+    "start_line": 79,
+    "end_line": 85,
+    "relative_link": "../backend/app/core/database.py#L79-L85"
+  },
+  "backend/app/main.py::_repo_root": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 17,
+    "end_line": 18,
+    "relative_link": "../backend/app/main.py#L17-L18"
+  },
+  "backend/app/main.py::_frontend_dist_dir": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 21,
+    "end_line": 22,
+    "relative_link": "../backend/app/main.py#L21-L22"
+  },
+  "backend/app/main.py::_resolve_frontend_asset": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 25,
+    "end_line": 35,
+    "relative_link": "../backend/app/main.py#L25-L35"
   },
   "backend/app/main.py::create_app": {
     "path": "backend/app/main.py",
     "kind": "function",
-    "start_line": 13,
-    "end_line": 36,
-    "relative_link": "../backend/app/main.py#L13-L36"
+    "start_line": 38,
+    "end_line": 80,
+    "relative_link": "../backend/app/main.py#L38-L80"
   },
   "backend/app/main.py::health": {
     "path": "backend/app/main.py",
     "kind": "function",
-    "start_line": 26,
-    "end_line": 27,
-    "relative_link": "../backend/app/main.py#L26-L27"
+    "start_line": 52,
+    "end_line": 53,
+    "relative_link": "../backend/app/main.py#L52-L53"
+  },
+  "backend/app/main.py::health_v1": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 56,
+    "end_line": 57,
+    "relative_link": "../backend/app/main.py#L56-L57"
   },
   "backend/app/main.py::startup": {
     "path": "backend/app/main.py",
     "kind": "function",
-    "start_line": 30,
-    "end_line": 34,
-    "relative_link": "../backend/app/main.py#L30-L34"
+    "start_line": 60,
+    "end_line": 64,
+    "relative_link": "../backend/app/main.py#L60-L64"
+  },
+  "backend/app/main.py::frontend_index": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 70,
+    "end_line": 71,
+    "relative_link": "../backend/app/main.py#L70-L71"
+  },
+  "backend/app/main.py::frontend_spa": {
+    "path": "backend/app/main.py",
+    "kind": "function",
+    "start_line": 74,
+    "end_line": 78,
+    "relative_link": "../backend/app/main.py#L74-L78"
   },
   "backend/app/models/persistence.py::new_id": {
     "path": "backend/app/models/persistence.py",
     "kind": "function",
-    "start_line": 12,
-    "end_line": 13,
-    "relative_link": "../backend/app/models/persistence.py#L12-L13"
+    "start_line": 14,
+    "end_line": 15,
+    "relative_link": "../backend/app/models/persistence.py#L14-L15"
+  },
+  "backend/app/models/persistence.py::PgVector": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "class",
+    "start_line": 18,
+    "end_line": 44,
+    "relative_link": "../backend/app/models/persistence.py#L18-L44"
   },
   "backend/app/models/persistence.py::AdminUser": {
     "path": "backend/app/models/persistence.py",
     "kind": "class",
-    "start_line": 16,
-    "end_line": 26,
-    "relative_link": "../backend/app/models/persistence.py#L16-L26"
+    "start_line": 51,
+    "end_line": 61,
+    "relative_link": "../backend/app/models/persistence.py#L51-L61"
   },
   "backend/app/models/persistence.py::KnowledgeDocument": {
     "path": "backend/app/models/persistence.py",
     "kind": "class",
-    "start_line": 29,
-    "end_line": 56,
-    "relative_link": "../backend/app/models/persistence.py#L29-L56"
+    "start_line": 64,
+    "end_line": 99,
+    "relative_link": "../backend/app/models/persistence.py#L64-L99"
   },
   "backend/app/models/persistence.py::KnowledgeDocumentVersion": {
     "path": "backend/app/models/persistence.py",
     "kind": "class",
-    "start_line": 59,
-    "end_line": 78,
-    "relative_link": "../backend/app/models/persistence.py#L59-L78"
+    "start_line": 102,
+    "end_line": 127,
+    "relative_link": "../backend/app/models/persistence.py#L102-L127"
+  },
+  "backend/app/models/persistence.py::KnowledgeBase": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "class",
+    "start_line": 130,
+    "end_line": 145,
+    "relative_link": "../backend/app/models/persistence.py#L130-L145"
+  },
+  "backend/app/models/persistence.py::KnowledgeChunk": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "class",
+    "start_line": 148,
+    "end_line": 179,
+    "relative_link": "../backend/app/models/persistence.py#L148-L179"
   },
   "backend/app/models/persistence.py::KnowledgeOperationLog": {
     "path": "backend/app/models/persistence.py",
     "kind": "class",
-    "start_line": 81,
-    "end_line": 96,
-    "relative_link": "../backend/app/models/persistence.py#L81-L96"
+    "start_line": 182,
+    "end_line": 197,
+    "relative_link": "../backend/app/models/persistence.py#L182-L197"
   },
   "backend/app/models/persistence.py::AvatarConfig": {
     "path": "backend/app/models/persistence.py",
     "kind": "class",
-    "start_line": 99,
-    "end_line": 112,
-    "relative_link": "../backend/app/models/persistence.py#L99-L112"
+    "start_line": 200,
+    "end_line": 213,
+    "relative_link": "../backend/app/models/persistence.py#L200-L213"
+  },
+  "backend/app/models/persistence.py::__init__": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "function",
+    "start_line": 21,
+    "end_line": 22,
+    "relative_link": "../backend/app/models/persistence.py#L21-L22"
+  },
+  "backend/app/models/persistence.py::get_col_spec": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "function",
+    "start_line": 24,
+    "end_line": 25,
+    "relative_link": "../backend/app/models/persistence.py#L24-L25"
+  },
+  "backend/app/models/persistence.py::bind_processor": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "function",
+    "start_line": 27,
+    "end_line": 33,
+    "relative_link": "../backend/app/models/persistence.py#L27-L33"
+  },
+  "backend/app/models/persistence.py::result_processor": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "function",
+    "start_line": 35,
+    "end_line": 44,
+    "relative_link": "../backend/app/models/persistence.py#L35-L44"
+  },
+  "backend/app/models/persistence.py::process": {
+    "path": "backend/app/models/persistence.py",
+    "kind": "function",
+    "start_line": 36,
+    "end_line": 42,
+    "relative_link": "../backend/app/models/persistence.py#L36-L42"
   },
   "backend/app/schemas/admin.py::LoginRequest": {
     "path": "backend/app/schemas/admin.py",
@@ -292,6 +635,48 @@
     "start_line": 4,
     "end_line": 6,
     "relative_link": "../backend/app/schemas/admin.py#L4-L6"
+  },
+  "backend/app/schemas/api_v1.py::GuideSessionRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 6,
+    "end_line": 8,
+    "relative_link": "../backend/app/schemas/api_v1.py#L6-L8"
+  },
+  "backend/app/schemas/api_v1.py::GuideAskRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 11,
+    "end_line": 15,
+    "relative_link": "../backend/app/schemas/api_v1.py#L11-L15"
+  },
+  "backend/app/schemas/api_v1.py::RouteRecommendRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 18,
+    "end_line": 22,
+    "relative_link": "../backend/app/schemas/api_v1.py#L18-L22"
+  },
+  "backend/app/schemas/api_v1.py::RagRetrieveRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 25,
+    "end_line": 27,
+    "relative_link": "../backend/app/schemas/api_v1.py#L25-L27"
+  },
+  "backend/app/schemas/api_v1.py::TtsSynthesizeRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 30,
+    "end_line": 34,
+    "relative_link": "../backend/app/schemas/api_v1.py#L30-L34"
+  },
+  "backend/app/schemas/api_v1.py::AvatarSpeakRequestV1": {
+    "path": "backend/app/schemas/api_v1.py",
+    "kind": "class",
+    "start_line": 37,
+    "end_line": 40,
+    "relative_link": "../backend/app/schemas/api_v1.py#L37-L40"
   },
   "backend/app/schemas/visitor.py::CreateSessionRequest": {
     "path": "backend/app/schemas/visitor.py",
@@ -492,163 +877,177 @@
   "backend/app/services/knowledge_service.py::retrieve_context": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 22,
-    "end_line": 42,
-    "relative_link": "../backend/app/services/knowledge_service.py#L22-L42"
+    "start_line": 32,
+    "end_line": 53,
+    "relative_link": "../backend/app/services/knowledge_service.py#L32-L53"
+  },
+  "backend/app/services/knowledge_service.py::list_knowledge_bases": {
+    "path": "backend/app/services/knowledge_service.py",
+    "kind": "function",
+    "start_line": 56,
+    "end_line": 57,
+    "relative_link": "../backend/app/services/knowledge_service.py#L56-L57"
   },
   "backend/app/services/knowledge_service.py::_safe_document_stem": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 45,
-    "end_line": 48,
-    "relative_link": "../backend/app/services/knowledge_service.py#L45-L48"
+    "start_line": 60,
+    "end_line": 63,
+    "relative_link": "../backend/app/services/knowledge_service.py#L60-L63"
   },
   "backend/app/services/knowledge_service.py::_safe_file_name": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 51,
-    "end_line": 55,
-    "relative_link": "../backend/app/services/knowledge_service.py#L51-L55"
+    "start_line": 66,
+    "end_line": 70,
+    "relative_link": "../backend/app/services/knowledge_service.py#L66-L70"
   },
   "backend/app/services/knowledge_service.py::_root_dir": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 58,
-    "end_line": 59,
-    "relative_link": "../backend/app/services/knowledge_service.py#L58-L59"
+    "start_line": 73,
+    "end_line": 74,
+    "relative_link": "../backend/app/services/knowledge_service.py#L73-L74"
   },
   "backend/app/services/knowledge_service.py::_relative_path": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 62,
-    "end_line": 67,
-    "relative_link": "../backend/app/services/knowledge_service.py#L62-L67"
+    "start_line": 77,
+    "end_line": 82,
+    "relative_link": "../backend/app/services/knowledge_service.py#L77-L82"
   },
   "backend/app/services/knowledge_service.py::_storage_path": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 70,
-    "end_line": 71,
-    "relative_link": "../backend/app/services/knowledge_service.py#L70-L71"
+    "start_line": 85,
+    "end_line": 86,
+    "relative_link": "../backend/app/services/knowledge_service.py#L85-L86"
   },
   "backend/app/services/knowledge_service.py::_read_preview": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 74,
-    "end_line": 78,
-    "relative_link": "../backend/app/services/knowledge_service.py#L74-L78"
+    "start_line": 89,
+    "end_line": 93,
+    "relative_link": "../backend/app/services/knowledge_service.py#L89-L93"
   },
   "backend/app/services/knowledge_service.py::_hash": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 81,
-    "end_line": 82,
-    "relative_link": "../backend/app/services/knowledge_service.py#L81-L82"
+    "start_line": 96,
+    "end_line": 97,
+    "relative_link": "../backend/app/services/knowledge_service.py#L96-L97"
   },
   "backend/app/services/knowledge_service.py::_current_version": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 85,
-    "end_line": 93,
-    "relative_link": "../backend/app/services/knowledge_service.py#L85-L93"
+    "start_line": 100,
+    "end_line": 108,
+    "relative_link": "../backend/app/services/knowledge_service.py#L100-L108"
   },
   "backend/app/services/knowledge_service.py::_log": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 96,
-    "end_line": 105,
-    "relative_link": "../backend/app/services/knowledge_service.py#L96-L105"
+    "start_line": 111,
+    "end_line": 127,
+    "relative_link": "../backend/app/services/knowledge_service.py#L111-L127"
+  },
+  "backend/app/services/knowledge_service.py::_knowledge_base_public_id": {
+    "path": "backend/app/services/knowledge_service.py",
+    "kind": "function",
+    "start_line": 130,
+    "end_line": 131,
+    "relative_link": "../backend/app/services/knowledge_service.py#L130-L131"
   },
   "backend/app/services/knowledge_service.py::_document_payload": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 108,
-    "end_line": 128,
-    "relative_link": "../backend/app/services/knowledge_service.py#L108-L128"
-  },
-  "backend/app/services/knowledge_service.py::_chunk_count_for_source": {
-    "path": "backend/app/services/knowledge_service.py",
-    "kind": "function",
-    "start_line": 131,
-    "end_line": 138,
-    "relative_link": "../backend/app/services/knowledge_service.py#L131-L138"
+    "start_line": 134,
+    "end_line": 159,
+    "relative_link": "../backend/app/services/knowledge_service.py#L134-L159"
   },
   "backend/app/services/knowledge_service.py::rebuild_index": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 141,
-    "end_line": 150,
-    "relative_link": "../backend/app/services/knowledge_service.py#L141-L150"
+    "start_line": 162,
+    "end_line": 171,
+    "relative_link": "../backend/app/services/knowledge_service.py#L162-L171"
+  },
+  "backend/app/services/knowledge_service.py::embed_document": {
+    "path": "backend/app/services/knowledge_service.py",
+    "kind": "function",
+    "start_line": 174,
+    "end_line": 184,
+    "relative_link": "../backend/app/services/knowledge_service.py#L174-L184"
   },
   "backend/app/services/knowledge_service.py::save_document": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 153,
-    "end_line": 213,
-    "relative_link": "../backend/app/services/knowledge_service.py#L153-L213"
+    "start_line": 187,
+    "end_line": 259,
+    "relative_link": "../backend/app/services/knowledge_service.py#L187-L259"
   },
   "backend/app/services/knowledge_service.py::update_document": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 216,
-    "end_line": 262,
-    "relative_link": "../backend/app/services/knowledge_service.py#L216-L262"
+    "start_line": 262,
+    "end_line": 325,
+    "relative_link": "../backend/app/services/knowledge_service.py#L262-L325"
   },
   "backend/app/services/knowledge_service.py::publish_document": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 265,
-    "end_line": 282,
-    "relative_link": "../backend/app/services/knowledge_service.py#L265-L282"
+    "start_line": 328,
+    "end_line": 353,
+    "relative_link": "../backend/app/services/knowledge_service.py#L328-L353"
   },
   "backend/app/services/knowledge_service.py::archive_document": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 285,
-    "end_line": 302,
-    "relative_link": "../backend/app/services/knowledge_service.py#L285-L302"
+    "start_line": 356,
+    "end_line": 379,
+    "relative_link": "../backend/app/services/knowledge_service.py#L356-L379"
   },
   "backend/app/services/knowledge_service.py::delete_document": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 305,
-    "end_line": 324,
-    "relative_link": "../backend/app/services/knowledge_service.py#L305-L324"
+    "start_line": 382,
+    "end_line": 407,
+    "relative_link": "../backend/app/services/knowledge_service.py#L382-L407"
   },
   "backend/app/services/knowledge_service.py::list_documents": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 327,
-    "end_line": 337,
-    "relative_link": "../backend/app/services/knowledge_service.py#L327-L337"
+    "start_line": 410,
+    "end_line": 420,
+    "relative_link": "../backend/app/services/knowledge_service.py#L410-L420"
   },
   "backend/app/services/knowledge_service.py::list_versions": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 340,
-    "end_line": 369,
-    "relative_link": "../backend/app/services/knowledge_service.py#L340-L369"
+    "start_line": 423,
+    "end_line": 454,
+    "relative_link": "../backend/app/services/knowledge_service.py#L423-L454"
   },
   "backend/app/services/knowledge_service.py::list_history": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 372,
-    "end_line": 396,
-    "relative_link": "../backend/app/services/knowledge_service.py#L372-L396"
+    "start_line": 457,
+    "end_line": 481,
+    "relative_link": "../backend/app/services/knowledge_service.py#L457-L481"
   },
   "backend/app/services/knowledge_service.py::search_test": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 399,
-    "end_line": 400,
-    "relative_link": "../backend/app/services/knowledge_service.py#L399-L400"
+    "start_line": 484,
+    "end_line": 489,
+    "relative_link": "../backend/app/services/knowledge_service.py#L484-L489"
   },
   "backend/app/services/knowledge_service.py::migrate_existing_admin_documents": {
     "path": "backend/app/services/knowledge_service.py",
     "kind": "function",
-    "start_line": 403,
-    "end_line": 418,
-    "relative_link": "../backend/app/services/knowledge_service.py#L403-L418"
+    "start_line": 492,
+    "end_line": 507,
+    "relative_link": "../backend/app/services/knowledge_service.py#L492-L507"
   },
   "backend/app/services/route_service.py::_distance_cost": {
     "path": "backend/app/services/route_service.py",
@@ -702,135 +1101,282 @@
   "backend/app/services/scenic_service.py::list_scenic_spots": {
     "path": "backend/app/services/scenic_service.py",
     "kind": "function",
-    "start_line": 228,
-    "end_line": 230,
-    "relative_link": "../backend/app/services/scenic_service.py#L228-L230"
+    "start_line": 240,
+    "end_line": 242,
+    "relative_link": "../backend/app/services/scenic_service.py#L240-L242"
+  },
+  "backend/app/services/scenic_service.py::list_facilities": {
+    "path": "backend/app/services/scenic_service.py",
+    "kind": "function",
+    "start_line": 245,
+    "end_line": 247,
+    "relative_link": "../backend/app/services/scenic_service.py#L245-L247"
+  },
+  "backend/app/services/system_service.py::_database_status": {
+    "path": "backend/app/services/system_service.py",
+    "kind": "function",
+    "start_line": 11,
+    "end_line": 22,
+    "relative_link": "../backend/app/services/system_service.py#L11-L22"
+  },
+  "backend/app/services/system_service.py::get_system_status": {
+    "path": "backend/app/services/system_service.py",
+    "kind": "function",
+    "start_line": 25,
+    "end_line": 40,
+    "relative_link": "../backend/app/services/system_service.py#L25-L40"
   },
   "backend/app/services/vector_store.py::KnowledgeEntry": {
     "path": "backend/app/services/vector_store.py",
     "kind": "class",
-    "start_line": 24,
-    "end_line": 29,
-    "relative_link": "../backend/app/services/vector_store.py#L24-L29"
+    "start_line": 33,
+    "end_line": 38,
+    "relative_link": "../backend/app/services/vector_store.py#L33-L38"
   },
   "backend/app/services/vector_store.py::tokenize": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 32,
-    "end_line": 40,
-    "relative_link": "../backend/app/services/vector_store.py#L32-L40"
+    "start_line": 41,
+    "end_line": 49,
+    "relative_link": "../backend/app/services/vector_store.py#L41-L49"
   },
   "backend/app/services/vector_store.py::vectorize": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 43,
-    "end_line": 52,
-    "relative_link": "../backend/app/services/vector_store.py#L43-L52"
+    "start_line": 52,
+    "end_line": 61,
+    "relative_link": "../backend/app/services/vector_store.py#L52-L61"
   },
   "backend/app/services/vector_store.py::cosine_similarity": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 55,
-    "end_line": 56,
-    "relative_link": "../backend/app/services/vector_store.py#L55-L56"
+    "start_line": 64,
+    "end_line": 65,
+    "relative_link": "../backend/app/services/vector_store.py#L64-L65"
   },
   "backend/app/services/vector_store.py::chunk_text": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 59,
-    "end_line": 68,
-    "relative_link": "../backend/app/services/vector_store.py#L59-L68"
+    "start_line": 68,
+    "end_line": 77,
+    "relative_link": "../backend/app/services/vector_store.py#L68-L77"
+  },
+  "backend/app/services/vector_store.py::vector_backend_name": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 80,
+    "end_line": 83,
+    "relative_link": "../backend/app/services/vector_store.py#L80-L83"
   },
   "backend/app/services/vector_store.py::load_faq_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 71,
-    "end_line": 88,
-    "relative_link": "../backend/app/services/vector_store.py#L71-L88"
+    "start_line": 86,
+    "end_line": 103,
+    "relative_link": "../backend/app/services/vector_store.py#L86-L103"
   },
   "backend/app/services/vector_store.py::load_spot_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 91,
-    "end_line": 114,
-    "relative_link": "../backend/app/services/vector_store.py#L91-L114"
+    "start_line": 106,
+    "end_line": 129,
+    "relative_link": "../backend/app/services/vector_store.py#L106-L129"
   },
   "backend/app/services/vector_store.py::load_raw_document_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 117,
-    "end_line": 136,
-    "relative_link": "../backend/app/services/vector_store.py#L117-L136"
+    "start_line": 132,
+    "end_line": 151,
+    "relative_link": "../backend/app/services/vector_store.py#L132-L151"
   },
   "backend/app/services/vector_store.py::read_supported_document": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 139,
-    "end_line": 147,
-    "relative_link": "../backend/app/services/vector_store.py#L139-L147"
+    "start_line": 154,
+    "end_line": 162,
+    "relative_link": "../backend/app/services/vector_store.py#L154-L162"
   },
   "backend/app/services/vector_store.py::load_admin_document_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 150,
-    "end_line": 201,
-    "relative_link": "../backend/app/services/vector_store.py#L150-L201"
+    "start_line": 165,
+    "end_line": 213,
+    "relative_link": "../backend/app/services/vector_store.py#L165-L213"
   },
   "backend/app/services/vector_store.py::xml_text": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 204,
-    "end_line": 210,
-    "relative_link": "../backend/app/services/vector_store.py#L204-L210"
+    "start_line": 216,
+    "end_line": 222,
+    "relative_link": "../backend/app/services/vector_store.py#L216-L222"
   },
   "backend/app/services/vector_store.py::extract_docx_text": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 213,
-    "end_line": 214,
-    "relative_link": "../backend/app/services/vector_store.py#L213-L214"
+    "start_line": 225,
+    "end_line": 226,
+    "relative_link": "../backend/app/services/vector_store.py#L225-L226"
   },
   "backend/app/services/vector_store.py::extract_xlsx_text": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 217,
-    "end_line": 254,
-    "relative_link": "../backend/app/services/vector_store.py#L217-L254"
+    "start_line": 229,
+    "end_line": 265,
+    "relative_link": "../backend/app/services/vector_store.py#L229-L265"
   },
   "backend/app/services/vector_store.py::load_scenic_pack_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 257,
-    "end_line": 282,
-    "relative_link": "../backend/app/services/vector_store.py#L257-L282"
+    "start_line": 268,
+    "end_line": 292,
+    "relative_link": "../backend/app/services/vector_store.py#L268-L292"
+  },
+  "backend/app/services/vector_store.py::load_static_knowledge_entries": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 295,
+    "end_line": 296,
+    "relative_link": "../backend/app/services/vector_store.py#L295-L296"
   },
   "backend/app/services/vector_store.py::load_knowledge_entries": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 285,
-    "end_line": 292,
-    "relative_link": "../backend/app/services/vector_store.py#L285-L292"
+    "start_line": 299,
+    "end_line": 300,
+    "relative_link": "../backend/app/services/vector_store.py#L299-L300"
+  },
+  "backend/app/services/vector_store.py::ensure_default_knowledge_base": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 303,
+    "end_line": 329,
+    "relative_link": "../backend/app/services/vector_store.py#L303-L329"
+  },
+  "backend/app/services/vector_store.py::_row_to_hit": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 332,
+    "end_line": 344,
+    "relative_link": "../backend/app/services/vector_store.py#L332-L344"
+  },
+  "backend/app/services/vector_store.py::_persist_static_entries": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 347,
+    "end_line": 372,
+    "relative_link": "../backend/app/services/vector_store.py#L347-L372"
+  },
+  "backend/app/services/vector_store.py::_document_version_chunks": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 375,
+    "end_line": 389,
+    "relative_link": "../backend/app/services/vector_store.py#L375-L389"
+  },
+  "backend/app/services/vector_store.py::_upsert_document_version_chunks": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 392,
+    "end_line": 421,
+    "relative_link": "../backend/app/services/vector_store.py#L392-L421"
+  },
+  "backend/app/services/vector_store.py::_sync_document_chunk_flags": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 424,
+    "end_line": 431,
+    "relative_link": "../backend/app/services/vector_store.py#L424-L431"
+  },
+  "backend/app/services/vector_store.py::embed_document": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 434,
+    "end_line": 464,
+    "relative_link": "../backend/app/services/vector_store.py#L434-L464"
   },
   "backend/app/services/vector_store.py::build_knowledge_base": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 295,
-    "end_line": 315,
-    "relative_link": "../backend/app/services/vector_store.py#L295-L315"
+    "start_line": 467,
+    "end_line": 505,
+    "relative_link": "../backend/app/services/vector_store.py#L467-L505"
+  },
+  "backend/app/services/vector_store.py::_retrieve_sqlite_chunks": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 508,
+    "end_line": 519,
+    "relative_link": "../backend/app/services/vector_store.py#L508-L519"
+  },
+  "backend/app/services/vector_store.py::_retrieve_pgvector_chunks": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 522,
+    "end_line": 545,
+    "relative_link": "../backend/app/services/vector_store.py#L522-L545"
   },
   "backend/app/services/vector_store.py::load_vector_store": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 318,
-    "end_line": 321,
-    "relative_link": "../backend/app/services/vector_store.py#L318-L321"
+    "start_line": 548,
+    "end_line": 588,
+    "relative_link": "../backend/app/services/vector_store.py#L548-L588"
   },
   "backend/app/services/vector_store.py::retrieve_context": {
     "path": "backend/app/services/vector_store.py",
     "kind": "function",
-    "start_line": 324,
-    "end_line": 345,
-    "relative_link": "../backend/app/services/vector_store.py#L324-L345"
+    "start_line": 591,
+    "end_line": 614,
+    "relative_link": "../backend/app/services/vector_store.py#L591-L614"
+  },
+  "backend/app/services/vector_store.py::list_knowledge_bases": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 617,
+    "end_line": 659,
+    "relative_link": "../backend/app/services/vector_store.py#L617-L659"
+  },
+  "backend/app/services/vector_store.py::count_document_chunks": {
+    "path": "backend/app/services/vector_store.py",
+    "kind": "function",
+    "start_line": 662,
+    "end_line": 673,
+    "relative_link": "../backend/app/services/vector_store.py#L662-L673"
+  },
+  "backend/tests/test_api_v1.py::_reset_v1_db": {
+    "path": "backend/tests/test_api_v1.py",
+    "kind": "function",
+    "start_line": 10,
+    "end_line": 12,
+    "relative_link": "../backend/tests/test_api_v1.py#L10-L12"
+  },
+  "backend/tests/test_api_v1.py::_admin_token": {
+    "path": "backend/tests/test_api_v1.py",
+    "kind": "function",
+    "start_line": 15,
+    "end_line": 18,
+    "relative_link": "../backend/tests/test_api_v1.py#L15-L18"
+  },
+  "backend/tests/test_api_v1.py::test_v1_health_and_guide_ask": {
+    "path": "backend/tests/test_api_v1.py",
+    "kind": "function",
+    "start_line": 21,
+    "end_line": 42,
+    "relative_link": "../backend/tests/test_api_v1.py#L21-L42"
+  },
+  "backend/tests/test_api_v1.py::test_v1_scenic_and_route_endpoints": {
+    "path": "backend/tests/test_api_v1.py",
+    "kind": "function",
+    "start_line": 45,
+    "end_line": 66,
+    "relative_link": "../backend/tests/test_api_v1.py#L45-L66"
+  },
+  "backend/tests/test_api_v1.py::test_v1_admin_knowledge_and_system_status": {
+    "path": "backend/tests/test_api_v1.py",
+    "kind": "function",
+    "start_line": 69,
+    "end_line": 98,
+    "relative_link": "../backend/tests/test_api_v1.py#L69-L98"
   },
   "backend/tests/test_auth_service.py::_reset_auth_db": {
     "path": "backend/tests/test_auth_service.py",
@@ -892,8 +1438,8 @@
     "path": "backend/tests/test_knowledge_management.py",
     "kind": "function",
     "start_line": 21,
-    "end_line": 61,
-    "relative_link": "../backend/tests/test_knowledge_management.py#L21-L61"
+    "end_line": 63,
+    "relative_link": "../backend/tests/test_knowledge_management.py#L21-L63"
   },
   "backend/tests/test_route_service.py::test_scenic_spots_use_ling_shan_real_names": {
     "path": "backend/tests/test_route_service.py",
@@ -912,16 +1458,16 @@
   "backend/tests/test_vector_store.py::test_build_knowledge_base_creates_entries": {
     "path": "backend/tests/test_vector_store.py",
     "kind": "function",
-    "start_line": 4,
-    "end_line": 6,
-    "relative_link": "../backend/tests/test_vector_store.py#L4-L6"
+    "start_line": 6,
+    "end_line": 17,
+    "relative_link": "../backend/tests/test_vector_store.py#L6-L17"
   },
   "backend/tests/test_vector_store.py::test_retrieve_context_finds_facility_answer": {
     "path": "backend/tests/test_vector_store.py",
     "kind": "function",
-    "start_line": 9,
-    "end_line": 12,
-    "relative_link": "../backend/tests/test_vector_store.py#L9-L12"
+    "start_line": 20,
+    "end_line": 25,
+    "relative_link": "../backend/tests/test_vector_store.py#L20-L25"
   },
   "scripts/build_knowledge_base.py::main": {
     "path": "scripts/build_knowledge_base.py",
@@ -1196,12 +1742,19 @@
     "end_line": 146,
     "relative_link": "../scripts/run_local.py#L136-L146"
   },
-  "scripts/run_local.py::main": {
+  "scripts/run_local.py::smoke_docker_postgres": {
     "path": "scripts/run_local.py",
     "kind": "function",
     "start_line": 149,
-    "end_line": 189,
-    "relative_link": "../scripts/run_local.py#L149-L189"
+    "end_line": 150,
+    "relative_link": "../scripts/run_local.py#L149-L150"
+  },
+  "scripts/run_local.py::main": {
+    "path": "scripts/run_local.py",
+    "kind": "function",
+    "start_line": 153,
+    "end_line": 196,
+    "relative_link": "../scripts/run_local.py#L153-L196"
   },
   "scripts/serve_static_frontend.py::main": {
     "path": "scripts/serve_static_frontend.py",
@@ -1209,6 +1762,48 @@
     "start_line": 14,
     "end_line": 23,
     "relative_link": "../scripts/serve_static_frontend.py#L14-L23"
+  },
+  "scripts/smoke_docker_postgres.py::run_compose": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 18,
+    "end_line": 21,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L18-L21"
+  },
+  "scripts/smoke_docker_postgres.py::resolve_command": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 24,
+    "end_line": 32,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L24-L32"
+  },
+  "scripts/smoke_docker_postgres.py::build_frontend": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 35,
+    "end_line": 38,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L35-L38"
+  },
+  "scripts/smoke_docker_postgres.py::http_json": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 41,
+    "end_line": 49,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L41-L49"
+  },
+  "scripts/smoke_docker_postgres.py::wait_http_ok": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 52,
+    "end_line": 61,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L52-L61"
+  },
+  "scripts/smoke_docker_postgres.py::main": {
+    "path": "scripts/smoke_docker_postgres.py",
+    "kind": "function",
+    "start_line": 64,
+    "end_line": 103,
+    "relative_link": "../scripts/smoke_docker_postgres.py#L64-L103"
   },
   "scripts/smoke_full_stack.py::wait_url": {
     "path": "scripts/smoke_full_stack.py",

@@ -8,11 +8,21 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import new_session
 from app.models.persistence import KnowledgeDocument, KnowledgeDocumentVersion, KnowledgeOperationLog
-from app.services.vector_store import ADMIN_KNOWLEDGE_DIR, VECTOR_STORE_PATH, build_knowledge_base, load_vector_store
-from app.services.vector_store import read_supported_document
-from app.services.vector_store import retrieve_context as retrieve_vector_context
+from app.services.vector_store import (
+    ADMIN_KNOWLEDGE_DIR,
+    VECTOR_STORE_PATH,
+    build_knowledge_base,
+    count_document_chunks,
+    embed_document as embed_document_chunks,
+    ensure_default_knowledge_base,
+    list_knowledge_bases as list_vector_knowledge_bases,
+    read_supported_document,
+    retrieve_context as retrieve_vector_context,
+    vector_backend_name,
+)
 
 
 SUPPORTED_UPLOAD_SUFFIXES = {".md", ".txt", ".csv", ".json", ".docx", ".xlsx"}
@@ -26,6 +36,7 @@ def retrieve_context(query: str, top_k: int = 2) -> list[dict]:
     对应需求：
     - REQ-001 DeepSeek + 本地知识库问答闭环
     - REQ-008 后台权限、版本化知识库与数据库持久化
+    - REQ-017 PostgreSQL + pgvector 知识库检索
     """
     chunks = retrieve_vector_context(query, top_k=top_k)
     if chunks:
@@ -40,6 +51,10 @@ def retrieve_context(query: str, top_k: int = 2) -> list[dict]:
             "score": 0,
         }
     ]
+
+
+def list_knowledge_bases() -> list[dict]:
+    return list_vector_knowledge_bases()
 
 
 def _safe_document_stem(name: str) -> str:
@@ -93,7 +108,14 @@ def _current_version(db: Session, document: KnowledgeDocument) -> KnowledgeDocum
     )
 
 
-def _log(db: Session, action: str, actor: str, document: KnowledgeDocument | None = None, version_id: str | None = None, detail=None) -> None:
+def _log(
+    db: Session,
+    action: str,
+    actor: str,
+    document: KnowledgeDocument | None = None,
+    version_id: str | None = None,
+    detail=None,
+) -> None:
     db.add(
         KnowledgeOperationLog(
             document_id=document.id if document else None,
@@ -105,12 +127,19 @@ def _log(db: Session, action: str, actor: str, document: KnowledgeDocument | Non
     )
 
 
+def _knowledge_base_public_id() -> str:
+    return settings.default_knowledge_base_id
+
+
 def _document_payload(db: Session, document: KnowledgeDocument, include_preview: bool = True) -> dict:
     version = _current_version(db, document)
     version_count = db.query(KnowledgeDocumentVersion).filter(KnowledgeDocumentVersion.document_id == document.id).count()
     history_count = db.query(KnowledgeOperationLog).filter(KnowledgeOperationLog.document_id == document.id).count()
+    current_chunk_count = count_document_chunks(document.id, document.current_version_id)
+    enabled_chunk_count = count_document_chunks(document.id, document.current_version_id, enabled_only=True)
     return {
         "id": document.id,
+        "knowledge_base_id": _knowledge_base_public_id(),
         "title": document.title,
         "file_name": document.file_name,
         "source": document.storage_path,
@@ -120,30 +149,35 @@ def _document_payload(db: Session, document: KnowledgeDocument, include_preview:
         "current_version_id": document.current_version_id,
         "version_count": version_count,
         "history_count": history_count,
-        "chunk_count": _chunk_count_for_source(document.storage_path),
+        "chunk_count": current_chunk_count,
+        "enabled_chunk_count": enabled_chunk_count,
         "updated_at": document.updated_at.isoformat(timespec="seconds"),
         "created_at": document.created_at.isoformat(timespec="seconds"),
         "preview": _read_preview(version.storage_path) if include_preview and version else "",
         "vector_store": str(VECTOR_STORE_PATH),
+        "vector_backend": vector_backend_name(),
     }
 
 
-def _chunk_count_for_source(source: str) -> int:
-    if not source:
-        return 0
-    try:
-        store = load_vector_store()
-    except Exception:
-        return 0
-    return sum(1 for entry in store.get("entries", []) if entry.get("source") == source)
-
-
 def rebuild_index(actor: str = "system") -> dict:
-    """Rebuild the local JSON vector store after active knowledge changes."""
+    """Rebuild the database-backed knowledge chunk index after active knowledge changes."""
     result = build_knowledge_base()
     db = new_session()
     try:
         _log(db, "reindex", actor, detail=result)
+        db.commit()
+    finally:
+        db.close()
+    return result
+
+
+def embed_document(document_id: str, actor: str = "system") -> dict:
+    """Embed the current version of a knowledge document into the database chunk store."""
+    result = embed_document_chunks(document_id)
+    db = new_session()
+    try:
+        document = db.get(KnowledgeDocument, document_id)
+        _log(db, "embed", actor, document, result.get("version_id"), result)
         db.commit()
     finally:
         db.close()
@@ -175,7 +209,9 @@ def save_document(
 
     db = new_session()
     try:
+        knowledge_base = ensure_default_knowledge_base(db)
         document = KnowledgeDocument(
+            knowledge_base_id=knowledge_base.id,
             title=_safe_document_stem(title or file_name),
             file_name=target_name,
             status=status,
@@ -206,14 +242,30 @@ def save_document(
         _log(db, "upload", actor, document, version.id, {"status": status, "change_note": change_note})
         db.commit()
         db.refresh(document)
-        if status == "active":
-            rebuild_index(actor)
-        return _document_payload(db, document)
+    finally:
+        db.close()
+
+    embed_result = embed_document(document.id, actor)
+    if status == "active":
+        rebuild_index(actor)
+
+    db = new_session()
+    try:
+        refreshed = db.get(KnowledgeDocument, document.id)
+        payload = _document_payload(db, refreshed)
+        payload["embed_result"] = embed_result
+        return payload
     finally:
         db.close()
 
 
-def update_document(document_id: str, title: str | None = None, content: str | None = None, actor: str = "system", change_note: str = "browser edit") -> dict:
+def update_document(
+    document_id: str,
+    title: str | None = None,
+    content: str | None = None,
+    actor: str = "system",
+    change_note: str = "browser edit",
+) -> dict:
     """Create a new draft version for an editable text knowledge document."""
     db = new_session()
     try:
@@ -257,7 +309,18 @@ def update_document(document_id: str, title: str | None = None, content: str | N
         _log(db, "update", actor, document, version.id, {"change_note": change_note})
         db.commit()
         db.refresh(document)
-        return _document_payload(db, document)
+    finally:
+        db.close()
+
+    embed_result = embed_document(document_id, actor)
+    index_result = rebuild_index(actor)
+    db = new_session()
+    try:
+        refreshed = db.get(KnowledgeDocument, document_id)
+        payload = _document_payload(db, refreshed)
+        payload["embed_result"] = embed_result
+        payload["index_result"] = index_result
+        return payload
     finally:
         db.close()
 
@@ -274,9 +337,17 @@ def publish_document(document_id: str, actor: str = "system") -> dict:
         _log(db, "publish", actor, document, document.current_version_id)
         db.commit()
         db.refresh(document)
-        result = rebuild_index(actor)
-        payload = _document_payload(db, document)
-        payload["index_result"] = result
+    finally:
+        db.close()
+
+    embed_result = embed_document(document_id, actor)
+    index_result = rebuild_index(actor)
+    db = new_session()
+    try:
+        refreshed = db.get(KnowledgeDocument, document_id)
+        payload = _document_payload(db, refreshed)
+        payload["embed_result"] = embed_result
+        payload["index_result"] = index_result
         return payload
     finally:
         db.close()
@@ -294,9 +365,15 @@ def archive_document(document_id: str, actor: str = "system") -> dict:
         _log(db, "archive", actor, document, document.current_version_id)
         db.commit()
         db.refresh(document)
-        result = rebuild_index(actor)
-        payload = _document_payload(db, document)
-        payload["index_result"] = result
+    finally:
+        db.close()
+
+    index_result = rebuild_index(actor)
+    db = new_session()
+    try:
+        refreshed = db.get(KnowledgeDocument, document_id)
+        payload = _document_payload(db, refreshed)
+        payload["index_result"] = index_result
         return payload
     finally:
         db.close()
@@ -316,9 +393,15 @@ def delete_document(document_id: str, actor: str = "system") -> dict:
         _log(db, "delete", actor, document, document.current_version_id)
         db.commit()
         db.refresh(document)
-        result = rebuild_index(actor)
-        payload = _document_payload(db, document)
-        payload["index_result"] = result
+    finally:
+        db.close()
+
+    index_result = rebuild_index(actor)
+    db = new_session()
+    try:
+        refreshed = db.get(KnowledgeDocument, document_id)
+        payload = _document_payload(db, refreshed)
+        payload["index_result"] = index_result
         return payload
     finally:
         db.close()
@@ -362,6 +445,8 @@ def list_versions(document_id: str) -> list[dict]:
                 "created_by": version.created_by,
                 "created_at": version.created_at.isoformat(timespec="seconds"),
                 "is_current": version.id == document.current_version_id,
+                "chunk_count": count_document_chunks(document_id, version.id),
+                "enabled_chunk_count": count_document_chunks(document_id, version.id, enabled_only=True),
             }
             for version in versions
         ]
@@ -397,7 +482,11 @@ def list_history(document_id: str) -> list[dict]:
 
 
 def search_test(query: str) -> dict:
-    return {"query": query, "chunks": retrieve_context(query)}
+    return {
+        "query": query,
+        "vector_backend": vector_backend_name(),
+        "chunks": retrieve_context(query),
+    }
 
 
 def migrate_existing_admin_documents(actor: str = "system") -> None:

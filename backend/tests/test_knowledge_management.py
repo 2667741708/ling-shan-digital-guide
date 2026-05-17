@@ -4,13 +4,13 @@ from uuid import uuid4
 
 from app.core.database import reset_database
 from app.services import knowledge_service
-from app.services.vector_store import build_knowledge_base, retrieve_context
+from app.services.vector_store import retrieve_context
+from tests.postgres_test_utils import postgres_test_database_url
 
 
 def _reset_persistence(monkeypatch):
     test_id = uuid4().hex
-    db_path = Path(f"backend/.test_lingtour_{test_id}.db")
-    reset_database(f"sqlite:///{db_path.as_posix()}")
+    reset_database(postgres_test_database_url("knowledge_management"))
     temp_dir = Path(f"backend/.test_admin_knowledge_{test_id}")
     shutil.rmtree(temp_dir, ignore_errors=True)
     temp_dir.mkdir(parents=True)
@@ -30,6 +30,8 @@ def test_versioned_knowledge_document_lifecycle(monkeypatch):
 
         assert saved["status"] == "draft"
         assert saved["current_version"] == 1
+        assert saved["embed_result"]["chunk_count"] >= 1
+        assert saved["enabled_chunk_count"] == 0
         assert all("版本化测试" not in hit["text"] for hit in retrieve_context("版本化测试知识", top_k=5))
 
         updated = knowledge_service.update_document(
@@ -41,18 +43,18 @@ def test_versioned_knowledge_document_lifecycle(monkeypatch):
 
         assert updated["status"] == "draft"
         assert updated["current_version"] == 2
+        assert updated["embed_result"]["chunk_count"] >= 1
         assert len(knowledge_service.list_versions(saved["id"])) == 2
 
         published = knowledge_service.publish_document(saved["id"], actor="admin")
-        build_knowledge_base()
         hits = retrieve_context("版本化测试知识", top_k=5)
 
         assert published["status"] == "active"
+        assert published["enabled_chunk_count"] >= 1
         assert hits
         assert hits[0]["source"].startswith("backend/.test_admin_knowledge") or "data/admin_knowledge" in hits[0]["source"]
 
         deleted = knowledge_service.delete_document(saved["id"], actor="admin")
-        build_knowledge_base()
 
         assert deleted["status"] == "deleted"
         assert knowledge_service.list_history(saved["id"])

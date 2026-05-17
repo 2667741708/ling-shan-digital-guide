@@ -1,19 +1,19 @@
 import { http, unwrap } from "./http";
 
 export function fetchDashboard() {
-  return unwrap(http.get("/api/admin/analytics/overview"));
+  return unwrap(http.get("/api/v1/admin/analytics/overview"));
 }
 
 export function loginAdmin(username: string, password: string) {
-  return unwrap(http.post("/api/admin/login", { username, password }));
+  return unwrap(http.post("/api/v1/auth/login", { username, password }));
 }
 
 export function fetchAdminMe() {
-  return unwrap(http.get("/api/admin/me"));
+  return unwrap(http.get("/api/v1/auth/me"));
 }
 
 export function fetchKnowledgeDocs(status = "all") {
-  return unwrap(http.get("/api/admin/knowledge/documents", { params: { status } }));
+  return unwrap(http.get("/api/v1/admin/knowledge-bases/default/documents", { params: { status } }));
 }
 
 export function uploadKnowledgeDocument(file: File, title: string, changeNote = "initial upload") {
@@ -21,45 +21,46 @@ export function uploadKnowledgeDocument(file: File, title: string, changeNote = 
   form.append("file", file);
   form.append("title", title);
   form.append("change_note", changeNote);
-  return unwrap(http.post("/api/admin/knowledge/upload", form));
+  return unwrap(http.post("/api/v1/admin/knowledge-bases/default/documents", form));
 }
 
 export function updateKnowledgeDocument(documentId: string, payload: { title?: string; content?: string; change_note?: string }) {
-  return unwrap(http.put(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}`, payload));
+  return unwrap(http.put(`/api/v1/admin/documents/${encodeURIComponent(documentId)}`, payload));
 }
 
 export function publishKnowledgeDocument(documentId: string) {
-  return unwrap(http.post(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}/publish`));
+  return unwrap(http.post(`/api/v1/admin/documents/${encodeURIComponent(documentId)}/publish`));
 }
 
 export function archiveKnowledgeDocument(documentId: string) {
-  return unwrap(http.post(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}/archive`));
+  return unwrap(http.post(`/api/v1/admin/documents/${encodeURIComponent(documentId)}/archive`));
 }
 
 export function deleteKnowledgeDocument(documentId: string) {
-  return unwrap(http.delete(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}`));
+  return unwrap(http.delete(`/api/v1/admin/documents/${encodeURIComponent(documentId)}`));
 }
 
 export function fetchKnowledgeVersions(documentId: string) {
-  return unwrap(http.get(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}/versions`));
+  return unwrap(http.get(`/api/v1/admin/documents/${encodeURIComponent(documentId)}/versions`));
 }
 
 export function fetchKnowledgeHistory(documentId: string) {
-  return unwrap(http.get(`/api/admin/knowledge/documents/${encodeURIComponent(documentId)}/history`));
+  return unwrap(http.get(`/api/v1/admin/documents/${encodeURIComponent(documentId)}/history`));
 }
 
 export function reindexKnowledgeBase() {
-  return unwrap(http.post("/api/admin/knowledge/reindex"));
+  return unwrap(http.post("/api/v1/admin/knowledge-bases/default/reindex"));
 }
 
 export function searchKnowledge(query: string) {
-  return unwrap(http.post("/api/admin/knowledge/search-test", { query }));
+  return unwrap(http.post("/api/v1/admin/knowledge-bases/default/test-retrieve", { query }));
 }
 
-export function fetchActiveAvatar() {
-  return unwrap(http.get("/api/admin/avatar-configs/active"));
+export async function fetchActiveAvatar() {
+  const profiles = await unwrap<any[]>(http.get("/api/v1/admin/avatar/profiles"));
+  return profiles.find((item) => item.enabled) || profiles[0] || {};
 }
 
 export function saveAvatarConfig(payload: Record<string, unknown>) {
-  return unwrap(http.post("/api/admin/avatar-configs", payload));
+  return unwrap(http.post("/api/v1/admin/avatar/profiles", payload));
 }

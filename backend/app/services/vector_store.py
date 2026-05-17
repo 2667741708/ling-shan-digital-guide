@@ -7,17 +7,26 @@ import math
 import re
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 from xml.etree import ElementTree
+
+from sqlalchemy import literal
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.core.database import init_db, new_session
+from app.models.persistence import KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeDocumentVersion, PgVector, new_id
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 DATA_DIR = ROOT_DIR / "data"
 VECTOR_DB_DIR = DATA_DIR / "vector_db"
-VECTOR_STORE_PATH = VECTOR_DB_DIR / "scenic_vector_store.json"
+VECTOR_STORE_PATH = ROOT_DIR / settings.vector_db_path
 ADMIN_KNOWLEDGE_DIR = DATA_DIR / "admin_knowledge"
-VECTOR_DIMENSION = 256
+VECTOR_DIMENSION = settings.pgvector_dimension
+DEFAULT_KNOWLEDGE_BASE_ID = settings.default_knowledge_base_id
 
 
 @dataclass
@@ -66,6 +75,10 @@ def chunk_text(text: str, chunk_size: int = 420, overlap: int = 80) -> Iterable[
         if start + chunk_size >= len(compact):
             break
         start += chunk_size - overlap
+
+
+def vector_backend_name() -> str:
+    return "pgvector"
 
 
 def load_faq_entries() -> list[KnowledgeEntry]:
@@ -149,9 +162,6 @@ def read_supported_document(path: Path) -> str:
 
 def load_admin_document_entries() -> list[KnowledgeEntry]:
     try:
-        from app.core.database import init_db, new_session
-        from app.models.persistence import KnowledgeDocument, KnowledgeDocumentVersion
-
         init_db()
         db = new_session()
         try:
@@ -245,10 +255,9 @@ def extract_xlsx_text(path: Path, max_cells: int = 2500) -> str:
                     if 0 <= index < len(shared_strings):
                         values.append(shared_strings[index])
                         collected += 1
-                else:
-                    if re.search(r"[\u4e00-\u9fffA-Za-z]", value_node.text):
-                        values.append(value_node.text)
-                        collected += 1
+                elif re.search(r"[\u4e00-\u9fffA-Za-z]", value_node.text):
+                    values.append(value_node.text)
+                    collected += 1
             if values:
                 texts.append("\n".join(values))
     return "\n\n".join(texts)
@@ -262,13 +271,12 @@ def load_scenic_pack_entries() -> list[KnowledgeEntry]:
     for path in sorted(pack_dir.glob("*")):
         if path.suffix.lower() == ".docx":
             content = extract_docx_text(path)
+            category = "scenic_pack"
         elif path.suffix.lower() == ".xlsx":
             content = extract_xlsx_text(path)
             category = "behavior_data"
         else:
             continue
-        if path.suffix.lower() != ".xlsx":
-            category = "scenic_pack"
         for index, chunk in enumerate(chunk_text(content, chunk_size=520, overlap=100), start=1):
             entries.append(
                 KnowledgeEntry(
@@ -282,64 +290,366 @@ def load_scenic_pack_entries() -> list[KnowledgeEntry]:
     return entries
 
 
+def load_static_knowledge_entries() -> list[KnowledgeEntry]:
+    return load_faq_entries() + load_spot_entries() + load_raw_document_entries() + load_scenic_pack_entries()
+
+
 def load_knowledge_entries() -> list[KnowledgeEntry]:
-    return (
-        load_faq_entries()
-        + load_spot_entries()
-        + load_raw_document_entries()
-        + load_scenic_pack_entries()
-        + load_admin_document_entries()
-    )
+    return load_static_knowledge_entries() + load_admin_document_entries()
+
+
+def ensure_default_knowledge_base(db: Session | None = None) -> KnowledgeBase:
+    owns_session = db is None
+    db = db or new_session()
+    try:
+        knowledge_base = db.query(KnowledgeBase).filter(KnowledgeBase.code == DEFAULT_KNOWLEDGE_BASE_ID).first()
+        if knowledge_base:
+            knowledge_base.vector_backend = vector_backend_name()
+            knowledge_base.embedding_dimension = VECTOR_DIMENSION
+            knowledge_base.updated_at = datetime.utcnow()
+            db.flush()
+            return knowledge_base
+        knowledge_base = KnowledgeBase(
+            code=DEFAULT_KNOWLEDGE_BASE_ID,
+            name="灵山景区知识库",
+            description="景区 FAQ、景点资料、后台上传资料和公开资料包的统一知识库。",
+            vector_backend=vector_backend_name(),
+            embedding_model=f"hash_token_{VECTOR_DIMENSION}",
+            embedding_dimension=VECTOR_DIMENSION,
+            enabled=True,
+        )
+        db.add(knowledge_base)
+        db.flush()
+        return knowledge_base
+    finally:
+        if owns_session:
+            db.commit()
+            db.close()
+
+
+def _row_to_hit(row: KnowledgeChunk, query_vector: list[float], query: str) -> dict:
+    embedding = list(row.embedding_payload or [])
+    score = cosine_similarity(query_vector, embedding)
+    if query and query in row.text:
+        score += 0.25
+    return {
+        "chunk_id": row.chunk_id,
+        "source": row.source,
+        "category": row.category,
+        "title": row.title,
+        "text": row.text,
+        "score": round(score, 4),
+    }
+
+
+def _persist_static_entries(db: Session, knowledge_base_id: str, entries: list[KnowledgeEntry]) -> int:
+    db.query(KnowledgeChunk).filter(
+        KnowledgeChunk.knowledge_base_id == knowledge_base_id,
+        KnowledgeChunk.document_id.is_(None),
+    ).delete(synchronize_session=False)
+    for index, entry in enumerate(entries, start=1):
+        embedding = vectorize(entry.text)
+        db.add(
+            KnowledgeChunk(
+                id=new_id(),
+                knowledge_base_id=knowledge_base_id,
+                document_id=None,
+                version_id=None,
+                chunk_id=entry.id,
+                chunk_index=index,
+                source=entry.source,
+                category=entry.category,
+                title=entry.title,
+                text=entry.text,
+                token_count=len(tokenize(entry.text)),
+                embedding_payload=embedding,
+                embedding=embedding,
+                enabled=True,
+            )
+        )
+    return len(entries)
+
+
+def _document_version_chunks(document: KnowledgeDocument, version: KnowledgeDocumentVersion) -> list[KnowledgeEntry]:
+    path = ROOT_DIR / version.storage_path
+    if not path.exists() or path.suffix.lower() not in {".md", ".txt", ".csv", ".json", ".docx", ".xlsx"}:
+        return []
+    content = read_supported_document(path)
+    return [
+        KnowledgeEntry(
+            id=f"admin_{document.id}_{version.version}_{index}",
+            text=chunk,
+            source=version.storage_path,
+            category="admin_knowledge",
+            title=f"{document.title} v{version.version}#{index}",
+        )
+        for index, chunk in enumerate(chunk_text(content, chunk_size=520, overlap=100), start=1)
+    ]
+
+
+def _upsert_document_version_chunks(
+    db: Session,
+    knowledge_base_id: str,
+    document: KnowledgeDocument,
+    version: KnowledgeDocumentVersion,
+    enabled: bool,
+) -> int:
+    db.query(KnowledgeChunk).filter(KnowledgeChunk.version_id == version.id).delete(synchronize_session=False)
+    entries = _document_version_chunks(document, version)
+    for index, entry in enumerate(entries, start=1):
+        embedding = vectorize(entry.text)
+        db.add(
+            KnowledgeChunk(
+                id=new_id(),
+                knowledge_base_id=knowledge_base_id,
+                document_id=document.id,
+                version_id=version.id,
+                chunk_id=entry.id,
+                chunk_index=index,
+                source=entry.source,
+                category=entry.category,
+                title=entry.title,
+                text=entry.text,
+                token_count=len(tokenize(entry.text)),
+                embedding_payload=embedding,
+                embedding=embedding,
+                enabled=enabled,
+            )
+        )
+    return len(entries)
+
+
+def _sync_document_chunk_flags(db: Session, document: KnowledgeDocument) -> int:
+    enabled_count = 0
+    for row in db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == document.id).all():
+        row.enabled = document.status == "active" and row.version_id == document.current_version_id
+        row.updated_at = datetime.utcnow()
+        if row.enabled:
+            enabled_count += 1
+    return enabled_count
+
+
+def embed_document(document_id: str) -> dict:
+    init_db()
+    db = new_session()
+    try:
+        knowledge_base = ensure_default_knowledge_base(db)
+        document = db.get(KnowledgeDocument, document_id)
+        if not document or document.status == "deleted":
+            raise FileNotFoundError(f"knowledge document not found: {document_id}")
+        version = db.get(KnowledgeDocumentVersion, document.current_version_id) if document.current_version_id else None
+        if not version:
+            raise FileNotFoundError(f"knowledge document has no current version: {document_id}")
+        chunk_count = _upsert_document_version_chunks(
+            db,
+            knowledge_base.id,
+            document,
+            version,
+            enabled=document.status == "active",
+        )
+        enabled_chunk_count = _sync_document_chunk_flags(db, document)
+        db.commit()
+        return {
+            "knowledge_base_id": knowledge_base.code,
+            "document_id": document.id,
+            "version_id": version.id,
+            "version": version.version,
+            "chunk_count": chunk_count,
+            "enabled_chunk_count": enabled_chunk_count,
+            "vector_backend": vector_backend_name(),
+        }
+    finally:
+        db.close()
 
 
 def build_knowledge_base(output_path: Path = VECTOR_STORE_PATH) -> dict:
-    entries = load_knowledge_entries()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "version": 1,
-        "dimension": VECTOR_DIMENSION,
-        "entry_count": len(entries),
-        "entries": [
-            {
-                "id": entry.id,
-                "text": entry.text,
-                "source": entry.source,
-                "category": entry.category,
-                "title": entry.title,
-                "vector": vectorize(entry.text),
-            }
-            for entry in entries
-        ],
-    }
-    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return {"path": str(output_path), "entry_count": len(entries)}
+    init_db()
+    db = new_session()
+    try:
+        knowledge_base = ensure_default_knowledge_base(db)
+        static_entry_count = _persist_static_entries(db, knowledge_base.id, load_static_knowledge_entries())
+        documents = db.query(KnowledgeDocument).all()
+        embedded_document_count = 0
+        for document in documents:
+            version = db.get(KnowledgeDocumentVersion, document.current_version_id) if document.current_version_id else None
+            if version:
+                has_current_chunks = (
+                    db.query(KnowledgeChunk)
+                    .filter(KnowledgeChunk.version_id == version.id)
+                    .count()
+                )
+                if has_current_chunks == 0:
+                    _upsert_document_version_chunks(
+                        db,
+                        knowledge_base.id,
+                        document,
+                        version,
+                        enabled=document.status == "active",
+                    )
+                    embedded_document_count += 1
+            _sync_document_chunk_flags(db, document)
+        db.commit()
+        payload = load_vector_store(output_path=output_path, rebuild=False)
+        return {
+            "path": str(output_path),
+            "knowledge_base_id": knowledge_base.code,
+            "vector_backend": vector_backend_name(),
+            "entry_count": payload["entry_count"],
+            "static_entry_count": static_entry_count,
+            "embedded_document_count": embedded_document_count,
+            "active_chunk_count": payload["entry_count"],
+        }
+    finally:
+        db.close()
 
 
-def load_vector_store(path: Path = VECTOR_STORE_PATH) -> dict:
-    if not path.exists():
+def _retrieve_pgvector_chunks(
+    db: Session,
+    knowledge_base_id: str,
+    query_vector: list[float],
+    query: str,
+    top_k: int,
+) -> list[dict]:
+    rows = (
+        db.query(KnowledgeChunk)
+        .filter(
+            KnowledgeChunk.knowledge_base_id == knowledge_base_id,
+            KnowledgeChunk.enabled.is_(True),
+        )
+        .order_by(
+            KnowledgeChunk.embedding.op("<=>")(
+                literal(query_vector, type_=PgVector(VECTOR_DIMENSION))
+            )
+        )
+        .limit(max(top_k * 4, 12))
+        .all()
+    )
+    scored = [_row_to_hit(row, query_vector, query) for row in rows]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return [item for item in scored[:top_k] if item["score"] > 0]
+
+
+def load_vector_store(path: Path = VECTOR_STORE_PATH, output_path: Path | None = None, rebuild: bool = True) -> dict:
+    if rebuild:
         build_knowledge_base(path)
-    return json.loads(path.read_text(encoding="utf-8"))
+    init_db()
+    db = new_session()
+    try:
+        knowledge_base = ensure_default_knowledge_base(db)
+        entries = []
+        for row in (
+            db.query(KnowledgeChunk)
+            .filter(
+                KnowledgeChunk.knowledge_base_id == knowledge_base.id,
+                KnowledgeChunk.enabled.is_(True),
+            )
+            .order_by(KnowledgeChunk.source.asc(), KnowledgeChunk.chunk_index.asc())
+            .all()
+        ):
+            entries.append(
+                {
+                    "id": row.chunk_id,
+                    "text": row.text,
+                    "source": row.source,
+                    "category": row.category,
+                    "title": row.title,
+                    "vector": list(row.embedding_payload or []),
+                }
+            )
+        payload = {
+            "version": 2,
+            "dimension": VECTOR_DIMENSION,
+            "vector_backend": vector_backend_name(),
+            "knowledge_base_id": knowledge_base.code,
+            "entry_count": len(entries),
+            "entries": entries,
+        }
+        target = output_path or path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    finally:
+        db.close()
 
 
 def retrieve_context(query: str, top_k: int = 5) -> list[dict]:
-    store = load_vector_store()
+    init_db()
     query_vector = vectorize(query)
-    scored = []
-    for entry in store.get("entries", []):
-        score = cosine_similarity(query_vector, entry["vector"])
-        if query and query in entry["text"]:
-            score += 0.25
-        scored.append((score, entry))
-    scored.sort(key=lambda item: item[0], reverse=True)
-    return [
-        {
-            "chunk_id": entry["id"],
-            "source": entry["source"],
-            "category": entry["category"],
-            "title": entry["title"],
-            "text": entry["text"],
-            "score": round(score, 4),
-        }
-        for score, entry in scored[:top_k]
-        if score > 0
-    ]
+    db = new_session()
+    try:
+        knowledge_base = ensure_default_knowledge_base(db)
+        active_chunk_count = (
+            db.query(KnowledgeChunk)
+            .filter(
+                KnowledgeChunk.knowledge_base_id == knowledge_base.id,
+                KnowledgeChunk.enabled.is_(True),
+            )
+            .count()
+        )
+        if active_chunk_count == 0:
+            db.close()
+            build_knowledge_base()
+            db = new_session()
+            knowledge_base = ensure_default_knowledge_base(db)
+        return _retrieve_pgvector_chunks(db, knowledge_base.id, query_vector, query, top_k)
+    finally:
+        db.close()
+
+
+def list_knowledge_bases() -> list[dict]:
+    init_db()
+    db = new_session()
+    try:
+        ensure_default_knowledge_base(db)
+        db.commit()
+        rows = db.query(KnowledgeBase).order_by(KnowledgeBase.created_at.asc()).all()
+        result = []
+        for row in rows:
+            document_count = db.query(KnowledgeDocument).filter(KnowledgeDocument.knowledge_base_id == row.id).count()
+            active_document_count = (
+                db.query(KnowledgeDocument)
+                .filter(
+                    KnowledgeDocument.knowledge_base_id == row.id,
+                    KnowledgeDocument.status == "active",
+                )
+                .count()
+            )
+            active_chunk_count = (
+                db.query(KnowledgeChunk)
+                .filter(
+                    KnowledgeChunk.knowledge_base_id == row.id,
+                    KnowledgeChunk.enabled.is_(True),
+                )
+                .count()
+            )
+            result.append(
+                {
+                    "id": row.code,
+                    "db_id": row.id,
+                    "name": row.name,
+                    "description": row.description,
+                    "vector_backend": row.vector_backend,
+                    "embedding_model": row.embedding_model,
+                    "embedding_dimension": row.embedding_dimension,
+                    "document_count": document_count,
+                    "active_document_count": active_document_count,
+                    "active_chunk_count": active_chunk_count,
+                }
+            )
+        return result
+    finally:
+        db.close()
+
+
+def count_document_chunks(document_id: str, version_id: str | None = None, enabled_only: bool = False) -> int:
+    init_db()
+    db = new_session()
+    try:
+        query = db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == document_id)
+        if version_id:
+            query = query.filter(KnowledgeChunk.version_id == version_id)
+        if enabled_only:
+            query = query.filter(KnowledgeChunk.enabled.is_(True))
+        return query.count()
+    finally:
+        db.close()

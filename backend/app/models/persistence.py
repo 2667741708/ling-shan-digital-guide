@@ -3,14 +3,49 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import UserDefinedType
 
 from app.core.database import Base
+from app.core.config import settings
 
 
 def new_id() -> str:
     return uuid4().hex
+
+
+class PgVector(UserDefinedType):
+    cache_ok = True
+
+    def __init__(self, dimension: int):
+        self.dimension = dimension
+
+    def get_col_spec(self, **kw) -> str:
+        return f"vector({self.dimension})"
+
+    def bind_processor(self, dialect):
+        def process(value):
+            if value is None:
+                return None
+            return "[" + ",".join(f"{float(item):.12g}" for item in value) + "]"
+
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is None or isinstance(value, list):
+                return value
+            stripped = value.strip("[]")
+            if not stripped:
+                return []
+            return [float(item) for item in stripped.split(",")]
+
+        return process
+
+
+EMBEDDING_DIMENSION = settings.pgvector_dimension
+EmbeddingType = PgVector(EMBEDDING_DIMENSION)
 
 
 class AdminUser(Base):
@@ -30,6 +65,7 @@ class KnowledgeDocument(Base):
     __tablename__ = "knowledge_document"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    knowledge_base_id: Mapped[str] = mapped_column(ForeignKey("knowledge_base.id"), default=settings.default_knowledge_base_id, index=True)
     title: Mapped[str] = mapped_column(String(200))
     file_name: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
@@ -54,6 +90,13 @@ class KnowledgeDocument(Base):
         cascade="all, delete-orphan",
         foreign_keys="KnowledgeOperationLog.document_id",
     )
+    knowledge_base: Mapped["KnowledgeBase"] = relationship("KnowledgeBase", back_populates="documents")
+    chunks: Mapped[list["KnowledgeChunk"]] = relationship(
+        "KnowledgeChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        foreign_keys="KnowledgeChunk.document_id",
+    )
 
 
 class KnowledgeDocumentVersion(Base):
@@ -75,6 +118,64 @@ class KnowledgeDocumentVersion(Base):
         "KnowledgeDocument",
         back_populates="versions",
         foreign_keys=[document_id],
+    )
+    chunks: Mapped[list["KnowledgeChunk"]] = relationship(
+        "KnowledgeChunk",
+        back_populates="version",
+        cascade="all, delete-orphan",
+        foreign_keys="KnowledgeChunk.version_id",
+    )
+
+
+class KnowledgeBase(Base):
+    __tablename__ = "knowledge_base"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    code: Mapped[str] = mapped_column(String(80), unique=True, index=True, default=settings.default_knowledge_base_id)
+    name: Mapped[str] = mapped_column(String(120), default="灵山景区知识库")
+    description: Mapped[str] = mapped_column(Text, default="景区 FAQ、景点资料、后台上传资料和公开资料包的统一知识库。")
+    vector_backend: Mapped[str] = mapped_column(String(40), default="pgvector")
+    embedding_model: Mapped[str] = mapped_column(String(120), default="hash_token_256")
+    embedding_dimension: Mapped[int] = mapped_column(Integer, default=EMBEDDING_DIMENSION)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    documents: Mapped[list[KnowledgeDocument]] = relationship("KnowledgeDocument", back_populates="knowledge_base")
+    chunks: Mapped[list["KnowledgeChunk"]] = relationship("KnowledgeChunk", back_populates="knowledge_base")
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunk"
+    __table_args__ = (UniqueConstraint("version_id", "chunk_index", name="uq_knowledge_chunk_version_index"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    knowledge_base_id: Mapped[str] = mapped_column(ForeignKey("knowledge_base.id"), index=True)
+    document_id: Mapped[str | None] = mapped_column(ForeignKey("knowledge_document.id"), nullable=True, index=True)
+    version_id: Mapped[str | None] = mapped_column(ForeignKey("knowledge_document_version.id"), nullable=True, index=True)
+    chunk_id: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    chunk_index: Mapped[int] = mapped_column(Integer, default=1)
+    source: Mapped[str] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(80), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text)
+    token_count: Mapped[int] = mapped_column(Integer, default=0)
+    embedding_payload: Mapped[list[float]] = mapped_column(JSON, default=list)
+    embedding: Mapped[list[float]] = mapped_column(EmbeddingType)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    knowledge_base: Mapped[KnowledgeBase] = relationship("KnowledgeBase", back_populates="chunks")
+    document: Mapped[KnowledgeDocument | None] = relationship(
+        "KnowledgeDocument",
+        back_populates="chunks",
+        foreign_keys=[document_id],
+    )
+    version: Mapped[KnowledgeDocumentVersion | None] = relationship(
+        "KnowledgeDocumentVersion",
+        back_populates="chunks",
+        foreign_keys=[version_id],
     )
 
 

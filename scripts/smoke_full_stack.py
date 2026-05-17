@@ -13,6 +13,8 @@ BACKEND = ROOT / "backend"
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
 
+from run_local import ensure_postgres_service  # noqa: E402
+
 
 def wait_url(url: str, expected: str, timeout_seconds: int = 30) -> str:
     deadline = time.time() + timeout_seconds
@@ -28,6 +30,7 @@ def wait_url(url: str, expected: str, timeout_seconds: int = 30) -> str:
 
 
 def main() -> int:
+    ensure_postgres_service()
     env = os.environ.copy()
     env["PYTHONPATH"] = str(BACKEND)
     backend = subprocess.Popen(

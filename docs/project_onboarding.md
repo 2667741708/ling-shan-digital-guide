@@ -19,7 +19,8 @@ LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的
 
 - 真实 ASR/TTS 音频生成仍是 P1。
 - Live2D 数字人仍是 P1。
-- Docker PostgreSQL 配置已提供，完整 Compose 端到端仍需单独验收。
+- 单应用容器 + PostgreSQL/pgvector Compose 链路已完成验收，可直接使用 [TEST-019 docs/test_reference.md:L218-L227](./test_reference.md#L218-L227) 回归。
+- 仓库默认只支持 PostgreSQL；本机调试统一连接 `127.0.0.1:5433`，不再保留 SQLite 兼容层。
 - ChromaDB / SentenceTransformer 可作为 P2 增强，不是当前 P0 依赖。
 - 图片识景接口仍是演示逻辑，真实多模态模型接入是 P1，详见 [实现缺口核查 docs/implementation_gap_audit.md:L1-L51](./implementation_gap_audit.md#L1-L51)。
 
@@ -45,6 +46,6 @@ LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的
 | 修改真实地图 | [REQ-005](./requirements_traceability.md#req-005-灵山真实景点地图与路线导览) | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 修改数字人灵灵 | [REQ-006](./requirements_traceability.md#req-006-数字人灵灵真实前端交互体验) | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
 | 修改后台知识库发布机制 | [REQ-007](./requirements_traceability.md#req-007-后台知识库管理闭环) | [knowledge_service.py:L153-L324](../backend/app/services/knowledge_service.py#L153-L324) |
-| 修改后台权限或数据库 | [REQ-008](./requirements_traceability.md#req-008-后台权限版本化知识库与数据库持久化) | [auth_service.py:L32-L145](../backend/app/services/auth_service.py#L32-L145)、[database.py:L33-L69](../backend/app/core/database.py#L33-L69) |
+| 修改后台权限或数据库 | [REQ-008](./requirements_traceability.md#req-008-后台权限版本化知识库与数据库持久化) | [auth_service.py:L32-L145](../backend/app/services/auth_service.py#L32-L145)、[database.py:L38-L76](../backend/app/core/database.py#L38-L76) |
 | 启动本地演示 | [TEST-006](./test_reference.md#test-006-完整栈烟测) | [main scripts/smoke_full_stack.py:L30-L61](../scripts/smoke_full_stack.py#L30-L61) |
 | 排查 npm 失败 | [TRB-001](./troubleshooting.md#trb-001-前端-npm-install-超时或-econnreset) | [frontend/.npmrc:L1-L4](../frontend/.npmrc#L1-L4) |

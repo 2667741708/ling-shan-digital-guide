@@ -4,13 +4,30 @@
 
 ```powershell
 Copy-Item .env.example .env
-docker compose -f deploy/docker-compose.yml up --build
+python scripts\run_local.py smoke-docker-postgres
 ```
 
 访问地址：
 
-- 游客端：http://localhost:5173
+- 游客端：http://127.0.0.1:8000/guide
+- 管理后台：http://127.0.0.1:8000/admin/login
 - 后端 API：http://localhost:8000/api/health
+- PostgreSQL：http://127.0.0.1:5433
+
+当前 Compose 方案已经切到“单应用容器 + PostgreSQL/pgvector 服务”：
+
+- `app` 容器同时运行 FastAPI 并托管 `frontend/dist`，不再单独起 Vite 或 nginx。
+- `postgres` 服务使用 `pgvector/pgvector:pg16`，项目运行时默认走 PostgreSQL，不再依赖 SQLite。
+- 宿主机对外暴露 `5433`，避免和机器上已有的 `5432` PostgreSQL 冲突。
+- 标准验收入口是 [smoke_docker_postgres scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107)，会自动构建前端、执行 `docker compose up -d --build`、校验 `/guide` 与 `/api/v1/admin/system/status`，最后自动 `down`。
+
+对应实现：
+
+- [Compose 编排 deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44)
+- [单容器镜像 deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18)
+- [前端静态托管 backend/app/main.py:L66-L78](../backend/app/main.py#L66-L78)
+- [PostgreSQL pgvector 初始化 backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66)
+- [Docker 烟测命令分发 scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197)
 
 ## 本地开发
 
@@ -23,6 +40,7 @@ python scripts\run_local.py check-env
 python scripts\run_local.py build-kb
 python scripts\run_local.py test-backend
 python scripts\run_local.py smoke-backend
+python scripts\run_local.py smoke-docker-postgres
 ```
 
 Git Bash / MINGW64 必须使用正斜杠 `/`，不要使用反斜杠 `\`：
@@ -44,9 +62,10 @@ bash scripts/dev_vue_full_stack.sh
 
 对应实现：
 
-- [环境检查 scripts/run_local.py:L51-L63](../scripts/run_local.py#L51-L63)
-- [知识库构建 scripts/run_local.py:L78-L79](../scripts/run_local.py#L78-L79)
-- [后端烟测 scripts/run_local.py:L136-L146](../scripts/run_local.py#L136-L146)
+- [环境检查 scripts/run_local.py:L89-L102](../scripts/run_local.py#L89-L102)
+- [知识库构建 scripts/run_local.py:L117-L123](../scripts/run_local.py#L117-L123)
+- [后端烟测 scripts/run_local.py:L183-L193](../scripts/run_local.py#L183-L193)
+- [Docker pgvector 烟测 scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197)
 
 后端手动开发命令：
 

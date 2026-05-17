@@ -11,9 +11,82 @@
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `GET /api/health` |
-| 实现位置 | [health backend/app/main.py:L21-L23](../backend/app/main.py#L21-L23) |
+| 实现位置 | [health backend/app/main.py:L51-L53](../backend/app/main.py#L51-L53) |
 | 响应字段 | `data.status` |
 | 测试 | [test_health backend/tests/test_health.py:L6-L10](../backend/tests/test_health.py#L6-L10) |
+
+## API-014 `/api/v1` MVP 健康检查
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/v1/health` |
+| 实现位置 | [health_v1 backend/app/main.py:L55-L57](../backend/app/main.py#L55-L57) |
+| 响应字段 | `data.status` |
+| 测试 | [test_v1_health_and_guide_ask backend/tests/test_api_v1.py:L21-L42](../backend/tests/test_api_v1.py#L21-L42) |
+
+## API-015 `/api/v1` 游客统一问答
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/v1/guide/ask` |
+| 请求字段 | `question`, `session_id?`, `scene_code`, `user_profile` |
+| 响应字段 | `session_id`, `message_id`, `answer`, `text`, `references`, `avatar_directive`, `latency_ms` |
+| API 入口 | [guide_ask_v1 backend/app/api/v1.py:L122-L136](../backend/app/api/v1.py#L122-L136) |
+| 服务函数 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
+| 前端使用 | [sendText frontend/src/api/visitor.ts:L35-L42](../frontend/src/api/visitor.ts#L35-L42) |
+
+## API-016 `/api/v1` 游客会话创建
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/v1/guide/sessions` |
+| 请求字段 | `scene_code`, `user_profile` |
+| 响应字段 | `session_id`, `session_uuid`, `avatar_config`, `user_profile` |
+| API 入口 | [create_guide_session_v1 backend/app/api/v1.py:L110-L119](../backend/app/api/v1.py#L110-L119) |
+| 前端使用 | [createSession frontend/src/api/visitor.ts:L28-L33](../frontend/src/api/visitor.ts#L28-L33) |
+
+## API-017 `/api/v1` 景点与设施
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/v1/scenic/spots`, `GET /api/v1/scenic/facilities` |
+| 响应字段 | 景点：`id/name/description/map_x/map_y/tags`；设施：`id/name/type/map_x/map_y/service_radius` |
+| API 入口 | [scenic_spots_v1 backend/app/api/v1.py:L213-L220](../backend/app/api/v1.py#L213-L220) |
+| 服务函数 | [list_scenic_spots backend/app/services/scenic_service.py:L240-L242](../backend/app/services/scenic_service.py#L240-L242), [list_facilities backend/app/services/scenic_service.py:L245-L247](../backend/app/services/scenic_service.py#L245-L247) |
+| 前端使用 | [fetchScenicSpots frontend/src/api/visitor.ts:L44-L46](../frontend/src/api/visitor.ts#L44-L46) |
+
+## API-018 `/api/v1` 路线推荐
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/v1/route/recommend` |
+| 请求字段 | `start_point`, `available_minutes`, `interest_tags`, `group_type` |
+| 响应字段 | `route_id`, `route_name`, `total_duration`, `spots`, `reason` |
+| API 入口 | [route_recommend_v1 backend/app/api/v1.py:L214-L217](../backend/app/api/v1.py#L214-L217) |
+| 服务函数 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+| 前端使用 | [recommendRoute frontend/src/api/visitor.ts:L48-L55](../frontend/src/api/visitor.ts#L48-L55) |
+
+## API-019 `/api/v1` 后台鉴权、知识库、数字人与系统状态
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `GET /api/v1/admin/knowledge-bases`, `POST /api/v1/admin/knowledge-bases/default/documents`, `POST /api/v1/admin/documents/{document_id}/embed`, `GET /api/v1/admin/avatar/profiles`, `POST /api/v1/admin/avatar/profiles`, `GET /api/v1/admin/system/status` |
+| 鉴权 | 除登录外均需 `Authorization: Bearer <token>` |
+| API 入口 | [auth_login_v1 backend/app/api/v1.py:L225-L247](../backend/app/api/v1.py#L225-L247), [admin_knowledge_bases_v1 backend/app/api/v1.py:L245-L247](../backend/app/api/v1.py#L245-L247), [admin_upload_document_v1 backend/app/api/v1.py:L255-L268](../backend/app/api/v1.py#L255-L268), [admin_document_embed_v1 backend/app/api/v1.py:L359-L372](../backend/app/api/v1.py#L359-L372), [admin_avatar_profiles_v1 backend/app/api/v1.py:L375-L382](../backend/app/api/v1.py#L375-L382), [admin_system_status_v1 backend/app/api/v1.py:L235-L237](../backend/app/api/v1.py#L235-L237) |
+| 服务函数 | [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [list_knowledge_bases backend/app/services/knowledge_service.py:L56-L57](../backend/app/services/knowledge_service.py#L56-L57), [save_document backend/app/services/knowledge_service.py:L187-L259](../backend/app/services/knowledge_service.py#L187-L259), [embed_document backend/app/services/knowledge_service.py:L174-L184](../backend/app/services/knowledge_service.py#L174-L184), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
+| 前端使用 | [admin api frontend/src/api/admin.ts:L3-L66](../frontend/src/api/admin.ts#L3-L66) |
+| 系统状态字段 | `backend`, `postgres`, `llm`, `asr`, `tts`, `avatar`, `database_backend`, `vector_backend` |
+
+## API-020 `/api/v1` RAG 检索
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `POST /api/v1/rag/retrieve` |
+| 请求字段 | `query`, `top_k` |
+| 响应字段 | `query`, `chunks[].chunk_id/source/category/title/text/score` |
+| API 入口 | [rag_retrieve_v1 backend/app/api/v1.py:L220-L222](../backend/app/api/v1.py#L220-L222) |
+| 服务函数 | [retrieve_context backend/app/services/knowledge_service.py:L32-L53](../backend/app/services/knowledge_service.py#L32-L53), [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596) |
+| 测试 | [test_v1_admin_knowledge_and_system_status backend/tests/test_api_v1.py:L66-L95](../backend/tests/test_api_v1.py#L66-L95) |
 
 ## API-002 游客文本问答
 

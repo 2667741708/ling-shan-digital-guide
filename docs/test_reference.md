@@ -6,7 +6,7 @@
 |---|---|
 | 对应需求 | REQ-003 |
 | 测试函数 | [test_health backend/tests/test_health.py:L6-L10](../backend/tests/test_health.py#L6-L10) |
-| 被测接口 | [health backend/app/main.py:L21-L23](../backend/app/main.py#L21-L23) |
+| 被测接口 | [health backend/app/main.py:L51-L53](../backend/app/main.py#L51-L53) |
 | 运行命令 | `python scripts\run_local.py test-backend` |
 
 ## TEST-002 知识库构建
@@ -14,8 +14,8 @@
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-002 |
-| 测试函数 | [test_build_knowledge_base_creates_entries backend/tests/test_vector_store.py:L4-L6](../backend/tests/test_vector_store.py#L4-L6) |
-| 被测函数 | [build_knowledge_base backend/app/services/vector_store.py:L223-L243](../backend/app/services/vector_store.py#L223-L243) |
+| 测试函数 | [test_build_knowledge_base_creates_entries backend/tests/test_vector_store.py:L6-L17](../backend/tests/test_vector_store.py#L6-L17) |
+| 被测函数 | [build_knowledge_base backend/app/services/vector_store.py:L469-L507](../backend/app/services/vector_store.py#L469-L507) |
 | 运行命令 | `python scripts\run_local.py build-kb` |
 
 ## TEST-003 知识库检索命中
@@ -23,8 +23,8 @@
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-002 |
-| 测试函数 | [test_retrieve_context_finds_facility_answer backend/tests/test_vector_store.py:L9-L12](../backend/tests/test_vector_store.py#L9-L12) |
-| 被测函数 | [retrieve_context backend/app/services/vector_store.py:L252-L273](../backend/app/services/vector_store.py#L252-L273) |
+| 测试函数 | [test_retrieve_context_finds_facility_answer backend/tests/test_vector_store.py:L20-L25](../backend/tests/test_vector_store.py#L20-L25) |
+| 被测函数 | [retrieve_context backend/app/services/vector_store.py:L589-L612](../backend/app/services/vector_store.py#L589-L612) |
 | 预期结果 | 查询“附近哪里有洗手间”可命中包含“洗手间”的知识片段 |
 
 ## TEST-004 问答服务单元测试
@@ -127,7 +127,7 @@ python scripts\run_local.py build-kb
 结果：entry_count = 3377
 
 python scripts\run_local.py test-backend
-结果：11 passed
+结果：14 passed
 
 python scripts\run_local.py smoke-backend
 结果：DeepSeek 模型 deepseek-v4-flash 返回问答，知识库命中 faq_3
@@ -141,11 +141,14 @@ python scripts\run_local.py install-frontend
 python scripts\run_local.py build-frontend
 结果：Vue/Vite production build 通过
 
-PowerShell：`$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEND_PORT='8011'; $env:FRONTEND_PORT='5174'; python scripts\smoke_vue_full_stack.py`
+PowerShell：`python scripts\smoke_vue_full_stack.py`
 结果：Vue dev server + FastAPI + DeepSeek 问答完整栈通过，完成登录、草稿上传、发布、RAG 命中、游客端引用、软删除后不命中
 
 后台知识库上传 API 验证：
 结果：`POST /api/admin/knowledge/upload` 返回 draft，发布后检索来源命中 `data/admin_knowledge/{document_id}/v1_*.md`，随后 `DELETE /api/admin/knowledge/documents/{id}` 返回 deleted
+
+python scripts\run_local.py smoke-docker-postgres
+结果：Compose 单应用容器 + PostgreSQL/pgvector 烟测通过，`/guide` 可访问，`/api/v1/admin/system/status` 返回 `database_backend=postgresql`、`vector_backend=pgvector`
 ```
 
 ## TEST-013 GitHub 发布脚本帮助命令
@@ -163,11 +166,11 @@ PowerShell：`$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEN
 
 | 项目 | 内容 |
 |---|---|
-| 对应需求 | REQ-007 |
-| 测试函数 | [test_versioned_knowledge_document_lifecycle backend/tests/test_knowledge_management.py:L18-L58](../backend/tests/test_knowledge_management.py#L18-L58) |
-| 被测函数 | [save_document backend/app/services/knowledge_service.py:L153-L213](../backend/app/services/knowledge_service.py#L153-L213), [update_document backend/app/services/knowledge_service.py:L216-L262](../backend/app/services/knowledge_service.py#L216-L262), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [delete_document backend/app/services/knowledge_service.py:L305-L324](../backend/app/services/knowledge_service.py#L305-L324) |
+| 对应需求 | REQ-007、REQ-017 |
+| 测试函数 | [test_versioned_knowledge_document_lifecycle backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63) |
+| 被测函数 | [save_document backend/app/services/knowledge_service.py:L187-L259](../backend/app/services/knowledge_service.py#L187-L259), [embed_document backend/app/services/knowledge_service.py:L174-L184](../backend/app/services/knowledge_service.py#L174-L184), [publish_document backend/app/services/knowledge_service.py:L328-L353](../backend/app/services/knowledge_service.py#L328-L353), [delete_document backend/app/services/knowledge_service.py:L382-L407](../backend/app/services/knowledge_service.py#L382-L407) |
 | 运行命令 | `python scripts\run_local.py test-backend` |
-| 预期结果 | 上传创建 draft 和 v1，更新创建 v2，发布后进入 RAG，软删除后不再命中且历史保留 |
+| 预期结果 | 上传即生成 draft chunk，draft 不可检索；发布后当前版本 chunk 可检索；软删除后 chunk 禁用且历史保留 |
 
 ## TEST-015 后台知识库页面构建验证
 
@@ -186,7 +189,39 @@ PowerShell：`$env:DATABASE_URL='sqlite:///data/.smoke_lingtour.db'; $env:BACKEN
 | 对应需求 | REQ-008 |
 | 登录测试 | [test_admin_login_success_and_invalid_password backend/tests/test_auth_service.py:L18-L27](../backend/tests/test_auth_service.py#L18-L27) |
 | 禁用用户测试 | [test_disabled_admin_user_cannot_login backend/tests/test_auth_service.py:L30-L43](../backend/tests/test_auth_service.py#L30-L43) |
-| 无 token 写接口测试 | [test_admin_write_api_requires_bearer_token backend/tests/test_auth_service.py:L46-L50](../backend/tests/test_auth_service.py#L46-L50) |
-| 数字人配置测试 | [test_avatar_config_persists_in_database backend/tests/test_avatar_service.py:L8-L17](../backend/tests/test_avatar_service.py#L8-L17) |
+| 无 token 写接口测试 | [test_admin_write_api_requires_bearer_token backend/tests/test_auth_service.py:L43-L48](../backend/tests/test_auth_service.py#L43-L48) |
+| 数字人配置测试 | [test_avatar_config_persists_in_database backend/tests/test_avatar_service.py:L6-L14](../backend/tests/test_avatar_service.py#L6-L14) |
 | 运行命令 | `python scripts\run_local.py test-backend` |
 | 预期结果 | 登录成功、错误密码失败、禁用用户失败、未带 token 调后台写接口返回 401、数字人配置保存后可重新读取 |
+
+## TEST-017 后端测试入口依赖 `PYTHONPATH`
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-003 |
+| 推荐入口 | [test_backend scripts/run_local.py:L82-L86](../scripts/run_local.py#L82-L86) |
+| 导入示例 | [test_auth_service imports backend/tests/test_auth_service.py:L7-L10](../backend/tests/test_auth_service.py#L7-L10) |
+| 运行命令 | `python scripts\run_local.py test-backend` |
+| 备选命令 | `$env:PYTHONPATH = (Resolve-Path .\\backend); python -m pytest backend/tests -q` |
+| 注意事项 | 直接在仓库根目录运行 `python -m pytest backend/tests -q` 会因缺少 `PYTHONPATH=backend` 报 `ModuleNotFoundError: No module named 'app'` |
+
+## TEST-018 `/api/v1` MVP 路由验证
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-016、REQ-017 |
+| 测试文件 | [backend/tests/test_api_v1.py:L1-L94](../backend/tests/test_api_v1.py#L1-L94) |
+| 覆盖范围 | `GET /api/v1/health`、`POST /api/v1/guide/ask`、`GET /api/v1/scenic/spots`、`GET /api/v1/scenic/facilities`、`POST /api/v1/route/recommend`、`POST /api/v1/auth/login`、`GET /api/v1/admin/system/status`、`POST /api/v1/admin/knowledge-bases/default/documents`、`POST /api/v1/admin/documents/{id}/embed`、`POST /api/v1/rag/retrieve` |
+| 运行命令 | `python scripts\run_local.py test-backend` |
+| 预期结果 | `/api/v1` 核心路由返回 200，后台知识库列表返回向量后端类型，文档嵌入接口返回 `embed_result.chunk_count >= 1`，RAG 检索返回 chunk 列表 |
+
+## TEST-019 Docker Compose PostgreSQL/pgvector 烟测
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | REQ-014、REQ-017 |
+| 运行命令 | `python scripts\run_local.py smoke-docker-postgres` |
+| 命令入口 | [smoke_docker_postgres scripts/run_local.py:L196-L197](../scripts/run_local.py#L196-L197) |
+| 烟测脚本 | [main scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107) |
+| Compose 编排 | [deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44) |
+| 预期结果 | 自动构建前端、启动单应用容器和 PostgreSQL/pgvector，`GET /api/health` 返回 200，`/guide` 页面包含 `id=\"app\"`，后台系统状态返回 `database_backend=postgresql`、`vector_backend=pgvector` |

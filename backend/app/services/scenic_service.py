@@ -225,6 +225,23 @@ SCENIC_SPOTS = [
 ]
 
 
+SCENIC_FACILITIES = [
+    {"id": 101, "name": "南门游客中心服务台", "type": "游客中心", "map_x": 12, "map_y": 84, "service_radius": 18},
+    {"id": 102, "name": "南门停车场", "type": "停车场", "map_x": 8, "map_y": 88, "service_radius": 26},
+    {"id": 103, "name": "入口售票处", "type": "售票处", "map_x": 14, "map_y": 79, "service_radius": 16},
+    {"id": 104, "name": "菩提大道公共洗手间", "type": "厕所", "map_x": 48, "map_y": 46, "service_radius": 12},
+    {"id": 105, "name": "九龙灌浴医疗点", "type": "医疗点", "map_x": 57, "map_y": 37, "service_radius": 14},
+    {"id": 106, "name": "梵宫餐饮点", "type": "餐饮点", "map_x": 60, "map_y": 18, "service_radius": 15},
+    {"id": 107, "name": "梵宫母婴室", "type": "母婴室", "map_x": 58, "map_y": 14, "service_radius": 10},
+    {"id": 108, "name": "大佛无障碍服务点", "type": "无障碍设施", "map_x": 81, "map_y": 22, "service_radius": 12},
+]
+
+
 def list_scenic_spots() -> list[dict]:
     """Return the in-memory Ling Shan scenic spot catalog."""
     return SCENIC_SPOTS
+
+
+def list_facilities() -> list[dict]:
+    """Return the in-memory facility catalog used by the MVP guide APIs."""
+    return SCENIC_FACILITIES

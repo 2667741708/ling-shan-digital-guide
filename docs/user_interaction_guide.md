@@ -65,7 +65,7 @@ http://127.0.0.1:8000/api/health
 实现位置：
 
 - [后端启动 scripts/run_local.py:L89-L105](../scripts/run_local.py#L89-L105)
-- [后端健康检查 backend/app/main.py:L21-L23](../backend/app/main.py#L21-L23)
+- [后端健康检查 backend/app/main.py:L51-L53](../backend/app/main.py#L51-L53)
 
 ### 方式 F：Vue 前端单独运行
 
@@ -93,10 +93,23 @@ python scripts\smoke_full_stack.py
 
 ```powershell
 Copy-Item .env.example .env
-docker compose -f deploy/docker-compose.yml up --build
+python scripts\run_local.py smoke-docker-postgres
 ```
 
-注意：当前主要验证路径是 Python runner。Docker Compose 适合后续统一部署复现。
+当前 Compose 路径已经是正式可验收方案：
+
+- `app` 容器同时承载 FastAPI 和构建后的 Vue 静态资源；
+- `postgres` 服务提供真实 PostgreSQL + pgvector；
+- 宿主机访问 PostgreSQL 时使用 `127.0.0.1:5433`；
+- 默认访问地址切到 `http://127.0.0.1:8000/guide`、`http://127.0.0.1:8000/map`、`http://127.0.0.1:8000/admin/login`；
+- 烟测脚本会自动在结束后执行 `docker compose down`。
+
+对应实现：
+
+- [Compose 编排 deploy/docker-compose.yml:L1-L44](../deploy/docker-compose.yml#L1-L44)
+- [单容器镜像 deploy/Dockerfile:L1-L18](../deploy/Dockerfile#L1-L18)
+- [SPA 静态托管 backend/app/main.py:L66-L78](../backend/app/main.py#L66-L78)
+- [Docker pgvector 烟测 scripts/smoke_docker_postgres.py:L64-L107](../scripts/smoke_docker_postgres.py#L64-L107)
 
 ## 2. 数字人导游测试流程
 

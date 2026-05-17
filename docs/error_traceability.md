@@ -192,6 +192,37 @@ assert any(name in names for name in {"灵山大佛", "九龙灌浴", "灵山梵
 python scripts\run_local.py test-backend
 ```
 
+## ERR-0011 宿主机 5432 PostgreSQL 缺少 pgvector，导致项目误连失败
+
+### 错误现象
+
+项目测试或启动时可以连上 PostgreSQL，但执行 `CREATE EXTENSION IF NOT EXISTS vector` 失败，或者系统状态中 `vector_backend` 无法稳定返回 `pgvector`。
+
+### 触发命令
+
+```powershell
+python scripts\run_local.py test-backend
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 默认连接 | 宿主机默认数据库 URL 使用 `127.0.0.1:5433`，避免误连 `5432` | [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [.env.example:L5-L15](../.env.example#L5-L15) |
+| Runner 端口策略 | 自动拉起 Compose `postgres` 并等待 `5433` 可用 | [scripts/run_local.py:L20-L30](../scripts/run_local.py#L20-L30), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86) |
+| Compose 端口映射 | 宿主机 `5433 -> 容器 5432` | [deploy/docker-compose.yml:L25-L40](../deploy/docker-compose.yml#L25-L40) |
+| 扩展初始化 | 启动时自动执行 `CREATE EXTENSION IF NOT EXISTS vector` | [init_db backend/app/core/database.py:L58-L66](../backend/app/core/database.py#L58-L66) |
+
+### 原因分析
+
+真正的问题不是项目代码没有接 PostgreSQL，而是宿主机已有一个监听 `127.0.0.1:5432` 的旧 PostgreSQL，且未安装 `pgvector`。如果 `.env` 或 shell 环境变量还指向 `5432`，项目就会误连到错误实例。
+
+### 修复方案
+
+1. 把宿主机默认连接端口改为 `5433`。
+2. 让 `scripts/run_local.py` 自动启动 Compose 中的 `postgres` 服务。
+3. 用 `python scripts\run_local.py test-backend` 和 `python scripts\run_local.py smoke-docker-postgres` 验证统一链路。
+
 ## ERR-0010 GitHub 发布先失败后成功复盘
 
 ### 错误现象
