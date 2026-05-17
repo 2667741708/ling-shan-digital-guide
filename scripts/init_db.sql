@@ -106,3 +106,29 @@ CREATE TABLE IF NOT EXISTS avatar_config (
 );
 
 CREATE INDEX IF NOT EXISTS ix_avatar_config_enabled ON avatar_config(enabled);
+
+-- 观众景点评分表 (Visitor Spot Rating)
+-- 对应需求：观众对景点的个性化评分与反馈
+CREATE TABLE IF NOT EXISTS visitor_spot_rating (
+    id VARCHAR(32) PRIMARY KEY,
+    session_uuid VARCHAR(64) NOT NULL,
+    spot_id INT NOT NULL REFERENCES scenic_spot(id) ON DELETE CASCADE,
+    overall_rating INT NOT NULL CHECK (overall_rating >= 1 AND overall_rating <= 5),
+    culture_rating INT CHECK (culture_rating >= 1 AND culture_rating <= 5),
+    nature_rating INT CHECK (nature_rating >= 1 AND nature_rating <= 5),
+    photo_rating INT CHECK (photo_rating >= 1 AND photo_rating <= 5),
+    facility_rating INT CHECK (facility_rating >= 1 AND facility_rating <= 5),
+    comment TEXT,
+    user_tags JSONB DEFAULT '[]',
+    visit_date TIMESTAMP,
+    weather_condition VARCHAR(40),
+    crowd_level VARCHAR(40),
+    is_public BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT uq_visitor_spot_rating UNIQUE(session_uuid, spot_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_session_uuid ON visitor_spot_rating(session_uuid);
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_spot_id ON visitor_spot_rating(spot_id);
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_is_public ON visitor_spot_rating(is_public);

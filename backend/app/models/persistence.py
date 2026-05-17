@@ -211,3 +211,44 @@ class AvatarConfig(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class VisitorSpotRating(Base):
+    """Visitor personalized rating for scenic spots.
+    
+    对应需求：
+    - 观众对景点的个性化评分与反馈
+    - 支持后续基于用户评分的个性化推荐优化
+    """
+    __tablename__ = "visitor_spot_rating"
+    __table_args__ = (UniqueConstraint("session_uuid", "spot_id", name="uq_visitor_spot_rating"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    session_uuid: Mapped[str] = mapped_column(String(64), index=True)
+    spot_id: Mapped[int] = mapped_column(Integer, ForeignKey("scenic_spot.id", ondelete="CASCADE"), nullable=False)
+    
+    # 综合评分 (1-5 分)
+    overall_rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    
+    # 细分维度评分 (1-5 分，可选)
+    culture_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nature_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    photo_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    facility_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    
+    # 文字反馈
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # 用户标签 (用于个性化推荐)
+    user_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    
+    # 访问时的上下文信息
+    visit_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    weather_condition: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    crowd_level: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    
+    # 是否公开分享
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
