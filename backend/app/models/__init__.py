@@ -1,5 +1,5 @@
 from app.models.persistence import AdminUser, AvatarConfig, KnowledgeDocument, KnowledgeDocumentVersion
-from app.models.persistence import KnowledgeOperationLog
+from app.models.persistence import KnowledgeOperationLog, VisitorSpotRating
 
 __all__ = [
     "AdminUser",
@@ -7,4 +7,5 @@ __all__ = [
     "KnowledgeDocument",
     "KnowledgeDocumentVersion",
     "KnowledgeOperationLog",
+    "VisitorSpotRating",
 ]
