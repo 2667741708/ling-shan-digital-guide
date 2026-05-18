@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { createSession, fetchScenicSpots, recommendRoute, sendText, type RoutePlan, type ScenicSpot } from "../../api/visitor";
+import {
+  createSession,
+  fetchScenicSpots,
+  fetchSpotRatingStats,
+  recommendRoute,
+  sendText,
+  submitSpotRating,
+  type RoutePlan,
+  type ScenicSpot,
+  type SpotRatingStats,
+} from "../../api/visitor";
 import DigitalAvatar from "../../components/Avatar/DigitalAvatar.vue";
 import ChatPanel from "../../components/ChatPanel.vue";
 import ScenicMapView from "../../components/ScenicMapView.vue";
@@ -16,6 +26,19 @@ const spots = ref<ScenicSpot[]>([]);
 const busy = ref(false);
 const modelUsed = ref("本地降级");
 const latencyMs = ref(0);
+const selectedRatingSpotId = ref(6);
+const ratingStats = ref<SpotRatingStats | null>(null);
+const ratingNotice = ref("");
+const ratingForm = ref({
+  overall_rating: 5,
+  culture_rating: 5,
+  nature_rating: 4,
+  photo_rating: 5,
+  facility_rating: 4,
+  comment: "讲解清楚，路线安排合理。",
+  user_tags: "必看,适合拍照",
+  is_public: true,
+});
 
 const quickPrompts = [
   "我第一次来灵山胜境，应该先看哪里？",
@@ -33,6 +56,8 @@ onMounted(async () => {
   sessionUuid.value = session.session_uuid;
   spots.value = await fetchScenicSpots();
   routePlan.value = await recommendRoute(sessionUuid.value);
+  selectedRatingSpotId.value = routePlan.value?.spots?.[1]?.id || 6;
+  await loadRatingStats();
 });
 
 async function handleSend(message: string) {
@@ -51,6 +76,8 @@ async function handleSend(message: string) {
         interest: message.includes("亲子") ? ["family"] : message.includes("自然") ? ["nature", "photo"] : ["history", "photo"],
         available_time: message.includes("一小时") || message.includes("1小时") ? 60 : 120,
       });
+      selectedRatingSpotId.value = routePlan.value?.spots?.[1]?.id || selectedRatingSpotId.value;
+      await loadRatingStats();
     }
     speakAnswer(response.answer);
   } catch (error) {
@@ -59,6 +86,31 @@ async function handleSend(message: string) {
   } finally {
     busy.value = false;
   }
+}
+
+async function loadRatingStats() {
+  ratingStats.value = await fetchSpotRatingStats(selectedRatingSpotId.value);
+}
+
+async function handleSubmitRating() {
+  if (!sessionUuid.value) return;
+  const tags = ratingForm.value.user_tags.split(",").map((item) => item.trim()).filter(Boolean);
+  const response: any = await submitSpotRating({
+    session_uuid: sessionUuid.value,
+    spot_id: selectedRatingSpotId.value,
+    overall_rating: Number(ratingForm.value.overall_rating),
+    culture_rating: Number(ratingForm.value.culture_rating),
+    nature_rating: Number(ratingForm.value.nature_rating),
+    photo_rating: Number(ratingForm.value.photo_rating),
+    facility_rating: Number(ratingForm.value.facility_rating),
+    comment: ratingForm.value.comment,
+    user_tags: tags,
+    is_public: ratingForm.value.is_public,
+    user_profile_snapshot: { interest: ["history", "photo"], available_minutes: 120, group_type: "family" },
+    source: "guide_page",
+  });
+  ratingNotice.value = response.created_or_updated === "updated" ? "已更新这条景点评分。" : "已提交景点评分，路线推荐会参考你的偏好。";
+  await loadRatingStats();
 }
 
 function speakAnswer(text: string) {
@@ -126,6 +178,36 @@ function handleListen() {
           </li>
         </ol>
         <p>{{ routePlan.reason }}</p>
+      </div>
+
+      <div class="rating-panel panel">
+        <div class="section-heading">
+          <span>游客个性化评分</span>
+          <strong>{{ ratingStats?.spot_name || "选择景点" }}</strong>
+        </div>
+        <label>
+          评分景点
+          <select v-model.number="selectedRatingSpotId" @change="loadRatingStats">
+            <option v-for="spot in spots" :key="spot.id" :value="spot.id">{{ spot.name }}</option>
+          </select>
+        </label>
+        <div class="rating-grid">
+          <label>综合 <input v-model.number="ratingForm.overall_rating" type="number" min="1" max="5" /></label>
+          <label>文化 <input v-model.number="ratingForm.culture_rating" type="number" min="1" max="5" /></label>
+          <label>自然 <input v-model.number="ratingForm.nature_rating" type="number" min="1" max="5" /></label>
+          <label>拍照 <input v-model.number="ratingForm.photo_rating" type="number" min="1" max="5" /></label>
+          <label>设施 <input v-model.number="ratingForm.facility_rating" type="number" min="1" max="5" /></label>
+        </div>
+        <textarea v-model="ratingForm.comment" rows="3" />
+        <input v-model="ratingForm.user_tags" placeholder="标签，用英文逗号分隔" />
+        <label class="inline-check"><input v-model="ratingForm.is_public" type="checkbox" /> 允许公开展示</label>
+        <button class="primary-action" @click="handleSubmitRating">提交评分</button>
+        <p v-if="ratingNotice" class="notice-line">{{ ratingNotice }}</p>
+        <div class="rating-stat-row">
+          <span>累计 {{ ratingStats?.total_ratings || 0 }} 条</span>
+          <span>综合 {{ ratingStats?.average_overall || "暂无" }}</span>
+          <span>拍照 {{ ratingStats?.average_photo || "暂无" }}</span>
+        </div>
       </div>
 
       <ScenicMapView :spots="spots" :route-spot-ids="routeSpotIds" />

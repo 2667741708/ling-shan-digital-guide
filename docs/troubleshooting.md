@@ -224,7 +224,7 @@ Playwright skill 的 wrapper 依赖 `npx --package @playwright/cli`。当前 `np
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| Playwright 脚本 | 启动后端/Vite 后调用 Playwright wrapper | [scripts/playwright_smoke_vue.py:L56-L115](../scripts/playwright_smoke_vue.py#L56-L115) |
+| Playwright 脚本 | 启动 PostgreSQL、后端、Vite 后调用 Playwright wrapper，目标页面包括首页、`/guide`、`/admin/login` | [scripts/playwright_smoke_vue.py:L74-L125](../scripts/playwright_smoke_vue.py#L74-L125) |
 | 根 npm 配置 | Playwright wrapper 在仓库根目录读取此配置 | [.npmrc:L1-L4](../.npmrc#L1-L4) |
 
 ### 验证命令
@@ -652,7 +652,7 @@ python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-dig
 
 ### 原因分析
 
-当前正式后台采用版本和发布机制。上传默认是 `draft`，草稿不会进入游客端 RAG。必须发布后才会写入本地 JSON 向量索引。
+当前正式后台采用版本和发布机制。上传默认是 `draft`，草稿不会进入游客端 RAG。必须发布或执行嵌入后，当前版本 chunk 才会写入 PostgreSQL `knowledge_chunk` 并通过 pgvector 检索。
 
 ### 定位位置
 
@@ -660,7 +660,7 @@ python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-dig
 |---|---|---|
 | 上传草稿 | 上传后状态为 `draft` | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50) |
 | 发布文档 | 发布后重建索引 | [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282) |
-| 向量入库 | 只读取 active 文档当前版本 | [load_admin_document_entries backend/app/services/vector_store.py:L150-L201](../backend/app/services/vector_store.py#L150-L201) |
+| 向量入库 | 当前版本切片并写入 `knowledge_chunk` | [embed_document backend/app/services/vector_store.py:L432-L460](../backend/app/services/vector_store.py#L432-L460) |
 | 前端发布按钮 | 管理页发布、归档、删除操作 | [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
 
 ### 修复方式

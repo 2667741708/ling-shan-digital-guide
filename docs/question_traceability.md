@@ -302,7 +302,7 @@ python scripts\smoke_vue_full_stack.py
 | code | 游客前端 API 已切到 `/api/v1` | [frontend/src/api/visitor.ts:L28-L55](../frontend/src/api/visitor.ts#L28-L55) |
 | code | 管理前端 API 已切到 `/api/v1` | [frontend/src/api/admin.ts:L3-L66](../frontend/src/api/admin.ts#L3-L66) |
 | code | 当时系统状态仍声明 `vector_backend = local_json` | [backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
-| test | `/api/v1` 路由测试 | [backend/tests/test_api_v1.py:L1-L94](../backend/tests/test_api_v1.py#L1-L94) |
+| test | `/api/v1` 路由测试 | [backend/tests/test_api_v1.py:L1-L113](../backend/tests/test_api_v1.py#L1-L113) |
 | doc | 新增需求说明 | [docs/requirements_traceability.md:L492-L525](./requirements_traceability.md#L492-L525) |
 
 ### 验证命令
@@ -344,7 +344,7 @@ python scripts\smoke_vue_full_stack.py
 | code | 系统状态返回向量后端类型 | [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
 | test | chunk 表和检索验证 | [backend/tests/test_vector_store.py:L6-L25](../backend/tests/test_vector_store.py#L6-L25) |
 | test | 文档版本与启用状态验证 | [backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63) |
-| test | `/api/v1` embed/rag 路由验证 | [backend/tests/test_api_v1.py:L66-L95](../backend/tests/test_api_v1.py#L66-L95) |
+| test | `/api/v1` embed/rag 路由验证 | [backend/tests/test_api_v1.py:L84-L113](../backend/tests/test_api_v1.py#L84-L113) |
 
 ### 验证命令
 
@@ -414,7 +414,7 @@ python scripts\check_doc_links.py
 | config | 默认数据库 URL、宿主机端口和精简后的环境变量模板 | [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [.env.example:L5-L34](../.env.example#L5-L34) |
 | deploy | 宿主机 `5433 -> 容器 5432` 的 PostgreSQL/pgvector 编排 | [deploy/docker-compose.yml:L25-L40](../deploy/docker-compose.yml#L25-L40) |
 | runner | 本地脚本自动拉起 PostgreSQL 并复用统一 `DATABASE_URL` | [scripts/run_local.py:L20-L30](../scripts/run_local.py#L20-L30), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86), [test_backend scripts/run_local.py:L125-L131](../scripts/run_local.py#L125-L131) |
-| test | 核心测试统一改走 PostgreSQL 临时数据库 | [postgres_test_database_url backend/tests/postgres_test_utils.py:L10-L17](../backend/tests/postgres_test_utils.py#L10-L17), [backend/tests/test_auth_service.py:L11-L48](../backend/tests/test_auth_service.py#L11-L48), [backend/tests/test_api_v1.py:L8-L95](../backend/tests/test_api_v1.py#L8-L95) |
+| test | 核心测试统一改走 PostgreSQL 临时数据库 | [postgres_test_database_url backend/tests/postgres_test_utils.py:L10-L17](../backend/tests/postgres_test_utils.py#L10-L17), [backend/tests/test_auth_service.py:L11-L48](../backend/tests/test_auth_service.py#L11-L48), [backend/tests/test_api_v1.py:L8-L113](../backend/tests/test_api_v1.py#L8-L113) |
 | cleanup | `vue-tsc` 改为 `noEmit`，仅保留 TypeScript/Vue 源文件入口 | [frontend/tsconfig.json:L1-L16](../frontend/tsconfig.json#L1-L16), [frontend/src/main.ts:L1-L9](../frontend/src/main.ts#L1-L9), [frontend/src/api/admin.ts:L1-L66](../frontend/src/api/admin.ts#L1-L66), [frontend/src/api/visitor.ts:L1-L55](../frontend/src/api/visitor.ts#L1-L55) |
 | deps | 后端依赖收敛到 PostgreSQL 驱动，无 `redis` | [backend/requirements.txt:L1-L8](../backend/requirements.txt#L1-L8) |
 
@@ -620,10 +620,98 @@ git rev-parse origin/main
 docker manifest inspect ghcr.io/2667741708/ling-shan-digital-guide-allinone:latest
 ```
 
+## Q-0020 是否可以不用 DeepSeek，只使用多模态大模型和数字人？
+
+### 用户原始问题
+
+我们实际需要的是一个多模态大模型以及一个数字人可以即时的追踪语音对吗？我们可以不用DeepSeek，仅仅使用一个多模态大模型和一个数字人即可。
+
+### 回答摘要
+
+可以。DeepSeek 在当前项目中只是文本 LLM 供应商，不是不可替换的架构核心。更贴近最终产品的能力组合是：PostgreSQL/pgvector 知识库检索 + 多模态大模型理解文本、语音、图片或视频输入 + 数字人引擎完成实时语音播报、口型、表情和动作。如果选用的多模态大模型或数字人平台已经内置 ASR/TTS，可以取消独立 DeepSeek、独立 ASR、独立 TTS；否则仍需要由多模态模型外部的 ASR/TTS 服务补齐语音输入和语音输出。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 当前文本模型 | DeepSeek 客户端只是 OpenAI 兼容文本生成封装 | [DeepSeekClient backend/app/services/deepseek_service.py:L9-L47](../backend/app/services/deepseek_service.py#L9-L47) |
+| 当前问答编排 | RAG 检索后调用 DeepSeek 生成回答，已写入问答日志 | [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
+| 当前语音缺口 | 后端真实 ASR/TTS 仍未完成 | [REQ-010 docs/requirements_traceability.md:L237-L279](./requirements_traceability.md#L237-L279) |
+| 当前多模态缺口 | 图片识景仍是占位，需要接真实视觉/多模态模型 | [REQ-011 docs/requirements_traceability.md:L281-L323](./requirements_traceability.md#L281-L323) |
+| 当前数字人 | 前端数字人是 SVG + 本地口型模拟，不是真实实时驱动数字人 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64), [simulateSpeaking frontend/src/store/avatar.ts:L16-L32](../frontend/src/store/avatar.ts#L16-L32) |
+| 当前配置 | DeepSeek 配置字段后续可替换为通用 `MODEL_PROVIDER` / 多模态模型配置 | [docs/config_reference.md:L17-L20](./config_reference.md#L17-L20) |
+
+### 改造建议
+
+1. 抽象 `ModelProvider`，把 `DeepSeekClient` 替换为可配置的多模态模型客户端。
+2. 保留 `pgvector` RAG 检索，模型只负责理解、推理、生成和引用约束。
+3. 将 `/api/v1/guide/ask`、`/api/v1/guide/voice-ask`、`/api/v1/guide/image-ask` 统一编排到同一个多模态问答服务。
+4. 数字人侧对接实时 avatar SDK 或云服务，前端不再只用本地 SVG 口型模拟。
+5. 如果模型/数字人平台内置语音能力，`/asr/*` 和 `/tts/*` 可以变成兼容代理；如果没有内置能力，则仍需要保留独立 ASR/TTS。
+
 ### 验证命令
 
 ```powershell
+python scripts\run_local.py test-backend
 python scripts\run_local.py build-frontend
-python scripts\publish_ghcr_allinone.py --help
-python scripts\publish_ghcr_allinone.py --no-push --tag latest
+python scripts\check_doc_links.py
+```
+
+## Q-0022 如何整理项目程序并更新 README？
+
+### 用户原始问题
+
+我需要你帮我整理下我们的所有的项目程序，看看是否有需要更新的地方，比如说这个 readme。
+
+### 回答摘要
+
+本次检查按 `traceable-development` 文档体系和 GitHub 仓库上下文执行，发现 `README.md` 仍偏向早期骨架描述，且缺少两个项目长期维护需要的入口文档：`docs/architecture.md` 和 `docs/cli_usage.md`。已更新 README 的当前能力、快速启动、Docker/All-in-One、核心 API、验证命令和文档入口；新增架构说明记录系统边界、分层、数据流、数据层和部署结构；新增 CLI 使用说明记录可复现运行、测试、Docker、GHCR 和 GitHub 发布脚本。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| README | 当前能力、快速启动、API 链路、验证命令和文档入口 | [README.md:L1-L116](../README.md#L1-L116) |
+| 架构文档 | 系统边界、模块分层、数据流、数据层和部署结构 | [docs/architecture.md:L1-L136](./architecture.md#L1-L136) |
+| CLI 文档 | 本地 runner、联调、Docker、GHCR 和 GitHub 发布命令 | [docs/cli_usage.md:L1-L154](./cli_usage.md#L1-L154) |
+| 项目入口 | 新同事阅读顺序和常见任务入口 | [docs/project_onboarding.md:L27-L63](./project_onboarding.md#L27-L63) |
+| 程序索引 | 后端、脚本和前端入口已经覆盖主要程序 | [docs/program_index.md:L1-L83](./program_index.md#L1-L83) |
+
+### 验证命令
+
+```powershell
+python scripts\check_doc_links.py
+python scripts\run_local.py build-frontend
+```
+
+## Q-0021 如何补齐游客个性化、路线生成、账号边界、大屏和前端观感？
+
+### 用户原始问题
+
+我们的后端程序中关于观众的个性化出来，管理员账号与游客账号，以及路线生成，数据大屏，等等与大模型无关的功能，我认为还没有完整的实现,我们目前的前端app也很丑，你可以基于canva重新更新下我们的这个项目，把这个项目的各个功能的细节再完善一点。
+
+### 回答摘要
+
+已把“观众”统一落到景区语义中的“游客个性化评分”：游客端可提交多维景点评分、评论、标签和画像快照；后端按 `session_uuid + spot_id` upsert，计算情绪和加权评分；路线推荐读取景点评分与游客历史偏好；问答、路线和评分都写入 PostgreSQL，后台大屏从真实表聚合服务量、热门问题、路线访问、评分排行、负向反馈、情绪趋势和高频标签。前端同步增加游客评分面板和更完整的大屏卡片，并通过样式覆盖刷新视觉。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 需求追踪 | 本次功能归档为 REQ-021 | [REQ-021 docs/requirements_traceability.md:L539-L581](./requirements_traceability.md#L539-L581) |
+| 数据模型 | 景点、设施、会话、消息、路线和游客评分表 | [ScenicSpot backend/app/models/persistence.py:L64-L86](../backend/app/models/persistence.py#L64-L86), [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354) |
+| 评分服务 | upsert、统计、画像、后台排行和趋势 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
+| 路线生成 | 评分与画像反哺路线推荐，并持久化 `route_plan` | [_score_spot backend/app/services/route_service.py:L82-L107](../backend/app/services/route_service.py#L82-L107), [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
+| 大屏聚合 | 从真实问答、路线、评分和景点表聚合后台指标 | [dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89) |
+| 游客前端 | 数字人页评分面板和统计展示 | [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211) |
+| 后台前端 | 大屏新增评分排行、情绪趋势和标签洞察 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105) |
+| 样式 | 视觉刷新和移动端适配 | [UX refresh frontend/src/styles.css:L929-L1259](../frontend/src/styles.css#L929-L1259) |
+| 测试 | 评分 upsert、统计、排行和画像 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\check_doc_links.py
 ```

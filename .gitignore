@@ -1,4 +1,3 @@
-```
 # Dependencies
 __pycache__/
 *.pyc
@@ -10,6 +9,15 @@ venv/
 .env
 .env.local
 .env.*
+frontend/node_modules/
+
+# Runtime data
+data/vector_db/
+data/admin_knowledge/*
+!data/admin_knowledge/.gitkeep
+data/*.db
+data/*.sqlite
+logs/
 
 # Logs
 *.log
@@ -36,8 +44,9 @@ dist/
 *.egg-info/
 target/
 .gradle/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
 
 # Testing
 .pytest_cache/
 .mypy_cache/
-```

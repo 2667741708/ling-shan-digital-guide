@@ -1,113 +1,44 @@
-# 观众个性化评分功能
+# 游客个性化评分功能
 
-## 概述
+本功能已纳入 [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏)。项目统一使用“游客”，不再使用“观众”称谓。
 
-为灵山景区后台程序添加了观众对景点的个性化评分功能，支持用户提交、查看和管理景点评分。
+## 功能范围
 
-## 功能特性
+游客可以对景点提交综合、文化、自然、拍照、设施五类评分，并附带评论、标签、公开标记、访问上下文、画像快照和来源。后端按 `session_uuid + spot_id` 唯一约束执行 upsert，评分会进入路线推荐、公开评论、后台排行、情绪趋势和数据大屏。
 
-### 1. 多维度评分体系
-- **综合评分** (overall_rating): 1-5 分必填
-- **文化体验评分** (culture_rating): 1-5 分可选
-- **自然景观评分** (nature_rating): 1-5 分可选
-- **拍照价值评分** (photo_rating): 1-5 分可选
-- **设施便利评分** (facility_rating): 1-5 分可选
+## API
 
-### 2. 丰富的上下文信息
-- 文字反馈 (comment)
-- 用户标签 (user_tags): 用于个性化推荐
-- 访问日期 (visit_date)
-- 天气状况 (weather_condition)
-- 拥挤程度 (crowd_level)
-- 公开分享选项 (is_public)
-
-### 3. API 接口
-
-#### 提交/更新评分
-```http
-POST /api/visitor/ratings
-Content-Type: application/json
-
-{
-  "session_uuid": "abc123",
-  "spot_id": 6,
-  "overall_rating": 5,
-  "culture_rating": 4,
-  "nature_rating": 3,
-  "photo_rating": 5,
-  "facility_rating": 4,
-  "comment": "九龙灌浴表演非常精彩，值得观看！",
-  "user_tags": ["必看", "适合拍照"],
-  "visit_date": "2024-01-15",
-  "weather_condition": "晴朗",
-  "crowd_level": "中等",
-  "is_public": true
-}
-```
-
-#### 查看用户评分历史
-```http
-GET /api/visitor/sessions/{session_uuid}/ratings
-```
-
-#### 查看景点评分统计
-```http
-GET /api/visitor/spots/{spot_id}/ratings/stats
-```
-
-响应示例：
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "spot_id": 6,
-    "total_ratings": 128,
-    "average_overall": 4.52,
-    "average_culture": 4.35,
-    "average_nature": 3.80,
-    "average_photo": 4.75,
-    "average_facility": 4.10
-  }
-}
-```
+| 场景 | 方法与路径 | 实现位置 |
+|---|---|---|
+| 提交或更新评分 | `POST /api/v1/visitor/ratings` | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235) |
+| 查询会话评分 | `GET /api/v1/visitor/sessions/{session_uuid}/ratings` | [session_ratings_v1 backend/app/api/v1.py:L238-L241](../backend/app/api/v1.py#L238-L241) |
+| 景点评分统计 | `GET /api/v1/visitor/spots/{spot_id}/ratings/stats` | [spot_rating_stats_v1 backend/app/api/v1.py:L244-L246](../backend/app/api/v1.py#L244-L246) |
+| 公开评论列表 | `GET /api/v1/visitor/spots/{spot_id}/ratings/public` | [spot_public_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252) |
+| 后台评分列表 | `GET /api/v1/admin/ratings` | [admin_ratings_v1 backend/app/api/v1.py:L280-L302](../backend/app/api/v1.py#L280-L302) |
+| 后台评分排行 | `GET /api/v1/admin/ratings/ranking` | [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307) |
+| 后台评分趋势 | `GET /api/v1/admin/ratings/trend` | [admin_rating_trend_v1 backend/app/api/v1.py:L310-L312](../backend/app/api/v1.py#L310-L312) |
 
 ## 数据模型
 
-### VisitorSpotRating 表结构
+| 项目 | 实现位置 |
+|---|---|
+| 评分表 | [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354) |
+| 请求模型 | [SpotRatingRequest backend/app/schemas/visitor.py:L25-L41](../backend/app/schemas/visitor.py#L25-L41) |
+| 响应模型 | [SpotRatingResponse backend/app/schemas/visitor.py:L44-L67](../backend/app/schemas/visitor.py#L44-L67) |
+| 初始化 SQL | [scripts/init_db.sql:L207-L231](../scripts/init_db.sql#L207-L231) |
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | VARCHAR(32) | 主键 ID |
-| session_uuid | VARCHAR(64) | 用户会话 ID |
-| spot_id | INT | 景点 ID (外键) |
-| overall_rating | INT | 综合评分 (1-5) |
-| culture_rating | INT | 文化评分 (1-5, 可选) |
-| nature_rating | INT | 自然评分 (1-5, 可选) |
-| photo_rating | INT | 拍照评分 (1-5, 可选) |
-| facility_rating | INT | 设施评分 (1-5, 可选) |
-| comment | TEXT | 文字反馈 |
-| user_tags | JSONB | 用户标签数组 |
-| visit_date | TIMESTAMP | 访问日期 |
-| weather_condition | VARCHAR(40) | 天气状况 |
-| crowd_level | VARCHAR(40) | 拥挤程度 |
-| is_public | BOOLEAN | 是否公开 |
-| created_at | TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | 更新时间 |
+## 前端入口
 
-## 后续优化方向
+| 页面 | 实现位置 |
+|---|---|
+| 游客端评分面板 | [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211) |
+| 游客端 API 封装 | [visitor rating API frontend/src/api/visitor.ts:L29-L56](../frontend/src/api/visitor.ts#L29-L56), [submitSpotRating frontend/src/api/visitor.ts:L87-L97](../frontend/src/api/visitor.ts#L87-L97) |
+| 管理大屏评分模块 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105) |
 
-1. **个性化推荐增强**: 基于用户历史评分优化路线推荐算法
-2. **评分权重**: 根据用户可信度、访问时间等因素调整评分权重
-3. **情感分析**: 对文字评论进行 NLP 情感分析
-4. **评分趋势**: 分析景点评分随时间的变化趋势
-5. **用户画像**: 基于评分行为构建用户兴趣画像
+## 验证命令
 
-## 文件清单
-
-- `backend/app/models/persistence.py`: 添加 VisitorSpotRating 模型
-- `backend/app/schemas/visitor.py`: 添加评分请求/响应 Schema
-- `backend/app/services/rating_service.py`: 评分业务逻辑服务
-- `backend/app/api/visitor.py`: 添加评分相关 API 端点
-- `backend/app/models/__init__.py`: 导出新模型
-- `scripts/init_db.sql`: 数据库建表脚本
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\check_doc_links.py
+```

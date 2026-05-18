@@ -45,9 +45,23 @@ def test_v1_scenic_and_route_endpoints() -> None:
 
     spots = client.get("/api/v1/scenic/spots")
     facilities = client.get("/api/v1/scenic/facilities")
+    rating = client.post(
+        "/api/v1/visitor/ratings",
+        json={
+            "session_uuid": "api_route_session",
+            "spot_id": 6,
+            "overall_rating": 5,
+            "culture_rating": 5,
+            "photo_rating": 5,
+            "comment": "九龙灌浴非常精彩，适合拍照。",
+            "user_tags": ["演出", "拍照"],
+            "is_public": True,
+        },
+    )
     route = client.post(
         "/api/v1/route/recommend",
         json={
+            "session_id": "api_route_session",
             "start_point": "main_gate",
             "available_minutes": 120,
             "interest_tags": ["history", "photo"],
@@ -57,10 +71,14 @@ def test_v1_scenic_and_route_endpoints() -> None:
 
     assert spots.status_code == 200
     assert facilities.status_code == 200
+    assert rating.status_code == 200
     assert route.status_code == 200
     assert len(spots.json()["data"]) >= 10
     assert any(item["type"] == "厕所" for item in facilities.json()["data"])
-    assert route.json()["data"]["route_id"].startswith("route_")
+    route_data = route.json()["data"]
+    assert route_data["route_id"].startswith("route_")
+    assert route_data["score_summary"]["uses_visitor_ratings"] is True
+    assert route_data["score_summary"]["visitor_profile"]["total_ratings"] == 1
 
 
 def test_v1_admin_knowledge_and_system_status() -> None:

@@ -18,6 +18,8 @@ FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
 GIT_BASH = Path(r"C:\Program Files\Git\bin\bash.exe")
 PWCLI = Path.home() / ".codex" / "skills" / "playwright" / "scripts" / "playwright_cli.sh"
 
+from run_local import ensure_postgres_service  # noqa: E402
+
 
 def resolve_command(command: str) -> str:
     candidates = [command]
@@ -73,6 +75,7 @@ def main() -> int:
     if not PWCLI.exists():
         raise FileNotFoundError(str(PWCLI))
     OUTPUT.mkdir(parents=True, exist_ok=True)
+    ensure_postgres_service()
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(BACKEND)
@@ -107,11 +110,19 @@ def main() -> int:
         wait_url(f"http://127.0.0.1:{BACKEND_PORT}/api/health", '"status":"ok"')
         wait_url(f"http://127.0.0.1:{FRONTEND_PORT}/", '<div id="app"></div>')
         bash_pwcli = str(PWCLI).replace("\\", "/").replace("C:", "/c")
-        screenshot = str((OUTPUT / "vue-home.png").resolve()).replace("\\", "/").replace("C:", "/c")
+        home_screenshot = str((OUTPUT / "vue-home.png").resolve()).replace("\\", "/").replace("C:", "/c")
+        guide_screenshot = str((OUTPUT / "vue-guide.png").resolve()).replace("\\", "/").replace("C:", "/c")
+        admin_screenshot = str((OUTPUT / "vue-admin-login.png").resolve()).replace("\\", "/").replace("C:", "/c")
         run_git_bash(f'"{bash_pwcli}" open http://127.0.0.1:{FRONTEND_PORT}')
         run_git_bash(f'"{bash_pwcli}" snapshot')
-        run_git_bash(f'"{bash_pwcli}" screenshot --output "{screenshot}"')
-        print(f"playwright screenshot: {OUTPUT / 'vue-home.png'}", flush=True)
+        run_git_bash(f'"{bash_pwcli}" screenshot --output "{home_screenshot}"')
+        run_git_bash(f'"{bash_pwcli}" open http://127.0.0.1:{FRONTEND_PORT}/guide')
+        run_git_bash(f'"{bash_pwcli}" snapshot')
+        run_git_bash(f'"{bash_pwcli}" screenshot --output "{guide_screenshot}"')
+        run_git_bash(f'"{bash_pwcli}" open http://127.0.0.1:{FRONTEND_PORT}/admin/login')
+        run_git_bash(f'"{bash_pwcli}" snapshot')
+        run_git_bash(f'"{bash_pwcli}" screenshot --output "{admin_screenshot}"')
+        print(f"playwright screenshots: {OUTPUT / 'vue-home.png'}, {OUTPUT / 'vue-guide.png'}, {OUTPUT / 'vue-admin-login.png'}", flush=True)
     finally:
         terminate_tree(frontend)
         terminate_tree(backend)

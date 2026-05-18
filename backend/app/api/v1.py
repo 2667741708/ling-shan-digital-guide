@@ -3,7 +3,9 @@ from __future__ import annotations
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.schemas.admin import LoginRequest
 from app.schemas.api_v1 import (
     AvatarSpeakRequestV1,
@@ -13,7 +15,7 @@ from app.schemas.api_v1 import (
     RouteRecommendRequestV1,
     TtsSynthesizeRequestV1,
 )
-from app.schemas.visitor import ChatTextRequest, CreateSessionRequest, RouteRecommendRequest
+from app.schemas.visitor import ChatTextRequest, CreateSessionRequest, RouteRecommendRequest, SpotRatingRequest
 from app.services.analytics_service import dashboard_overview
 from app.services.auth_service import authenticate_admin, require_admin_user
 from app.services.avatar_service import get_active_avatar, save_avatar_config
@@ -34,6 +36,16 @@ from app.services.knowledge_service import (
     update_document,
 )
 from app.services.route_service import recommend_route
+from app.services.rating_service import (
+    create_or_update_rating,
+    get_admin_rating_ranking,
+    get_admin_rating_trend,
+    get_ratings_by_session,
+    get_spot_statistics,
+    list_admin_ratings,
+    list_public_ratings,
+    rating_to_response,
+)
 from app.services.scenic_service import list_facilities, list_scenic_spots
 from app.services.system_service import get_system_status
 
@@ -213,8 +225,31 @@ def scenic_facilities_v1():
 
 @router.post("/route/recommend")
 def route_recommend_v1(payload: RouteRecommendRequestV1):
-    result = recommend_route(_route_payload_from_v1(payload))
+    result = recommend_route(_route_payload_from_v1(payload, payload.session_id or "v1_route"))
     return {"code": 0, "message": "success", "data": {**result, "route_id": _message_id("route")}}
+
+
+@router.post("/visitor/ratings")
+def submit_rating_v1(payload: SpotRatingRequest, db: Session = Depends(get_db)):
+    rating = create_or_update_rating(db, payload)
+    return {"code": 0, "message": "success", "data": rating_to_response(rating).model_dump()}
+
+
+@router.get("/visitor/sessions/{session_uuid}/ratings")
+def session_ratings_v1(session_uuid: str, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
+    ratings = get_ratings_by_session(db, session_uuid, page, page_size)
+    return {"code": 0, "message": "success", "data": [rating_to_response(item).model_dump() for item in ratings]}
+
+
+@router.get("/visitor/spots/{spot_id}/ratings/stats")
+def spot_rating_stats_v1(spot_id: int, db: Session = Depends(get_db)):
+    return {"code": 0, "message": "success", "data": get_spot_statistics(db, spot_id)}
+
+
+@router.get("/visitor/spots/{spot_id}/ratings/public")
+def spot_public_ratings_v1(spot_id: int, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
+    ratings = list_public_ratings(db, spot_id, page, page_size)
+    return {"code": 0, "message": "success", "data": [rating_to_response(item).model_dump() for item in ratings]}
 
 
 @router.post("/rag/retrieve")
@@ -240,6 +275,41 @@ def admin_system_status_v1(admin=Depends(require_admin_user)):
 @router.get("/admin/analytics/overview")
 def admin_analytics_overview_v1(admin=Depends(require_admin_user)):
     return {"code": 0, "message": "success", "data": dashboard_overview()}
+
+
+@router.get("/admin/ratings")
+def admin_ratings_v1(
+    spot_id: int | None = None,
+    rating_min: int | None = None,
+    rating_max: int | None = None,
+    sentiment: str | None = None,
+    is_public: bool | None = None,
+    keyword: str = "",
+    admin=Depends(require_admin_user),
+    db: Session = Depends(get_db),
+):
+    ratings = list_admin_ratings(
+        db,
+        {
+            "spot_id": spot_id,
+            "rating_min": rating_min,
+            "rating_max": rating_max,
+            "sentiment": sentiment,
+            "is_public": is_public,
+            "keyword": keyword,
+        },
+    )
+    return {"code": 0, "message": "success", "data": [rating_to_response(item).model_dump() for item in ratings]}
+
+
+@router.get("/admin/ratings/ranking")
+def admin_rating_ranking_v1(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+    return {"code": 0, "message": "success", "data": get_admin_rating_ranking(db)}
+
+
+@router.get("/admin/ratings/trend")
+def admin_rating_trend_v1(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+    return {"code": 0, "message": "success", "data": get_admin_rating_trend(db)}
 
 
 @router.get("/admin/knowledge-bases")

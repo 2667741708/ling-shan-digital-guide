@@ -1,5 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, Depends, UploadFile, File, Form
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.schemas.visitor import (
     ChatTextRequest,
     CreateSessionRequest,
@@ -13,6 +15,7 @@ from app.services.rating_service import (
     create_or_update_rating, 
     get_ratings_by_session, 
     get_spot_statistics, 
+    list_public_ratings,
     rating_to_response,
     get_user_preference_profile,
     analyze_sentiment,
@@ -56,56 +59,36 @@ def routes_recommend(payload: RouteRecommendRequest):
 
 
 @router.post("/ratings")
-def submit_rating(payload: SpotRatingRequest, db=None):
+def submit_rating(payload: SpotRatingRequest, db: Session = Depends(get_db)):
     """Submit or update a visitor's rating for a scenic spot."""
-    from app.core.database import get_db
-    
-    # Get database session
-    db_session = next(get_db())
-    try:
-        rating = create_or_update_rating(db_session, payload)
-        return {"code": 0, "message": "success", "data": rating_to_response(rating)}
-    finally:
-        db_session.close()
+    rating = create_or_update_rating(db, payload)
+    return {"code": 0, "message": "success", "data": rating_to_response(rating).model_dump()}
 
 
 @router.get("/sessions/{session_uuid}/ratings")
-def list_session_ratings(session_uuid: str, db=None):
+def list_session_ratings(session_uuid: str, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
     """Get all ratings submitted by a specific session."""
-    from app.core.database import get_db
-    
-    db_session = next(get_db())
-    try:
-        ratings = get_ratings_by_session(db_session, session_uuid)
-        return {"code": 0, "message": "success", "data": [rating_to_response(r) for r in ratings]}
-    finally:
-        db_session.close()
+    ratings = get_ratings_by_session(db, session_uuid, page, page_size)
+    return {"code": 0, "message": "success", "data": [rating_to_response(r).model_dump() for r in ratings]}
 
 
 @router.get("/spots/{spot_id}/ratings/stats")
-def get_spot_rating_stats(spot_id: int, db=None):
+def get_spot_rating_stats(spot_id: int, db: Session = Depends(get_db)):
     """Get aggregated rating statistics for a specific spot with weighted scoring and sentiment analysis."""
-    from app.core.database import get_db
-    
-    db_session = next(get_db())
-    try:
-        stats = get_spot_statistics(db_session, spot_id)
-        return {"code": 0, "message": "success", "data": stats}
-    finally:
-        db_session.close()
+    return {"code": 0, "message": "success", "data": get_spot_statistics(db, spot_id)}
+
+
+@router.get("/spots/{spot_id}/ratings/public")
+def get_public_ratings(spot_id: int, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
+    """Get public approved ratings for a specific spot."""
+    ratings = list_public_ratings(db, spot_id, page, page_size)
+    return {"code": 0, "message": "success", "data": [rating_to_response(r).model_dump() for r in ratings]}
 
 
 @router.get("/sessions/{session_uuid}/preference-profile")
-def get_preference_profile(session_uuid: str, db=None):
+def get_preference_profile(session_uuid: str, db: Session = Depends(get_db)):
     """Get user preference profile based on their rating history."""
-    from app.core.database import get_db
-    
-    db_session = next(get_db())
-    try:
-        profile = get_user_preference_profile(db_session, session_uuid)
-        return {"code": 0, "message": "success", "data": profile}
-    finally:
-        db_session.close()
+    return {"code": 0, "message": "success", "data": get_user_preference_profile(db, session_uuid)}
 
 
 @router.post("/sentiment/analyze")

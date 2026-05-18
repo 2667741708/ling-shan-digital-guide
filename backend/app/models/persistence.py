@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import UserDefinedType
 
@@ -59,6 +59,96 @@ class AdminUser(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ScenicSpot(Base):
+    """Persisted scenic spot catalog used by routes, ratings and analytics."""
+
+    __tablename__ = "scenic_spot"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    guide_text: Mapped[str] = mapped_column(Text, default="")
+    map_x: Mapped[float] = mapped_column(Float, default=0)
+    map_y: Mapped[float] = mapped_column(Float, default=0)
+    tags_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    recommended_duration: Mapped[int] = mapped_column(Integer, default=10)
+    popularity_score: Mapped[float] = mapped_column(Float, default=0.5)
+    culture_score: Mapped[float] = mapped_column(Float, default=0.5)
+    nature_score: Mapped[float] = mapped_column(Float, default=0.5)
+    photo_score: Mapped[float] = mapped_column(Float, default=0.5)
+    facility_score: Mapped[float] = mapped_column(Float, default=0.5)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    ratings: Mapped[list["VisitorSpotRating"]] = relationship("VisitorSpotRating", back_populates="spot")
+
+
+class Facility(Base):
+    """Persisted service facility catalog for maps and nearby queries."""
+
+    __tablename__ = "facility"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), index=True)
+    type: Mapped[str] = mapped_column(String(40), index=True)
+    map_x: Mapped[float] = mapped_column(Float, default=0)
+    map_y: Mapped[float] = mapped_column(Float, default=0)
+    service_radius: Mapped[int] = mapped_column(Integer, default=10)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class VisitorSession(Base):
+    """Anonymous visitor session for personalization and analytics."""
+
+    __tablename__ = "visitor_session"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    session_uuid: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    device_type: Mapped[str] = mapped_column(String(40), default="web")
+    visitor_type: Mapped[str] = mapped_column(String(40), default="anonymous")
+    user_profile: Mapped[dict] = mapped_column(JSON, default=dict)
+    start_location: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    messages: Mapped[list["ChatMessage"]] = relationship("ChatMessage", back_populates="session")
+
+
+class ChatMessage(Base):
+    """Persisted visitor question/answer message for dashboard aggregation."""
+
+    __tablename__ = "chat_message"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    session_uuid: Mapped[str] = mapped_column(ForeignKey("visitor_session.session_uuid"), index=True)
+    role: Mapped[str] = mapped_column(String(20), index=True)
+    content: Mapped[str] = mapped_column(Text)
+    intent: Mapped[str] = mapped_column(String(60), default="scenic_qa", index=True)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    references_json: Mapped[list[dict]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    session: Mapped[VisitorSession] = relationship("VisitorSession", back_populates="messages")
+
+
+class RoutePlan(Base):
+    """Persisted generated route summary for personalization and analytics."""
+
+    __tablename__ = "route_plan"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    session_uuid: Mapped[str] = mapped_column(String(64), index=True)
+    route_name: Mapped[str] = mapped_column(String(160))
+    interest_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    spot_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    total_duration: Mapped[int] = mapped_column(Integer, default=0)
+    score_summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class KnowledgeDocument(Base):
@@ -214,14 +304,17 @@ class AvatarConfig(Base):
 
 
 class VisitorSpotRating(Base):
-    """Visitor personalized rating for scenic spots.
-    
-    对应需求：
-    - 观众对景点的个性化评分与反馈
-    - 支持后续基于用户评分的个性化推荐优化
-    """
+    """Visitor personalized rating for scenic spots."""
+
     __tablename__ = "visitor_spot_rating"
-    __table_args__ = (UniqueConstraint("session_uuid", "spot_id", name="uq_visitor_spot_rating"),)
+    __table_args__ = (
+        UniqueConstraint("session_uuid", "spot_id", name="uq_visitor_spot_rating"),
+        CheckConstraint("overall_rating BETWEEN 1 AND 5", name="ck_rating_overall_range"),
+        CheckConstraint("culture_rating IS NULL OR culture_rating BETWEEN 1 AND 5", name="ck_rating_culture_range"),
+        CheckConstraint("nature_rating IS NULL OR nature_rating BETWEEN 1 AND 5", name="ck_rating_nature_range"),
+        CheckConstraint("photo_rating IS NULL OR photo_rating BETWEEN 1 AND 5", name="ck_rating_photo_range"),
+        CheckConstraint("facility_rating IS NULL OR facility_rating BETWEEN 1 AND 5", name="ck_rating_facility_range"),
+    )
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     session_uuid: Mapped[str] = mapped_column(String(64), index=True)
@@ -241,6 +334,7 @@ class VisitorSpotRating(Base):
     
     # 用户标签 (用于个性化推荐)
     user_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    user_profile_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)
     
     # 访问时的上下文信息
     visit_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -249,6 +343,12 @@ class VisitorSpotRating(Base):
     
     # 是否公开分享
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+    review_status: Mapped[str] = mapped_column(String(30), default="approved", index=True)
+    sentiment: Mapped[str] = mapped_column(String(30), default="neutral", index=True)
+    sentiment_score: Mapped[float] = mapped_column(Float, default=0.0)
+    source: Mapped[str] = mapped_column(String(50), default="visitor_page", index=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    spot: Mapped[ScenicSpot] = relationship("ScenicSpot", back_populates="ratings")

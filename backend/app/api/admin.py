@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.schemas.admin import LoginRequest
 from app.services.analytics_service import dashboard_overview, sentiment_report
 from app.services.auth_service import authenticate_admin, require_admin_user
 from app.services.avatar_service import get_active_avatar, save_avatar_config
 from app.services.knowledge_service import archive_document, delete_document, list_documents, list_history, list_versions
 from app.services.knowledge_service import publish_document, rebuild_index, save_document, search_test, update_document
+from app.services.rating_service import get_admin_rating_ranking, get_admin_rating_trend, list_admin_ratings, rating_to_response
 from app.services.scenic_service import list_scenic_spots
 
 router = APIRouter()
@@ -140,3 +143,38 @@ def analytics_overview(admin=Depends(require_admin_user)):
 @router.get("/analytics/report")
 def analytics_report(admin=Depends(require_admin_user)):
     return {"code": 0, "message": "success", "data": sentiment_report()}
+
+
+@router.get("/ratings")
+def admin_ratings(
+    spot_id: int | None = None,
+    rating_min: int | None = None,
+    rating_max: int | None = None,
+    sentiment: str | None = None,
+    is_public: bool | None = None,
+    keyword: str = "",
+    admin=Depends(require_admin_user),
+    db: Session = Depends(get_db),
+):
+    ratings = list_admin_ratings(
+        db,
+        {
+            "spot_id": spot_id,
+            "rating_min": rating_min,
+            "rating_max": rating_max,
+            "sentiment": sentiment,
+            "is_public": is_public,
+            "keyword": keyword,
+        },
+    )
+    return {"code": 0, "message": "success", "data": [rating_to_response(item).model_dump() for item in ratings]}
+
+
+@router.get("/ratings/ranking")
+def admin_ratings_ranking(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+    return {"code": 0, "message": "success", "data": get_admin_rating_ranking(db)}
+
+
+@router.get("/ratings/trend")
+def admin_ratings_trend(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+    return {"code": 0, "message": "success", "data": get_admin_rating_trend(db)}

@@ -10,6 +10,11 @@ Ling Shan guide documents: entrance -> central Buddhist axis -> core Buddha
 area -> west-side palace/tantric area.
 """
 
+from sqlalchemy import select
+
+from app.core.database import new_session
+from app.models.persistence import Facility, ScenicSpot
+
 
 SCENIC_SPOTS = [
     {
@@ -245,3 +250,49 @@ def list_scenic_spots() -> list[dict]:
 def list_facilities() -> list[dict]:
     """Return the in-memory facility catalog used by the MVP guide APIs."""
     return SCENIC_FACILITIES
+
+
+def ensure_scenic_catalog() -> None:
+    """Seed the PostgreSQL scenic catalog used by ratings and analytics."""
+    with new_session() as db:
+        existing_spots = {row.id: row for row in db.execute(select(ScenicSpot)).scalars().all()}
+        for spot in SCENIC_SPOTS:
+            row = existing_spots.get(spot["id"])
+            values = {
+                "name": spot["name"],
+                "description": spot["description"],
+                "guide_text": spot["guide_text"],
+                "map_x": float(spot["map_x"]),
+                "map_y": float(spot["map_y"]),
+                "tags_json": spot.get("tags", []),
+                "recommended_duration": int(spot.get("recommended_duration", 10)),
+                "popularity_score": float(spot.get("popularity_score", 0.5)),
+                "culture_score": float(spot.get("culture_score", 0.5)),
+                "nature_score": float(spot.get("nature_score", 0.5)),
+                "photo_score": float(spot.get("photo_score", 0.5)),
+                "facility_score": float(spot.get("facility_score", 0.5)),
+                "enabled": True,
+            }
+            if row:
+                for key, value in values.items():
+                    setattr(row, key, value)
+            else:
+                db.add(ScenicSpot(id=spot["id"], **values))
+
+        existing_facilities = {row.id: row for row in db.execute(select(Facility)).scalars().all()}
+        for facility in SCENIC_FACILITIES:
+            values = {
+                "name": facility["name"],
+                "type": facility["type"],
+                "map_x": float(facility["map_x"]),
+                "map_y": float(facility["map_y"]),
+                "service_radius": int(facility.get("service_radius", 10)),
+                "enabled": True,
+            }
+            row = existing_facilities.get(facility["id"])
+            if row:
+                for key, value in values.items():
+                    setattr(row, key, value)
+            else:
+                db.add(Facility(id=facility["id"], **values))
+        db.commit()

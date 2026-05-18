@@ -89,28 +89,28 @@ RAG 是 Retrieval-Augmented Generation，完整链路包括：
 
 ## 5. 当前实现与生产级 RAG 的区别
 
-当前是 P0 轻量实现：
+当前比赛版实现：
 
 | 项目 | 当前实现 | 生产增强 |
 |---|---|---|
-| 向量方式 | Python 标准库哈希向量 | bge-m3 / text2vec / Qwen Embedding |
-| 向量库 | 本地 JSON 文件 | Chroma / FAISS / Milvus |
+| 向量方式 | Python 标准库哈希 embedding，维度由 `PGVECTOR_DIMENSION` 控制 | bge-m3 / text2vec / Qwen Embedding |
+| 向量库 | PostgreSQL + pgvector 的 `knowledge_chunk.embedding` | 仍建议优先 pgvector；只有千万级以上或多租户强隔离时再评估专用向量库 |
 | 重排 | 余弦相似度排序 | reranker + hybrid search |
 | 数据隔离 | 游客问答过滤 `behavior_data` | 按知识域、景区、权限分 collection |
 
-当前这样设计的原因：P0 阶段保证本地可运行、依赖少、比赛演示稳定。
+当前这样设计的原因：项目规模适合单库架构，景点、评分、问答日志和知识 chunk 都需要和 PostgreSQL 结构化数据 JOIN；引入 Chroma / Milvus / Qdrant 会增加部署和同步复杂度。
 
 ## 6. 为什么 xlsx 不默认用于游客路线问答？
 
 真实 xlsx 行为分析表体积较大，并包含多景区行为数据。直接喂给游客问答会污染回答。当前策略：
 
-- xlsx 仍进入向量库，供后台数据分析扩展使用。
+- xlsx 仍进入 PostgreSQL `knowledge_chunk`，供后台数据分析扩展使用。
 - 游客问答默认过滤 `behavior_data` 和 `.xlsx`。
 - 路线问题优先使用结构化景点和导览资料。
 
 过滤位置：
 
-- [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88)
+- [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137)
 
 ## 7. 如何验证 RAG 使用了知识库？
 

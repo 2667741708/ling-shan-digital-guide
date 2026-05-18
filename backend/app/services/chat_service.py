@@ -5,6 +5,8 @@ from uuid import uuid4
 from fastapi import UploadFile
 
 from app.schemas.visitor import ChatTextRequest, CreateSessionRequest
+from app.core.database import new_session
+from app.models.persistence import ChatMessage, VisitorSession
 from app.services.avatar_service import get_active_avatar
 from app.services.deepseek_service import DeepSeekClient
 from app.services.knowledge_service import retrieve_context
@@ -28,15 +30,61 @@ def _is_safe_reference(item: dict) -> bool:
 
 
 def create_session(payload: CreateSessionRequest) -> dict:
-    return {
+    session = {
         "session_uuid": f"s_{datetime.now().strftime('%Y%m%d')}_{uuid4().hex[:8]}",
         "avatar_config": get_active_avatar(),
         "user_profile": payload.user_profile,
     }
+    try:
+        with new_session() as db:
+            db.add(
+                VisitorSession(
+                    session_uuid=session["session_uuid"],
+                    device_type=payload.device_type,
+                    visitor_type=payload.user_profile.get("group_type", "anonymous"),
+                    user_profile=payload.user_profile,
+                    start_location=payload.start_location,
+                )
+            )
+            db.commit()
+    except Exception:
+        pass
+    return session
+
+
+def _ensure_session(session_uuid: str) -> None:
+    try:
+        with new_session() as db:
+            existing = db.query(VisitorSession).filter(VisitorSession.session_uuid == session_uuid).first()
+            if not existing:
+                db.add(VisitorSession(session_uuid=session_uuid, device_type="web"))
+                db.commit()
+    except Exception:
+        pass
+
+
+def _log_message(session_uuid: str, role: str, content: str, intent: str = "scenic_qa", latency_ms: int = 0, references: list[dict] | None = None) -> None:
+    try:
+        _ensure_session(session_uuid)
+        with new_session() as db:
+            db.add(
+                ChatMessage(
+                    session_uuid=session_uuid,
+                    role=role,
+                    content=content,
+                    intent=intent,
+                    latency_ms=latency_ms,
+                    references_json=references or [],
+                )
+            )
+            db.commit()
+    except Exception:
+        pass
 
 
 def chat_with_text(payload: ChatTextRequest) -> dict:
     started_at = perf_counter()
+    _log_message(payload.session_uuid, "user", payload.message)
     need_route = any(word in payload.message for word in ["路线", "怎么逛", "两个小时", "2小时"])
     if need_route:
         route_query = "灵山胜境 灵山大照壁 五智门 菩提大道 九龙灌浴 灵山大佛 灵山梵宫 五印坛城 推荐路线 历史 拍照"
@@ -74,7 +122,7 @@ def chat_with_text(payload: ChatTextRequest) -> dict:
         except RuntimeError:
             answer = fallback_answer
 
-    return {
+    result = {
         "answer": answer,
         "intent": "route_recommendation" if need_route else "scenic_qa",
         "emotion": "happy" if need_route else "thinking",
@@ -85,6 +133,8 @@ def chat_with_text(payload: ChatTextRequest) -> dict:
         "references": [{"document": item["source"], "chunk_id": item["chunk_id"]} for item in context],
         "latency_ms": int((perf_counter() - started_at) * 1000),
     }
+    _log_message(payload.session_uuid, "assistant", answer, result["intent"], result["latency_ms"], result["references"])
+    return result
 
 
 async def voice_chat(session_uuid: str, audio_file: UploadFile) -> dict:

@@ -1,39 +1,4 @@
-CREATE TABLE IF NOT EXISTS scenic_spot (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    alias VARCHAR(200),
-    description TEXT,
-    history_story TEXT,
-    guide_text TEXT,
-    latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION,
-    map_x DOUBLE PRECISION,
-    map_y DOUBLE PRECISION,
-    tags VARCHAR(500),
-    recommended_duration INT,
-    popularity_score FLOAT DEFAULT 0.5,
-    cultural_score FLOAT DEFAULT 0.5,
-    photo_score FLOAT DEFAULT 0.5,
-    family_score FLOAT DEFAULT 0.5,
-    elderly_friendly_score FLOAT DEFAULT 0.5,
-    open_time VARCHAR(100),
-    close_time VARCHAR(100),
-    image_url TEXT,
-    status VARCHAR(20) DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS faq (
-    id SERIAL PRIMARY KEY,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    category VARCHAR(50),
-    keywords VARCHAR(500),
-    enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
+CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS admin_user (
     id VARCHAR(32) PRIMARY KEY,
@@ -46,8 +11,106 @@ CREATE TABLE IF NOT EXISTS admin_user (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS ix_admin_user_username ON admin_user(username);
+
+CREATE TABLE IF NOT EXISTS scenic_spot (
+    id INT PRIMARY KEY,
+    name VARCHAR(120) UNIQUE NOT NULL,
+    description TEXT DEFAULT '',
+    guide_text TEXT DEFAULT '',
+    map_x DOUBLE PRECISION DEFAULT 0,
+    map_y DOUBLE PRECISION DEFAULT 0,
+    tags_json JSONB DEFAULT '[]'::jsonb,
+    recommended_duration INT DEFAULT 10,
+    popularity_score DOUBLE PRECISION DEFAULT 0.5,
+    culture_score DOUBLE PRECISION DEFAULT 0.5,
+    nature_score DOUBLE PRECISION DEFAULT 0.5,
+    photo_score DOUBLE PRECISION DEFAULT 0.5,
+    facility_score DOUBLE PRECISION DEFAULT 0.5,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_scenic_spot_enabled ON scenic_spot(enabled);
+
+CREATE TABLE IF NOT EXISTS facility (
+    id INT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    type VARCHAR(40) NOT NULL,
+    map_x DOUBLE PRECISION DEFAULT 0,
+    map_y DOUBLE PRECISION DEFAULT 0,
+    service_radius INT DEFAULT 10,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_facility_type ON facility(type);
+CREATE INDEX IF NOT EXISTS ix_facility_enabled ON facility(enabled);
+
+CREATE TABLE IF NOT EXISTS visitor_session (
+    id VARCHAR(32) PRIMARY KEY,
+    session_uuid VARCHAR(64) UNIQUE NOT NULL,
+    device_type VARCHAR(40) DEFAULT 'web',
+    visitor_type VARCHAR(40) DEFAULT 'anonymous',
+    user_profile JSONB DEFAULT '{}'::jsonb,
+    start_location JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_visitor_session_session_uuid ON visitor_session(session_uuid);
+
+CREATE TABLE IF NOT EXISTS chat_message (
+    id VARCHAR(32) PRIMARY KEY,
+    session_uuid VARCHAR(64) NOT NULL REFERENCES visitor_session(session_uuid) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    intent VARCHAR(60) DEFAULT 'scenic_qa',
+    latency_ms INT DEFAULT 0,
+    references_json JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_chat_message_session_uuid ON chat_message(session_uuid);
+CREATE INDEX IF NOT EXISTS ix_chat_message_role ON chat_message(role);
+CREATE INDEX IF NOT EXISTS ix_chat_message_intent ON chat_message(intent);
+CREATE INDEX IF NOT EXISTS ix_chat_message_created_at ON chat_message(created_at);
+
+CREATE TABLE IF NOT EXISTS route_plan (
+    id VARCHAR(32) PRIMARY KEY,
+    session_uuid VARCHAR(64) NOT NULL,
+    route_name VARCHAR(160) NOT NULL,
+    interest_tags JSONB DEFAULT '[]'::jsonb,
+    spot_ids JSONB DEFAULT '[]'::jsonb,
+    total_duration INT DEFAULT 0,
+    score_summary JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_route_plan_session_uuid ON route_plan(session_uuid);
+CREATE INDEX IF NOT EXISTS ix_route_plan_created_at ON route_plan(created_at);
+
+CREATE TABLE IF NOT EXISTS knowledge_base (
+    id VARCHAR(32) PRIMARY KEY,
+    code VARCHAR(80) UNIQUE NOT NULL DEFAULT 'default',
+    name VARCHAR(120) DEFAULT '灵山景区知识库',
+    description TEXT DEFAULT '景区 FAQ、景点资料、后台上传资料和公开资料包的统一知识库。',
+    vector_backend VARCHAR(40) DEFAULT 'pgvector',
+    embedding_model VARCHAR(120) DEFAULT 'hash_token_256',
+    embedding_dimension INT DEFAULT 256,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_knowledge_base_code ON knowledge_base(code);
+CREATE INDEX IF NOT EXISTS ix_knowledge_base_enabled ON knowledge_base(enabled);
+
 CREATE TABLE IF NOT EXISTS knowledge_document (
     id VARCHAR(32) PRIMARY KEY,
+    knowledge_base_id VARCHAR(32) NOT NULL REFERENCES knowledge_base(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     file_name VARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'draft',
@@ -61,11 +124,12 @@ CREATE TABLE IF NOT EXISTS knowledge_document (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS ix_knowledge_document_knowledge_base_id ON knowledge_document(knowledge_base_id);
 CREATE INDEX IF NOT EXISTS ix_knowledge_document_status ON knowledge_document(status);
 
 CREATE TABLE IF NOT EXISTS knowledge_document_version (
     id VARCHAR(32) PRIMARY KEY,
-    document_id VARCHAR(32) NOT NULL REFERENCES knowledge_document(id),
+    document_id VARCHAR(32) NOT NULL REFERENCES knowledge_document(id) ON DELETE CASCADE,
     version INT NOT NULL,
     title VARCHAR(200) NOT NULL,
     file_name VARCHAR(255) NOT NULL,
@@ -81,7 +145,7 @@ CREATE INDEX IF NOT EXISTS ix_knowledge_document_version_document_id ON knowledg
 
 CREATE TABLE IF NOT EXISTS knowledge_operation_log (
     id VARCHAR(32) PRIMARY KEY,
-    document_id VARCHAR(32) REFERENCES knowledge_document(id),
+    document_id VARCHAR(32) REFERENCES knowledge_document(id) ON DELETE SET NULL,
     version_id VARCHAR(32),
     action VARCHAR(40) NOT NULL,
     actor VARCHAR(80) DEFAULT 'system',
@@ -90,6 +154,33 @@ CREATE TABLE IF NOT EXISTS knowledge_operation_log (
 );
 
 CREATE INDEX IF NOT EXISTS ix_knowledge_operation_log_document_id ON knowledge_operation_log(document_id);
+
+CREATE TABLE IF NOT EXISTS knowledge_chunk (
+    id VARCHAR(32) PRIMARY KEY,
+    knowledge_base_id VARCHAR(32) NOT NULL REFERENCES knowledge_base(id) ON DELETE CASCADE,
+    document_id VARCHAR(32) REFERENCES knowledge_document(id) ON DELETE CASCADE,
+    version_id VARCHAR(32) REFERENCES knowledge_document_version(id) ON DELETE CASCADE,
+    chunk_id VARCHAR(120) UNIQUE NOT NULL,
+    chunk_index INT DEFAULT 1,
+    source TEXT NOT NULL,
+    category VARCHAR(80) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    text TEXT NOT NULL,
+    token_count INT DEFAULT 0,
+    embedding_payload JSONB DEFAULT '[]'::jsonb,
+    embedding vector(256),
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT uq_knowledge_chunk_version_index UNIQUE(version_id, chunk_index)
+);
+
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_knowledge_base_id ON knowledge_chunk(knowledge_base_id);
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_document_id ON knowledge_chunk(document_id);
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_version_id ON knowledge_chunk(version_id);
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_category ON knowledge_chunk(category);
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_enabled ON knowledge_chunk(enabled);
+CREATE INDEX IF NOT EXISTS ix_knowledge_chunk_embedding_hnsw ON knowledge_chunk USING hnsw (embedding vector_cosine_ops);
 
 CREATE TABLE IF NOT EXISTS avatar_config (
     id VARCHAR(32) PRIMARY KEY,
@@ -107,23 +198,26 @@ CREATE TABLE IF NOT EXISTS avatar_config (
 
 CREATE INDEX IF NOT EXISTS ix_avatar_config_enabled ON avatar_config(enabled);
 
--- 观众景点评分表 (Visitor Spot Rating)
--- 对应需求：观众对景点的个性化评分与反馈
 CREATE TABLE IF NOT EXISTS visitor_spot_rating (
     id VARCHAR(32) PRIMARY KEY,
     session_uuid VARCHAR(64) NOT NULL,
     spot_id INT NOT NULL REFERENCES scenic_spot(id) ON DELETE CASCADE,
-    overall_rating INT NOT NULL CHECK (overall_rating >= 1 AND overall_rating <= 5),
-    culture_rating INT CHECK (culture_rating >= 1 AND culture_rating <= 5),
-    nature_rating INT CHECK (nature_rating >= 1 AND nature_rating <= 5),
-    photo_rating INT CHECK (photo_rating >= 1 AND photo_rating <= 5),
-    facility_rating INT CHECK (facility_rating >= 1 AND facility_rating <= 5),
+    overall_rating INT NOT NULL CHECK (overall_rating BETWEEN 1 AND 5),
+    culture_rating INT CHECK (culture_rating BETWEEN 1 AND 5),
+    nature_rating INT CHECK (nature_rating BETWEEN 1 AND 5),
+    photo_rating INT CHECK (photo_rating BETWEEN 1 AND 5),
+    facility_rating INT CHECK (facility_rating BETWEEN 1 AND 5),
     comment TEXT,
-    user_tags JSONB DEFAULT '[]',
+    user_tags JSONB DEFAULT '[]'::jsonb,
     visit_date TIMESTAMP,
     weather_condition VARCHAR(40),
     crowd_level VARCHAR(40),
     is_public BOOLEAN DEFAULT FALSE,
+    user_profile_snapshot JSONB DEFAULT '{}'::jsonb,
+    review_status VARCHAR(30) DEFAULT 'approved',
+    sentiment VARCHAR(30) DEFAULT 'neutral',
+    sentiment_score DOUBLE PRECISION DEFAULT 0,
+    source VARCHAR(50) DEFAULT 'visitor_page',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT uq_visitor_spot_rating UNIQUE(session_uuid, spot_id)
@@ -132,3 +226,6 @@ CREATE TABLE IF NOT EXISTS visitor_spot_rating (
 CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_session_uuid ON visitor_spot_rating(session_uuid);
 CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_spot_id ON visitor_spot_rating(spot_id);
 CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_is_public ON visitor_spot_rating(is_public);
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_sentiment ON visitor_spot_rating(sentiment);
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_created_at ON visitor_spot_rating(created_at);
+CREATE INDEX IF NOT EXISTS ix_visitor_spot_rating_user_tags ON visitor_spot_rating USING GIN(user_tags);

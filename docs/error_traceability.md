@@ -156,7 +156,7 @@ python scripts/playwright_smoke_vue.py
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| Playwright 调用 | 通过技能 wrapper 调用 Playwright CLI | [scripts/playwright_smoke_vue.py:L56-L115](../scripts/playwright_smoke_vue.py#L56-L115) |
+| Playwright 调用 | 通过技能 wrapper 调用 Playwright CLI，脚本目标包含首页、游客导览页和后台登录页 | [scripts/playwright_smoke_vue.py:L74-L125](../scripts/playwright_smoke_vue.py#L74-L125) |
 | npm 配置 | 根目录 registry 配置 | [.npmrc:L1-L4](../.npmrc#L1-L4) |
 
 ### 当前状态

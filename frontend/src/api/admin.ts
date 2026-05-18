@@ -4,6 +4,18 @@ export function fetchDashboard() {
   return unwrap(http.get("/api/v1/admin/analytics/overview"));
 }
 
+export function fetchRatingRanking() {
+  return unwrap(http.get("/api/v1/admin/ratings/ranking"));
+}
+
+export function fetchRatingTrend() {
+  return unwrap(http.get("/api/v1/admin/ratings/trend"));
+}
+
+export function fetchAdminRatings(params: Record<string, unknown> = {}) {
+  return unwrap(http.get("/api/v1/admin/ratings", { params }));
+}
+
 export function loginAdmin(username: string, password: string) {
   return unwrap(http.post("/api/v1/auth/login", { username, password }));
 }

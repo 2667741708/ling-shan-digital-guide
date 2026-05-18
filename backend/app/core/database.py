@@ -64,6 +64,9 @@ def init_db() -> None:
     with engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     Base.metadata.create_all(bind=engine)
+    from app.services.scenic_service import ensure_scenic_catalog
+
+    ensure_scenic_catalog()
 
 
 def reset_database(database_url: str) -> None:

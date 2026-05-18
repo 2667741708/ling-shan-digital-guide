@@ -112,8 +112,9 @@ python scripts\check_doc_links.py
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
 | 景点数据 | 灵山大照壁、五智门、九龙灌浴、灵山大佛、梵宫、五印坛城等真实点位 | [SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L225](../backend/app/services/scenic_service.py#L14-L225) |
-| 路线算法 | 根据兴趣、热度、文化价值、自然价值、拍照价值、设施便利度、距离成本打分 | [_score_spot backend/app/services/route_service.py:L45-L67](../backend/app/services/route_service.py#L45-L67) |
-| 路线入口 | 游客端路线推荐服务 | [recommend_route backend/app/services/route_service.py:L80-L116](../backend/app/services/route_service.py#L80-L116) |
+| 路线算法 | 根据兴趣、热度、文化价值、游客评分、画像偏好、设施便利度和距离成本打分 | [_score_spot backend/app/services/route_service.py:L82-L107](../backend/app/services/route_service.py#L82-L107) |
+| 路线持久化 | 生成路线后写入 `route_plan`，供后台大屏统计热门景点与路线偏好 | [_persist_route backend/app/services/route_service.py:L118-L133](../backend/app/services/route_service.py#L118-L133) |
+| 路线入口 | 游客端路线推荐服务 | [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
 | 地图组件 | SVG 地形、水系、中轴线路线和 POI 详情 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 地图页面 | 兴趣和时间筛选，重新生成推荐路线 | [ScenicMap frontend/src/pages/visitor/ScenicMap.vue:L1-L62](../frontend/src/pages/visitor/ScenicMap.vue#L1-L62) |
 | 样式 | 地图视觉、路线、POI、图例、移动端适配 | [map styles frontend/src/styles.css:L438-L617](../frontend/src/styles.css#L438-L617) |
@@ -238,7 +239,7 @@ python scripts\smoke_vue_full_stack.py
 
 ### 状态
 
-待完成。
+已完成 MVP，后续可继续补充更细的时间筛选和图表组件。
 
 ### 用户场景
 
@@ -336,17 +337,20 @@ python scripts\smoke_vue_full_stack.py
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 大屏接口 | 当前提供 `/api/admin/analytics/overview` 和 `/api/admin/analytics/report` | [backend/app/api/admin.py:L135-L142](../backend/app/api/admin.py#L135-L142) |
-| 后端统计服务 | 当前返回固定演示数据 | [dashboard_overview backend/app/services/analytics_service.py:L1-L39](../backend/app/services/analytics_service.py#L1-L39) |
+| 大屏接口 | 提供旧 `/api/admin/analytics/*` 与新 `/api/v1/admin/analytics/overview` | [analytics_overview backend/app/api/admin.py:L138-L145](../backend/app/api/admin.py#L138-L145), [admin_analytics_overview_v1 backend/app/api/v1.py:L275-L277](../backend/app/api/v1.py#L275-L277) |
+| 后端统计服务 | 从 `chat_message`、`route_plan`、`visitor_spot_rating` 和 `scenic_spot` 聚合大屏数据 | [dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89) |
 | 前端 API | 当前直接请求 overview 接口 | [fetchDashboard frontend/src/api/admin.ts:L3-L5](../frontend/src/api/admin.ts#L3-L5) |
-| 大屏页面 | 当前仅展示接口返回结果 | [frontend/src/pages/admin/AdminDashboard.vue:L8-L80](../frontend/src/pages/admin/AdminDashboard.vue#L8-L80) |
+| 大屏页面 | 展示服务量、评分、热门问答、路线访问、景点评分排行、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L19-L108](../frontend/src/pages/admin/AdminDashboard.vue#L19-L108) |
+| 问答日志 | 游客问答写入 `chat_message`，供大屏计算服务量、热门问题和知识命中率 | [_log_message backend/app/services/chat_service.py:L66-L82](../backend/app/services/chat_service.py#L66-L82), [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
+| 路线日志 | 路线推荐写入 `route_plan`，供大屏计算热门景点和路线偏好 | [_persist_route backend/app/services/route_service.py:L118-L133](../backend/app/services/route_service.py#L118-L133) |
+| 评分聚合 | 景点评分排行、情绪趋势和标签统计来自评分服务 | [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366), [get_admin_rating_trend backend/app/services/rating_service.py:L369-L385](../backend/app/services/rating_service.py#L369-L385) |
 | 现有后台鉴权 | 大屏接口已受管理员权限保护 | [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
 
 ### 计划交付结果
 
-- 补齐游客问答、路线推荐、满意度或情绪的采集和存储。
-- `/api/admin/analytics/overview` 返回真实聚合结果。
-- 前端大屏可展示空态、错误态和真实统计刷新结果。
+- 游客问答、路线推荐、满意度和情绪已进入 PostgreSQL。
+- `/api/admin/analytics/overview` 和 `/api/v1/admin/analytics/overview` 返回真实聚合结果。
+- 前端大屏已展示空态和真实统计刷新结果。
 
 ### 验收标准
 
@@ -532,6 +536,50 @@ python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-dig
 
 影响镜像发布流程、容器分发方式、GitHub 凭据管理，以及外部环境对单容器方案的接入方式。
 
+## REQ-021 游客个性化评分、路线反哺与数据大屏
+
+### 用户场景
+
+游客在数字人导览页对景点提交综合、文化、自然、拍照、设施等多维评分，系统保存匿名画像快照和评论情绪；路线推荐根据景点评分与游客历史偏好调整排序，后台大屏展示评分排行、负向反馈、情绪趋势和高频标签。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 数据模型 | `visitor_spot_rating` 多维评分、唯一约束、情绪字段、画像快照和来源字段 | [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354) |
+| 景区主数据 | `scenic_spot`、`facility`、`visitor_session`、`chat_message` 和 `route_plan` 支撑评分、路线和大屏 | [ScenicSpot backend/app/models/persistence.py:L64-L86](../backend/app/models/persistence.py#L64-L86), [Facility backend/app/models/persistence.py:L89-L102](../backend/app/models/persistence.py#L89-L102), [VisitorSession backend/app/models/persistence.py:L105-L119](../backend/app/models/persistence.py#L105-L119), [ChatMessage backend/app/models/persistence.py:L122-L136](../backend/app/models/persistence.py#L122-L136), [RoutePlan backend/app/models/persistence.py:L139-L151](../backend/app/models/persistence.py#L139-L151) |
+| 景区数据初始化 | 启动时把内置灵山景点和设施同步到 PostgreSQL，避免评分外键缺失 | [init_db backend/app/core/database.py:L58-L69](../backend/app/core/database.py#L58-L69), [ensure_scenic_catalog backend/app/services/scenic_service.py:L255-L298](../backend/app/services/scenic_service.py#L255-L298) |
+| 请求/响应模型 | 评分请求包含画像快照、来源和公开标记，响应返回情绪和创建/更新状态 | [SpotRatingRequest backend/app/schemas/visitor.py:L25-L41](../backend/app/schemas/visitor.py#L25-L41), [SpotRatingResponse backend/app/schemas/visitor.py:L44-L67](../backend/app/schemas/visitor.py#L44-L67) |
+| 评分服务 | upsert、情绪分析、加权评分、公开评论、游客画像、后台排行和趋势 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
+| 游客 API | `/api/v1/visitor/ratings`、评分历史、景点评分统计和公开评论 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [session_ratings_v1 backend/app/api/v1.py:L238-L241](../backend/app/api/v1.py#L238-L241), [spot_rating_stats_v1 backend/app/api/v1.py:L244-L246](../backend/app/api/v1.py#L244-L246), [spot_public_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252) |
+| 后台 API | `/api/v1/admin/ratings`、评分排行和趋势 | [admin_ratings_v1 backend/app/api/v1.py:L280-L302](../backend/app/api/v1.py#L280-L302), [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307), [admin_rating_trend_v1 backend/app/api/v1.py:L310-L312](../backend/app/api/v1.py#L310-L312) |
+| 路线反哺 | 路线评分公式读取景点评分与游客偏好画像，生成后写入 `route_plan` | [_route_context backend/app/services/route_service.py:L110-L115](../backend/app/services/route_service.py#L110-L115), [_score_spot backend/app/services/route_service.py:L82-L107](../backend/app/services/route_service.py#L82-L107), [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
+| 游客前端 | 数字人页新增评分面板、评分统计和提交后路线偏好反馈 | [ChatGuide script frontend/src/pages/visitor/ChatGuide.vue:L29-L114](../frontend/src/pages/visitor/ChatGuide.vue#L29-L114), [ChatGuide rating template frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211), [visitor rating API frontend/src/api/visitor.ts:L29-L56](../frontend/src/api/visitor.ts#L29-L56) |
+| 后台前端 | 大屏新增评分、负向反馈、景点评分排行、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105), [admin rating API frontend/src/api/admin.ts:L7-L17](../frontend/src/api/admin.ts#L7-L17) |
+| 视觉样式 | 基于卡片、玻璃导航、评分面板和大屏网格的前端视觉刷新 | [UX refresh frontend/src/styles.css:L929-L1259](../frontend/src/styles.css#L929-L1259) |
+| 初始化 SQL | 手写 SQL 与 ORM 对齐，包含 pgvector、评分、会话、消息和路线表 | [scripts/init_db.sql:L1-L231](../scripts/init_db.sql#L1-L231) |
+| 测试 | 评分 upsert、统计、公开评论、排行和画像测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
+
+### 验收标准
+
+- 同一个 `session_uuid + spot_id` 重复提交评分时更新原记录，而不是产生重复数据。
+- 景点评分统计返回综合、文化、自然、拍照、设施、评分分布和高频标签。
+- 路线推荐返回 `score_summary.uses_visitor_ratings`，并把路线写入 `route_plan`。
+- 后台大屏能从真实问答、路线和评分数据生成热门问答、热门景点、满意度、负向反馈和标签。
+- 前端游客页和后台大屏构建通过，且移动端布局不崩溃。
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-frontend
+python scripts\check_doc_links.py
+```
+
+### 影响范围
+
+影响游客评分入口、路线推荐排序、后台数据大屏、PostgreSQL 表结构、`/api/v1` 契约、前端页面视觉和评分相关测试。
+
 ## REQ-015 演示视频与最终交付物
 
 ### 状态
@@ -625,7 +673,7 @@ python scripts\smoke_vue_full_stack.py
 | 文档嵌入 | `/api/v1/admin/documents/{id}/embed` 真实切片入库 | [embed_document backend/app/services/vector_store.py:L432-L460](../backend/app/services/vector_store.py#L432-L460), [admin_document_embed_v1 backend/app/api/v1.py:L359-L372](../backend/app/api/v1.py#L359-L372) |
 | RAG 检索 | `/api/v1/rag/retrieve` 默认走 pgvector 距离排序 | [vector_backend_name backend/app/services/vector_store.py:L80-L81](../backend/app/services/vector_store.py#L80-L81), [_retrieve_pgvector_chunks backend/app/services/vector_store.py:L506-L529](../backend/app/services/vector_store.py#L506-L529), [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596), [rag_retrieve_v1 backend/app/api/v1.py:L220-L222](../backend/app/api/v1.py#L220-L222) |
 | 系统状态 | 返回当前真实数据库后端和向量后端类型 | [_database_status backend/app/services/system_service.py:L10-L16](../backend/app/services/system_service.py#L10-L16), [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
-| 测试 | chunk 表构建、文档生命周期、`/api/v1` 嵌入和检索验证 | [backend/tests/test_vector_store.py:L6-L25](../backend/tests/test_vector_store.py#L6-L25), [backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63), [backend/tests/test_api_v1.py:L66-L95](../backend/tests/test_api_v1.py#L66-L95) |
+| 测试 | chunk 表构建、文档生命周期、`/api/v1` 嵌入和检索验证 | [backend/tests/test_vector_store.py:L6-L25](../backend/tests/test_vector_store.py#L6-L25), [backend/tests/test_knowledge_management.py:L21-L63](../backend/tests/test_knowledge_management.py#L21-L63), [backend/tests/test_api_v1.py:L84-L113](../backend/tests/test_api_v1.py#L84-L113) |
 
 ### 验证命令
 
@@ -652,7 +700,7 @@ python scripts\run_local.py smoke-docker-postgres
 | 配置约束 | `Settings.database_url` 仅接受 PostgreSQL URL，移除无效 `VECTOR_DB_TYPE` 配置 | [Settings backend/app/core/config.py:L4-L19](../backend/app/core/config.py#L4-L19), [_parse_postgres_url backend/app/core/database.py:L21-L27](../backend/app/core/database.py#L21-L27) |
 | 运行脚本 | 本地 runner 自动拉起 `postgres` 服务并固定宿主机端口 `5433` | [scripts/run_local.py:L19-L30](../scripts/run_local.py#L19-L30), [ensure_postgres_service scripts/run_local.py:L74-L86](../scripts/run_local.py#L74-L86) |
 | Compose 配置 | 宿主机 `5433 -> 容器 5432`，避免误连本机已有 PostgreSQL | [deploy/docker-compose.yml:L25-L40](../deploy/docker-compose.yml#L25-L40) |
-| 测试链路 | 所有核心测试改为 PostgreSQL 临时数据库，不再创建 SQLite 文件库 | [postgres_test_database_url backend/tests/postgres_test_utils.py:L10-L17](../backend/tests/postgres_test_utils.py#L10-L17), [backend/tests/test_auth_service.py:L11-L48](../backend/tests/test_auth_service.py#L11-L48), [backend/tests/test_vector_store.py:L7-L25](../backend/tests/test_vector_store.py#L7-L25), [backend/tests/test_api_v1.py:L8-L95](../backend/tests/test_api_v1.py#L8-L95) |
+| 测试链路 | 所有核心测试改为 PostgreSQL 临时数据库，不再创建 SQLite 文件库 | [postgres_test_database_url backend/tests/postgres_test_utils.py:L10-L17](../backend/tests/postgres_test_utils.py#L10-L17), [backend/tests/test_auth_service.py:L11-L48](../backend/tests/test_auth_service.py#L11-L48), [backend/tests/test_vector_store.py:L7-L25](../backend/tests/test_vector_store.py#L7-L25), [backend/tests/test_api_v1.py:L8-L113](../backend/tests/test_api_v1.py#L8-L113) |
 | 前端构建清理 | `vue-tsc` 改为 `noEmit`，删除历史 `frontend/src/*.js(.map)` 编译残留 | [frontend/tsconfig.json:L1-L16](../frontend/tsconfig.json#L1-L16), [frontend/src/main.ts:L1-L9](../frontend/src/main.ts#L1-L9), [frontend/src/api/admin.ts:L1-L66](../frontend/src/api/admin.ts#L1-L66), [frontend/src/api/visitor.ts:L1-L55](../frontend/src/api/visitor.ts#L1-L55) |
 | 仓库清理 | 删除 SQLite `.db` 测试产物，只保留 `data/admin_knowledge/.gitkeep` | [data/admin_knowledge/.gitkeep:L1-L1](../data/admin_knowledge/.gitkeep#L1-L1) |
 | 依赖收敛 | 后端依赖仅保留 PostgreSQL 驱动，不再保留未使用的 `redis` | [backend/requirements.txt:L1-L8](../backend/requirements.txt#L1-L8) |

@@ -16,6 +16,7 @@ class GuideAskRequestV1(BaseModel):
 
 
 class RouteRecommendRequestV1(BaseModel):
+    session_id: str | None = None
     start_point: str = "main_gate"
     available_minutes: int = 120
     interest_tags: list[str] = Field(default_factory=list)

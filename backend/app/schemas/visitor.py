@@ -37,6 +37,8 @@ class SpotRatingRequest(BaseModel):
     weather_condition: str | None = Field(None, description="天气状况")
     crowd_level: str | None = Field(None, description="拥挤程度")
     is_public: bool = False
+    user_profile_snapshot: dict = Field(default_factory=dict, description="提交评分时的匿名游客画像快照")
+    source: str = Field("visitor_page", description="评分来源")
 
 
 class SpotRatingResponse(BaseModel):
@@ -44,6 +46,7 @@ class SpotRatingResponse(BaseModel):
     id: str
     session_uuid: str
     spot_id: int
+    spot_name: str | None = None
     overall_rating: int
     culture_rating: int | None = None
     nature_rating: int | None = None
@@ -55,5 +58,10 @@ class SpotRatingResponse(BaseModel):
     weather_condition: str | None = None
     crowd_level: str | None = None
     is_public: bool = False
+    review_status: str = "approved"
+    sentiment: str = "neutral"
+    sentiment_score: float = 0.0
+    source: str = "visitor_page"
+    created_or_updated: str | None = None
     created_at: str
     updated_at: str

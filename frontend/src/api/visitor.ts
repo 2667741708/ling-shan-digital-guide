@@ -23,6 +23,36 @@ export interface RoutePlan {
   total_duration: number;
   spots: RouteSpot[];
   reason: string;
+  score_summary?: Record<string, unknown>;
+}
+
+export interface SpotRatingPayload {
+  session_uuid: string;
+  spot_id: number;
+  overall_rating: number;
+  culture_rating?: number;
+  nature_rating?: number;
+  photo_rating?: number;
+  facility_rating?: number;
+  comment?: string;
+  user_tags?: string[];
+  is_public?: boolean;
+  user_profile_snapshot?: Record<string, unknown>;
+  source?: string;
+}
+
+export interface SpotRatingStats {
+  spot_id: number;
+  spot_name?: string;
+  total_ratings: number;
+  average_overall?: number;
+  average_culture?: number;
+  average_nature?: number;
+  average_photo?: number;
+  average_facility?: number;
+  weighted_average_overall?: number;
+  top_tags: Array<{ tag: string; count: number }>;
+  rating_distribution: Record<string, number>;
 }
 
 export function createSession() {
@@ -47,9 +77,22 @@ export function fetchScenicSpots(): Promise<ScenicSpot[]> {
 
 export function recommendRoute(sessionUuid: string, overrides: Partial<{ interest: string[]; available_time: number; physical_strength: string; start_spot_id: number }> = {}): Promise<RoutePlan> {
   return unwrap(http.post("/api/v1/route/recommend", {
+    session_id: sessionUuid,
     start_point: "main_gate",
     available_minutes: overrides.available_time ?? 120,
     interest_tags: overrides.interest ?? ["history", "photo"],
     group_type: overrides.physical_strength === "elderly" ? "elderly" : "family"
   }));
+}
+
+export function submitSpotRating(payload: SpotRatingPayload) {
+  return unwrap(http.post("/api/v1/visitor/ratings", payload));
+}
+
+export function fetchSpotRatingStats(spotId: number): Promise<SpotRatingStats> {
+  return unwrap(http.get(`/api/v1/visitor/spots/${spotId}/ratings/stats`));
+}
+
+export function fetchSessionRatings(sessionUuid: string) {
+  return unwrap(http.get(`/api/v1/visitor/sessions/${encodeURIComponent(sessionUuid)}/ratings`));
 }

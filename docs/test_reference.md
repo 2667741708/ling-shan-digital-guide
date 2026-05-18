@@ -91,9 +91,9 @@
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-003 |
-| Playwright 脚本 | [scripts/playwright_smoke_vue.py:L56-L115](../scripts/playwright_smoke_vue.py#L56-L115) |
+| Playwright 脚本 | [scripts/playwright_smoke_vue.py:L74-L125](../scripts/playwright_smoke_vue.py#L74-L125) |
 | 运行命令 | `python scripts/playwright_smoke_vue.py` |
-| 当前状态 | `npx` 存在，但 `@playwright/cli` 下载出现 registry `ECONNRESET` |
+| 当前状态 | 脚本可启动 PostgreSQL、FastAPI 和 Vite，并会验证首页、`/guide`、`/admin/login`；当前机器下载 `@playwright/cli` 仍出现 registry `ECONNRESET`，应用验证以 `TEST-006`、`TEST-022`、`TEST-023` 为准 |
 
 ## TEST-011 手动测试数字人导游
 
@@ -210,8 +210,8 @@ python scripts\run_local.py smoke-docker-postgres
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | REQ-016、REQ-017 |
-| 测试文件 | [backend/tests/test_api_v1.py:L1-L94](../backend/tests/test_api_v1.py#L1-L94) |
-| 覆盖范围 | `GET /api/v1/health`、`POST /api/v1/guide/ask`、`GET /api/v1/scenic/spots`、`GET /api/v1/scenic/facilities`、`POST /api/v1/route/recommend`、`POST /api/v1/auth/login`、`GET /api/v1/admin/system/status`、`POST /api/v1/admin/knowledge-bases/default/documents`、`POST /api/v1/admin/documents/{id}/embed`、`POST /api/v1/rag/retrieve` |
+| 测试文件 | [backend/tests/test_api_v1.py:L1-L113](../backend/tests/test_api_v1.py#L1-L113) |
+| 覆盖范围 | `GET /api/v1/health`、`POST /api/v1/guide/ask`、`GET /api/v1/scenic/spots`、`GET /api/v1/scenic/facilities`、`POST /api/v1/visitor/ratings`、`POST /api/v1/route/recommend`、`POST /api/v1/auth/login`、`GET /api/v1/admin/system/status`、`POST /api/v1/admin/knowledge-bases/default/documents`、`POST /api/v1/admin/documents/{id}/embed`、`POST /api/v1/rag/retrieve` |
 | 运行命令 | `python scripts\run_local.py test-backend` |
 | 预期结果 | `/api/v1` 核心路由返回 200，后台知识库列表返回向量后端类型，文档嵌入接口返回 `embed_result.chunk_count >= 1`，RAG 检索返回 chunk 列表 |
 
@@ -250,3 +250,35 @@ python scripts\run_local.py smoke-docker-postgres
 | 被测脚本 | [main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) |
 | 发布镜像 | [deploy/Dockerfile.allinone.release:L1-L29](../deploy/Dockerfile.allinone.release#L1-L29) |
 | 预期结果 | `--help` 能输出参数说明；`--no-push` 可在本地构建 GHCR 发布镜像；真实推送需要有效 `GHCR_TOKEN` |
+
+## TEST-022 游客评分、路线反哺与大屏聚合
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) |
+| 测试函数 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
+| 被测服务 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
+| 相关路由 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307) |
+| 运行命令 | `python scripts\run_local.py test-backend` |
+| 预期结果 | 同一游客会话对同一景点重复评分会更新；景点评分统计、公开评论、后台排行和游客偏好画像均返回有效数据 |
+
+## TEST-023 前端评分面板与大屏视觉构建
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | [REQ-012 后台运营大屏真实聚合](./requirements_traceability.md#req-012-后台运营大屏真实聚合), [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) |
+| 游客页面 | [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211) |
+| 后台页面 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105) |
+| 样式入口 | [UX refresh frontend/src/styles.css:L929-L1259](../frontend/src/styles.css#L929-L1259) |
+| 运行命令 | `python scripts\run_local.py build-frontend` |
+| 预期结果 | Vue 类型检查和 Vite 生产构建通过，评分面板和大屏新增模块没有类型错误 |
+
+## TEST-024 PostgreSQL 初始化 SQL 验证
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | [REQ-017 PostgreSQL + pgvector 知识库迁移](./requirements_traceability.md#req-017-postgresql--pgvector-知识库迁移), [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) |
+| SQL 脚本 | [scripts/init_db.sql:L1-L231](../scripts/init_db.sql#L1-L231) |
+| 覆盖范围 | `CREATE EXTENSION vector`、知识库、chunk vector、景点、设施、游客会话、问答日志、路线日志和游客评分表 |
+| 运行命令 | `docker compose -f deploy/docker-compose.yml up -d postgres` 后，将 [scripts/init_db.sql:L1-L231](../scripts/init_db.sql#L1-L231) 输入临时 PostgreSQL 数据库执行 |
+| 预期结果 | 临时数据库能完整执行 SQL 并创建 HNSW 向量索引，随后可删除临时库 |
