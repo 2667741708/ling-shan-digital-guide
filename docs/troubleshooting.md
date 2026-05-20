@@ -1,4 +1,4 @@
-# 通用排错经验
+﻿# 通用排错经验
 
 ## TRB-001 前端 npm install 超时或 ECONNRESET
 
@@ -33,6 +33,42 @@ python scripts\run_local.py install-frontend
 ```powershell
 python scripts\smoke_full_stack.py
 ```
+
+## TRB-020 Windows PowerShell 执行 npm.ps1 或用户级 npm cache 失败
+
+### 错误现象
+
+PowerShell 中直接运行 `npm install` 或 `npm run ...` 时出现 `无法加载文件 ... npm.ps1，因为在此系统上禁止运行脚本`；或安装依赖时出现 `EPERM: operation not permitted, mkdir ... npm-cache\_cacache\tmp`。
+
+### 常见原因
+
+Windows 执行策略阻止 PowerShell 运行 `npm.ps1`，或当前进程没有权限写入用户级 npm cache。Codex/自动化环境中还可能因为沙箱只允许写项目目录而拒绝写 `C:\Users\<user>\AppData\Local\npm-cache`。
+
+### 定位位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| npm 配置 | 前端 registry 和 audit/fund/progress 配置 | [frontend/.npmrc:L1-L4](../frontend/.npmrc#L1-L4) |
+| 前端依赖 | 新增 `test:avatar` 和 Vitest 依赖 | [frontend/package.json:L5-L24](../frontend/package.json#L5-L24) |
+| local-2d 测试 | 触发前端测试依赖安装和运行 | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L1-L54](../frontend/tests/avatarLipSync.test.ts#L1-L54) |
+
+### 修复方式
+
+在 PowerShell 中优先调用 `npm.cmd`，并把缓存放到项目目录：
+
+```powershell
+cd frontend
+npm.cmd install --cache .\.npm-cache
+npm.cmd run test:avatar
+```
+
+也可以从仓库根目录运行：
+
+```powershell
+npm --prefix frontend run test:avatar
+```
+
+验证完成后，项目内临时 `.npm-cache` 可以删除；不要把缓存目录提交到 Git。
 
 ## TRB-002 端口占用
 
@@ -708,3 +744,179 @@ python scripts\smoke_vue_full_stack.py
 python scripts\run_local.py test-backend
 python scripts\run_local.py smoke-docker-postgres
 ```
+
+## TRB-021 本机没有 Blender/OpenSCAD，无法直接导出 3D 嘴部 GLB
+
+### 错误现象
+
+执行 `blender --background ...`、`openscad ...` 或 `FreeCADCmd ...` 时命令不存在，当前机器只能先查看 2D 口型或 OBJ 参考 pose。
+
+### 常见原因
+
+1. 未安装 Blender/OpenSCAD/FreeCAD；
+2. 软件已安装但未加入 `PATH`；
+3. 当前只需要前端 SVG 口型效果，不需要真实 GLB morph targets；
+4. 传统 CAD 工具不适合最终真人嘴唇软体形变。
+
+### 定位文件
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 2D/OBJ 资产生成 | 不依赖 Blender，可生成 SVG、OBJ 和 OpenSCAD 参考体 | [generate_mouth_assets scripts/generate_mouth_assets.py:L11-L266](../scripts/generate_mouth_assets.py#L11-L266) |
+| Blender GLB 脚本 | 安装 Blender 后运行，生成 shape keys 和 GLB | [blender_generate_mouth_model.py scripts/blender_generate_mouth_model.py:L1-L113](../scripts/blender_generate_mouth_model.py#L1-L113) |
+| 前端素材接入 | 当前 `local-2d` 先使用 SVG mouth sprites | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L7-L125](../frontend/src/components/Avatar/DigitalAvatar.vue#L7-L125) |
+| 本地启动约定 | Docker 不可用时可先前端-only 查看效果 | [AGENTS.md:L165-L214](../AGENTS.md#L165-L214) |
+
+### 排查命令
+
+```powershell
+Get-Command blender -ErrorAction SilentlyContinue
+Get-Command openscad -ErrorAction SilentlyContinue
+Get-Command FreeCADCmd -ErrorAction SilentlyContinue
+python scripts\generate_mouth_assets.py
+npm --prefix frontend run test:avatar
+```
+
+### 修复方式
+
+1. 只看当前口型效果：运行 `python scripts\generate_mouth_assets.py` 后打开 `http://127.0.0.1:5173/guide`。
+2. 需要 GLB morph targets：安装 Blender 并确认 `Get-Command blender` 可找到命令。
+3. 安装后执行：
+
+```powershell
+blender --background --python scripts\blender_generate_mouth_model.py -- --output frontend/public/avatar/mouth-3d/lingling-mouth.glb
+```
+
+### 验证方式
+
+```powershell
+npm --prefix frontend run test:avatar
+python scripts\run_local.py build-frontend
+python scripts\check_doc_links.py
+```
+
+当前 Windows 机器已通过 winget 安装 Blender/OpenSCAD/FreeCAD，但默认未加入当前 shell 的 `PATH`。可先使用完整路径：
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --version
+& "C:\Program Files\OpenSCAD\openscad.exe" --version
+& "C:\Users\hmw20\AppData\Local\Programs\FreeCAD 1.1\bin\freecadcmd.exe" --version
+```
+
+## TRB-022 `@gltf-transform/cli` 固定到前端 devDependency 后导致 Vue 类型检查失败
+
+### 错误现象
+
+执行 `npm.cmd run build` 时，`vue-tsc` 在 `node_modules/@types/glob`、`@types/node` 里报 `minimatch` 和 `Buffer` 类型冲突。
+
+### 原因分析
+
+`@gltf-transform/cli` 是 Node CLI 工具，不是浏览器运行时依赖。把它固定到 `frontend/devDependencies` 会让 TypeScript 自动纳入 Node 相关 `@types/*`，与当前 Vue 前端 DOM 类型检查发生冲突。
+
+### 定位文件
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 前端依赖 | 保留 Three.js/VRM 运行时和 Three 类型，不固定 glTF-Transform CLI | [package.json frontend/package.json:L13-L24](../frontend/package.json#L13-L24) |
+| 3D 渲染器 | 浏览器运行时使用 Three.js/GLTFLoader/three-vrm | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) |
+| CLI 用法 | 用 `npm exec --package @gltf-transform/cli` 临时运行 | [cli_usage docs/cli_usage.md:L85-L89](./cli_usage.md#L85-L89) |
+
+### 修复方式
+
+不要把 `@gltf-transform/cli` 固定到前端 `devDependencies`。需要检查或压缩模型时临时运行：
+
+```powershell
+npm.cmd --prefix frontend exec --registry=https://registry.npmmirror.com --package @gltf-transform/cli -- gltf-transform --help
+```
+
+### 验证方式
+
+```powershell
+npm.cmd --prefix frontend run build
+```
+
+## TRB-023 realistic-3d GLB 缺失或口型 morph targets 不兼容
+
+### 错误现象
+
+`/guide` 页面仍显示 `local-2d`，或 `python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb` 输出 `missing required targets`。
+
+### 常见原因
+
+1. `frontend/public/avatar/models/lingling-realistic.glb` 不存在；
+2. GLB 不是 glTF 2.0 binary；
+3. Blender 导出的 shape key 名称不是 `closed/mbp/aa/ee/oh/round/fv/smile`；
+4. 模型可以加载但没有 mesh morph targets，前端只能回退到 2D；
+5. 外部 AI 图生 3D 初模没有口型，需要回到 Blender 增加 shape keys。
+
+### 定位文件
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 全身 GLB 生成 | 生成本地 procedural 灵灵全身模型和 8 个口型 shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| GLB 检查 | 解析 GLB JSON chunk 并检查缺失 targets | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
+| 模型说明 | 模型路径、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 前端加载 | GLTFLoader/VRM loader 和 fallback 事件 | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
+
+### 修复方式
+
+重新生成并检查 GLB：
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --reference-dir 数字人形象示例
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
+```
+
+如果使用外部 GLB/VRM 替换模型，必须保留相同路径，或同步修改 [REALISTIC_AVATAR_MODEL_URL frontend/src/store/avatarRenderer.ts:L4-L4](../frontend/src/store/avatarRenderer.ts#L4-L4)，并确认 morph target 名称能被 [MORPH_TARGET_BY_VISEME frontend/src/store/avatarRenderer.ts:L19-L28](../frontend/src/store/avatarRenderer.ts#L19-L28) 匹配。
+
+### 验证方式
+
+```powershell
+npm.cmd --prefix frontend run test:avatar
+npm.cmd --prefix frontend run build
+python scripts\check_doc_links.py
+```
+
+## TRB-024 本机 8GB 显存无法稳定跑高保真图生 3D
+
+### 错误现象
+
+尝试运行 Hunyuan3D/Pixal3D/TRELLIS.2 时出现 CUDA OOM、CUDA extension 编译失败、OpenMP DLL 冲突，或生成结果不像参考图。
+
+### 常见原因
+
+1. 本机 RTX 5070 Laptop GPU 约 8GB VRAM，只适合低显存 shape-only 实验；
+2. TRELLIS.2 官方更偏 Linux + 24GB+ VRAM 环境；
+3. Pixal3D 官方安装以 TRELLIS.2 为基础，本机稳定性风险高；
+4. 参考图 `数字人灵灵.png` 是设计板拼图，包含多套服装、表情和文字，需要先裁剪成单主体输入；
+5. 已有 Conda Torch 环境存在 `libiomp5md.dll` OpenMP 冲突，不适合作为 Hunyuan3D 运行环境。
+
+### 定位文件
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 本地模型说明 | 当前可用的 procedural GLB 和图生 3D 替换注意事项 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 生成脚本 | 不依赖图生 3D 权重的 Blender fallback 资产链路 | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 检查脚本 | 替换外部 GLB 后必须先跑的口型合约检查 | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
+
+### 建议路线
+
+先用当前 Blender procedural GLB 保证前端演示稳定。若要继续追求高保真图生 3D，先裁剪参考图到单个全身主体，再在 clean Conda 环境尝试 Hunyuan3D-2mini low-vram；TRELLIS.2/Pixal3D 建议换到 Linux/WSL/cloud 的 24GB+ VRAM 机器。
+
+```powershell
+conda create -n hy3d20 python=3.10 -y -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main --override-channels
+conda activate hy3d20
+$env:HF_ENDPOINT="https://hf-mirror.com"
+python -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+### 验证方式
+
+```powershell
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
+npm.cmd --prefix frontend run test:avatar
+```
+
+
+
+

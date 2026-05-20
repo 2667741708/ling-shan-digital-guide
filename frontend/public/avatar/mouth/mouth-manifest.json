@@ -1,0 +1,50 @@
+{
+  "version": "local-2d-mouth-v1",
+  "viewBox": "0 0 512 256",
+  "visemes": {
+    "closed": {
+      "title": "closed neutral lips",
+      "svg": "/avatar/mouth/viseme-closed.svg",
+      "obj": "/avatar/mouth-3d/viseme-closed.obj"
+    },
+    "mbp": {
+      "title": "pressed m/b/p lips",
+      "svg": "/avatar/mouth/viseme-mbp.svg",
+      "obj": "/avatar/mouth-3d/viseme-mbp.obj"
+    },
+    "aa": {
+      "title": "open aa/a mouth",
+      "svg": "/avatar/mouth/viseme-aa.svg",
+      "obj": "/avatar/mouth-3d/viseme-aa.obj"
+    },
+    "ee": {
+      "title": "wide ee/i mouth",
+      "svg": "/avatar/mouth/viseme-ee.svg",
+      "obj": "/avatar/mouth-3d/viseme-ee.obj"
+    },
+    "oh": {
+      "title": "oval oh/o mouth",
+      "svg": "/avatar/mouth/viseme-oh.svg",
+      "obj": "/avatar/mouth-3d/viseme-oh.obj"
+    },
+    "round": {
+      "title": "rounded u/w mouth",
+      "svg": "/avatar/mouth/viseme-round.svg",
+      "obj": "/avatar/mouth-3d/viseme-round.obj"
+    },
+    "fv": {
+      "title": "f/v lower-lip contact",
+      "svg": "/avatar/mouth/viseme-fv.svg",
+      "obj": "/avatar/mouth-3d/viseme-fv.obj"
+    },
+    "smile": {
+      "title": "soft smile vowel",
+      "svg": "/avatar/mouth/viseme-smile.svg",
+      "obj": "/avatar/mouth-3d/viseme-smile.obj"
+    }
+  },
+  "modelAssets": {
+    "objDirectory": "/avatar/mouth-3d/",
+    "blenderScript": "scripts/blender_generate_mouth_model.py"
+  }
+}

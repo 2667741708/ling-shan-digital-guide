@@ -88,7 +88,7 @@
 | 用途 | 保存灵山核心景点主数据，作为评分外键、路线推荐和后台大屏景点名称来源 |
 | 模型 | [ScenicSpot backend/app/models/persistence.py:L64-L86](../backend/app/models/persistence.py#L64-L86) |
 | 初始化 | [ensure_scenic_catalog backend/app/services/scenic_service.py:L255-L280](../backend/app/services/scenic_service.py#L255-L280) |
-| 使用位置 | [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [dashboard_overview backend/app/services/analytics_service.py:L41-L87](../backend/app/services/analytics_service.py#L41-L87) |
+| 使用位置 | [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [dashboard_overview backend/app/services/analytics_service.py:L41-L87](../backend/app/services/analytics_service.py#L41-L87) |
 
 ## DS-010 设施主数据表 `facility`
 
@@ -126,6 +126,6 @@
 | 唯一约束 | `session_uuid + spot_id` 唯一，用于提交即更新的评分体验 |
 | 模型 | [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354) |
 | 请求模型 | [SpotRatingRequest backend/app/schemas/visitor.py:L25-L41](../backend/app/schemas/visitor.py#L25-L41) |
-| 写入位置 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176) |
-| 统计位置 | [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366), [get_admin_rating_trend backend/app/services/rating_service.py:L369-L385](../backend/app/services/rating_service.py#L369-L385) |
+| 写入位置 | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186) |
+| 统计位置 | [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386), [get_admin_rating_trend backend/app/services/rating_service.py:L417-L433](../backend/app/services/rating_service.py#L417-L433), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
 | 初始化 SQL | [scripts/init_db.sql:L207-L231](../scripts/init_db.sql#L207-L231) |

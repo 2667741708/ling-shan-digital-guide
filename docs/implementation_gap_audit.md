@@ -1,4 +1,4 @@
-# 实现缺口核查
+﻿# 实现缺口核查
 
 核查对象：用户提供的 A5 景区导览服务 AI 数字人系统工程设计说明书。  
 核查版本：`v0.0` 基线之后的 `codex/optimize-map-avatar-v0.1` 优化分支。
@@ -8,11 +8,11 @@
 | 计划项 | 当前状态 | 实现依据 |
 |---|---|---|
 | 游客端可打开 | 已完成 | [Vue 路由 frontend/src/router/index.ts:L10-L20](../frontend/src/router/index.ts#L10-L20) |
-| 数字人可显示 | 已增强 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| 数字人可显示 | 已增强 realistic-3d 渲染入口、本地 Blender 全身 GLB、local-2d 回退形象、高清 mouth sprite 和口型状态 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156), [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242), [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
 | 文本问答 | 已完成 | [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
 | 浏览器语音输入 | 部分完成 | [handleListen frontend/src/pages/visitor/ChatGuide.vue:L74-L98](../frontend/src/pages/visitor/ChatGuide.vue#L74-L98) |
-| 浏览器语音播报 | 部分完成 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L62-L72](../frontend/src/pages/visitor/ChatGuide.vue#L62-L72) |
-| 口型动画 | 已完成 MVP | [simulateSpeaking frontend/src/store/avatar.ts:L16-L32](../frontend/src/store/avatar.ts#L16-L32) |
+| 浏览器语音播报 | 部分完成，已接入口型生命周期 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L116-L137](../frontend/src/pages/visitor/ChatGuide.vue#L116-L137) |
+| local-2d 口型同步 | 已完成 MVP，基于文本/语速/标点和接触音生成 viseme 时间线 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110), [simulateSpeaking frontend/src/store/avatar.ts:L62-L84](../frontend/src/store/avatar.ts#L62-L84) |
 | 景区知识库问答 | 已完成 | [retrieve_context backend/app/services/vector_store.py:L591-L614](../backend/app/services/vector_store.py#L591-L614) |
 | 用户提供资料入库 | 已完成 | [load_scenic_pack_entries backend/app/services/vector_store.py:L268-L292](../backend/app/services/vector_store.py#L268-L292) |
 | 管理后台知识库维护 | 已升级为版本化后台 | [knowledge_upload backend/app/api/admin.py:L39-L50](../backend/app/api/admin.py#L39-L50), [publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282), [KnowledgeManage frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
@@ -21,7 +21,7 @@
 | 数字人配置持久化 | 已完成 | [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
 | 真实景区地图 | 本轮增强 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 个性化路线推荐 | 已增强，已接入游客评分与画像反哺 | [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
-| 游客个性化评分 | 已完成 MVP | [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354), [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211) |
+| 游客个性化评分 | 已完成 MVP，并补齐后台评分运营、评论审核和游客感受度报告 | [VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354), [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167) |
 | 管理后台大屏 | 已完成真实聚合 MVP | [dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89), [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105) |
 | 可复现本地启动 | 已完成 | [dev_vue_full_stack main scripts/dev_vue_full_stack.py:L52-L95](../scripts/dev_vue_full_stack.py#L52-L95) |
 | Vue 完整栈烟测 | 已完成 | [smoke_vue_full_stack main scripts/smoke_vue_full_stack.py:L67-L122](../scripts/smoke_vue_full_stack.py#L67-L122) |
@@ -51,3 +51,6 @@
 4. 展示回答依据、路线卡片和游客评分面板：[chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137)、[ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211)。
 5. 打开地图页展示真实点位和路线：[ScenicMap frontend/src/pages/visitor/ScenicMap.vue:L1-L62](../frontend/src/pages/visitor/ScenicMap.vue#L1-L62)。
 6. 打开管理大屏展示问答、路线、评分和情绪指标：[AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105)。
+
+
+

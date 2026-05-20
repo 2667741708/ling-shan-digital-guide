@@ -1,4 +1,4 @@
-# 程序索引
+﻿# 程序索引
 
 ## 核心后端服务
 
@@ -14,7 +14,7 @@
 | 数字人配置服务 | 持久化当前启用的数字人名称、风格、服装、音色、语速和欢迎语 | [get_active_avatar backend/app/services/avatar_service.py:L65-L73](../backend/app/services/avatar_service.py#L65-L73), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99) |
 | 真实资料包读取 | 读取灵山公开资料包 docx/xlsx，xlsx 限量抽取避免超时 | [load_scenic_pack_entries backend/app/services/vector_store.py:L266-L290](../backend/app/services/vector_store.py#L266-L290), [extract_xlsx_text backend/app/services/vector_store.py:L227-L263](../backend/app/services/vector_store.py#L227-L263) |
 | 灵山景点目录 | 提供真实灵山点位、地图坐标、标签、讲解词和推荐停留时间 | [SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L225](../backend/app/services/scenic_service.py#L14-L225) |
-| 评分服务 | 游客景点评分 upsert、情绪分析、评分统计、公开评论、偏好画像、后台排行与趋势 | [analyze_sentiment backend/app/services/rating_service.py:L36-L85](../backend/app/services/rating_service.py#L36-L85), [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327) |
+| 评分服务 | 游客景点评分 upsert、情绪分析、评分统计、公开评论、偏好画像、后台筛选、审核、排行、趋势与感受度报告 | [analyze_sentiment backend/app/services/rating_service.py:L36-L85](../backend/app/services/rating_service.py#L36-L85), [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [get_user_preference_profile backend/app/services/rating_service.py:L296-L337](../backend/app/services/rating_service.py#L296-L337), [list_admin_ratings backend/app/services/rating_service.py:L340-L367](../backend/app/services/rating_service.py#L340-L367), [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
 | 路线推荐服务 | 根据兴趣、时间、体力、游客评分、偏好画像和起点生成灵山推荐路线并持久化路线日志 | [_score_spot backend/app/services/route_service.py:L82-L107](../backend/app/services/route_service.py#L82-L107), [_persist_route backend/app/services/route_service.py:L118-L133](../backend/app/services/route_service.py#L118-L133), [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
 | 数据大屏服务 | 从问答消息、路线、评分和景点表聚合服务量、热门问题、热门景点、评分排行、情绪趋势和标签 | [dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89), [sentiment_report backend/app/services/analytics_service.py:L92-L107](../backend/app/services/analytics_service.py#L92-L107) |
 | v1 API 兼容层 | 提供 `/api/v1` 游客、评分、AI 能力、管理后台和系统状态 MVP 路由 | [backend/app/api/v1.py:L39-L452](../backend/app/api/v1.py#L39-L452) |
@@ -41,15 +41,27 @@
 
 | 程序 | 文件职责 | 核心位置 |
 |---|---|---|
-| Vue 数字人页 | 游客问答、语音输入、语音播报、知识引用、路线卡片和景点评分面板 | [ChatGuide script frontend/src/pages/visitor/ChatGuide.vue:L1-L151](../frontend/src/pages/visitor/ChatGuide.vue#L1-L151), [ChatGuide template frontend/src/pages/visitor/ChatGuide.vue:L154-L229](../frontend/src/pages/visitor/ChatGuide.vue#L154-L229) |
-| 数字人灵灵 | SVG 导游形象、口型、状态和字幕 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| Vue 数字人页 | 游客问答、语音输入、浏览器语音播报生命周期、知识引用、路线卡片和景点评分面板 | [ChatGuide script frontend/src/pages/visitor/ChatGuide.vue:L1-L163](../frontend/src/pages/visitor/ChatGuide.vue#L1-L163), [ChatGuide template frontend/src/pages/visitor/ChatGuide.vue:L167-L242](../frontend/src/pages/visitor/ChatGuide.vue#L167-L242) |
+| 数字人口型同步 | local-2d viseme 类型、语音时长估算、时间线生成和按播放时间取当前嘴型 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
+| 数字人状态机 | 管理 idle/listening/thinking/speaking 状态、口型帧、播放进度和字幕 | [useAvatarStore frontend/src/store/avatar.ts:L18-L84](../frontend/src/store/avatar.ts#L18-L84) |
+| 数字人灵灵 | 真实 3D 渲染器容器、SVG 2D fallback、高清 mouth sprite、状态和字幕 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156) |
+| 真实 3D AvatarRenderer | Three.js 场景、GLB/VRM 加载、VRM expression、mesh morph target 口型和失败回退事件 | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) |
+| 3D 口型映射 | realistic-3d 模型路径、VRM expression、morph target 候选名和权重算法 | [avatarRenderer frontend/src/store/avatarRenderer.ts:L1-L46](../frontend/src/store/avatarRenderer.ts#L1-L46) |
+| 真实模型目录 | 授权全身数字人 GLB/VRM 模型、参考图、哈希和验证命令的放置约定 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 数字人嘴型素材生成 | 生成 8 个高清 SVG 嘴型、OBJ pose、OpenSCAD 参考体和 manifest | [generate_mouth_assets scripts/generate_mouth_assets.py:L11-L266](../scripts/generate_mouth_assets.py#L11-L266), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
+| 数字人嘴型素材预览 | 浏览器独立查看 8 个高清 mouth sprite | [mouth-preview frontend/public/avatar/mouth-preview.html:L1-L96](../frontend/public/avatar/mouth-preview.html#L1-L96) |
+| Blender 3D 嘴部模型脚本 | 生成带 shape keys 的 GLB 嘴部模型，供 Three.js 后续加载 morph targets | [blender_generate_mouth_model.py scripts/blender_generate_mouth_model.py:L1-L113](../scripts/blender_generate_mouth_model.py#L1-L113) |
+| Blender 全身灵灵 GLB 脚本 | 生成浅青汉服、发髻、发簪、面部、参考图 metadata 和 8 个 viseme shape keys 的 full-body GLB | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| GLB morph target 检查脚本 | 解析 GLB/glTF，输出 mesh、target 和缺失口型检查结果 | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
+| 真实 3D 模型资产 | 前端默认加载的 full-body `lingling-realistic.glb` 和 source copy | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
 | 灵山地图组件 | SVG 真实景区地图、POI、路线和详情 | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
 | 地图导览页 | 兴趣/时间筛选并生成路线 | [ScenicMap frontend/src/pages/visitor/ScenicMap.vue:L1-L62](../frontend/src/pages/visitor/ScenicMap.vue#L1-L62) |
-| 管理大屏 | 服务量、知识命中率、游客评分、负向反馈、评分排行、路线偏好、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L1-L108](../frontend/src/pages/admin/AdminDashboard.vue#L1-L108) |
+| 管理大屏 | 服务量、知识命中率、游客评分、负向反馈、评分排行、路线偏好、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L1-L109](../frontend/src/pages/admin/AdminDashboard.vue#L1-L109) |
+| 评分运营页 | 筛选评分、查看游客感受度报告、审核公开评论、隐藏或拒绝不合规内容 | [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167) |
 | 后台登录页 | 登录后保存 Bearer token 到 localStorage | [AdminLogin frontend/src/pages/admin/AdminLogin.vue:L1-L46](../frontend/src/pages/admin/AdminLogin.vue#L1-L46) |
 | 知识库管理页 | 状态筛选、草稿上传、版本/历史、发布、归档、删除、重建索引和检索测试 | [KnowledgeManage script frontend/src/pages/admin/KnowledgeManage.vue:L33-L156](../frontend/src/pages/admin/KnowledgeManage.vue#L33-L156), [KnowledgeManage template frontend/src/pages/admin/KnowledgeManage.vue:L216-L265](../frontend/src/pages/admin/KnowledgeManage.vue#L216-L265) |
 | 数字人配置页 | 保存当前启用数字人配置到数据库 | [AvatarManage frontend/src/pages/admin/AvatarManage.vue:L1-L62](../frontend/src/pages/admin/AvatarManage.vue#L1-L62) |
-| 后台 API 客户端 | 登录、知识库版本流转、历史查询、评分排行、评分趋势和数字人配置请求封装 | [admin api frontend/src/api/admin.ts:L3-L78](../frontend/src/api/admin.ts#L3-L78) |
+| 后台 API 客户端 | 登录、知识库版本流转、历史查询、评分排行、评分趋势、感受度报告、评分审核和数字人配置请求封装 | [admin api frontend/src/api/admin.ts:L3-L86](../frontend/src/api/admin.ts#L3-L86) |
 | 游客 API 客户端 | 统一调用 `/api/v1/guide`、`/api/v1/scenic`、`/api/v1/route` 和游客评分 API | [visitor api frontend/src/api/visitor.ts:L21-L97](../frontend/src/api/visitor.ts#L21-L97) |
 | HTTP 客户端 | 自动附加 Bearer token，401 跳转登录页 | [http token frontend/src/api/http.ts:L8-L22](../frontend/src/api/http.ts#L8-L22) |
 | Vue 应用入口 | 注册 Pinia 和 Router，避免未使用 Element Plus 类型污染 | [frontend/src/main.ts:L1-L9](../frontend/src/main.ts#L1-L9) |
@@ -60,9 +72,12 @@
 - 修改 [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) 会影响游客问答、语音问答复用逻辑、大屏问答日志和 smoke 测试。
 - 修改 [SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L225](../backend/app/services/scenic_service.py#L14-L225) 会影响地图点位、路线推荐、景点列表 API 和前端 POI。
 - 修改 [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) 会影响问答路线卡片、地图路线、游客画像反哺和路线推荐接口。
-- 修改 [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176) 会影响游客评分、景点评分统计、路线排序和后台大屏评分指标。
+- 修改 [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186) 或 [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457) 会影响游客评分、景点评分统计、公开评论展示、路线排序、后台大屏和评分运营页。
 - 修改 [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596) 会影响知识库命中率、PostgreSQL pgvector 查询和游客端问答依据。
 - 修改 [embed_document backend/app/services/vector_store.py:L436-L466](../backend/app/services/vector_store.py#L436-L466) 会影响后台文档切片是否真正落入 `knowledge_chunk`。
 - 修改 [run_local.py 命令分发 scripts/run_local.py:L204-L254](../scripts/run_local.py#L204-L254) 会影响部署、测试、Docker pgvector 烟测、Docker All-in-One 烟测和服务器运行流程。
 - 修改 [publish_github.py 发布流程 scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84) 会影响 GitHub 远程发布、分支映射和 tag 推送。
 - 修改 [publish_ghcr_allinone.py 发布流程 scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160) 会影响 GHCR 镜像标签、本地构建和容器仓库推送。
+
+
+

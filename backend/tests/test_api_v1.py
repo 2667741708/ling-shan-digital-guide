@@ -81,6 +81,45 @@ def test_v1_scenic_and_route_endpoints() -> None:
     assert route_data["score_summary"]["visitor_profile"]["total_ratings"] == 1
 
 
+def test_v1_admin_rating_operations() -> None:
+    _reset_v1_db()
+    client = TestClient(app)
+    token = _admin_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    created = client.post(
+        "/api/v1/visitor/ratings",
+        json={
+            "session_uuid": "api_admin_rating_session",
+            "spot_id": 6,
+            "overall_rating": 2,
+            "facility_rating": 2,
+            "comment": "排队太久，遮阳不足，体验不好。",
+            "user_tags": ["排队", "遮阳不足"],
+            "is_public": True,
+        },
+    )
+    rating_id = created.json()["data"]["id"]
+
+    ratings = client.get("/api/v1/admin/ratings", headers=headers, params={"sentiment": "negative"})
+    report = client.get("/api/v1/admin/ratings/report", headers=headers)
+    review = client.put(
+        f"/api/v1/admin/ratings/{rating_id}/review",
+        headers=headers,
+        json={"review_status": "hidden", "is_public": False},
+    )
+    public = client.get("/api/v1/visitor/spots/6/ratings/public")
+
+    assert ratings.status_code == 200
+    assert ratings.json()["data"][0]["id"] == rating_id
+    assert report.status_code == 200
+    assert report.json()["data"]["summary"]["negative_count"] == 1
+    assert review.status_code == 200
+    assert review.json()["data"]["review_status"] == "hidden"
+    assert public.status_code == 200
+    assert public.json()["data"] == []
+
+
 def test_v1_admin_knowledge_and_system_status() -> None:
     _reset_v1_db()
     client = TestClient(app)

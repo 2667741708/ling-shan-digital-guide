@@ -1,0 +1,9 @@
+newmtl lip
+Kd 0.78 0.22 0.31
+Ks 0.18 0.05 0.06
+Ns 18
+
+newmtl mouth_cavity
+Kd 0.08 0.02 0.035
+Ks 0.02 0.01 0.01
+Ns 4

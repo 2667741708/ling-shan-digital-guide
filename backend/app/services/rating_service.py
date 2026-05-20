@@ -7,7 +7,7 @@ dashboard analytics and visitor sentiment reports can share the same data.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import datetime, time
 from typing import Any
 
 from sqlalchemy import select
@@ -125,6 +125,16 @@ def _parse_visit_date(value: str | None) -> datetime | None:
     if not value:
         return None
     return datetime.fromisoformat(value)
+
+
+def _parse_filter_datetime(value: str | None, end_of_day: bool = False) -> datetime | None:
+    """Parse ISO date or datetime strings used by admin rating filters."""
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(value)
+    if end_of_day and parsed.time() == time.min:
+        return parsed.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return parsed
 
 
 def _apply_rating_payload(rating: VisitorSpotRating, payload: SpotRatingRequest) -> None:
@@ -341,13 +351,23 @@ def list_admin_ratings(db: Session, filters: dict[str, Any] | None = None) -> li
         query = query.where(VisitorSpotRating.overall_rating >= int(filters["rating_min"]))
     if filters.get("rating_max"):
         query = query.where(VisitorSpotRating.overall_rating <= int(filters["rating_max"]))
+    if filters.get("review_status"):
+        query = query.where(VisitorSpotRating.review_status == filters["review_status"])
+    if filters.get("source"):
+        query = query.where(VisitorSpotRating.source == filters["source"])
+    start_date = _parse_filter_datetime(filters.get("start_date"))
+    if start_date:
+        query = query.where(VisitorSpotRating.created_at >= start_date)
+    end_date = _parse_filter_datetime(filters.get("end_date"), end_of_day=True)
+    if end_date:
+        query = query.where(VisitorSpotRating.created_at <= end_date)
     keyword = (filters.get("keyword") or "").strip()
     if keyword:
         query = query.where(VisitorSpotRating.comment.ilike(f"%{keyword}%"))
     return list(db.execute(query.order_by(VisitorSpotRating.updated_at.desc()).limit(200)).scalars().all())
 
 
-def get_admin_rating_ranking(db: Session) -> list[dict[str, Any]]:
+def get_admin_rating_ranking(db: Session, reverse: bool = False) -> list[dict[str, Any]]:
     """Rank scenic spots by weighted visitor satisfaction."""
     stats_map = get_all_spot_statistics(db)
     rows = [
@@ -363,7 +383,35 @@ def get_admin_rating_ranking(db: Session) -> list[dict[str, Any]]:
         for spot_id, stats in stats_map.items()
         if stats.get("total_ratings", 0) > 0
     ]
-    return sorted(rows, key=lambda item: (item["weighted_average_overall"] or 0, item["total_ratings"]), reverse=True)
+    return sorted(rows, key=lambda item: (item["weighted_average_overall"] or 0, item["total_ratings"]), reverse=not reverse)
+
+
+def _rank_rating_groups(db: Session, ratings: list[VisitorSpotRating], reverse: bool = False) -> list[dict[str, Any]]:
+    """Rank spots from a filtered rating set."""
+    grouped: dict[int, list[VisitorSpotRating]] = defaultdict(list)
+    for rating in ratings:
+        grouped[rating.spot_id].append(rating)
+    rows: list[dict[str, Any]] = []
+    for spot_id, items in grouped.items():
+        spot = db.get(ScenicSpot, spot_id)
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for item in items:
+            weight = calculate_rating_weight(item, items)
+            weighted_sum += item.overall_rating * weight
+            weight_total += weight
+        rows.append(
+            {
+                "spot_id": spot_id,
+                "spot_name": spot.name if spot else None,
+                "average_overall": _avg([item.overall_rating for item in items]),
+                "average_photo": _avg([item.photo_rating for item in items]),
+                "average_facility": _avg([item.facility_rating for item in items]),
+                "total_ratings": len(items),
+                "weighted_average_overall": round(weighted_sum / weight_total, 2) if weight_total else None,
+            }
+        )
+    return sorted(rows, key=lambda item: (item["weighted_average_overall"] or 0, item["total_ratings"]), reverse=not reverse)
 
 
 def get_admin_rating_trend(db: Session) -> list[dict[str, Any]]:
@@ -383,6 +431,119 @@ def get_admin_rating_trend(db: Session) -> list[dict[str, Any]]:
         }
         for day, items in sorted(buckets.items())
     ]
+
+
+def update_rating_review_status(
+    db: Session,
+    rating_id: str,
+    review_status: str,
+    is_public: bool | None = None,
+) -> VisitorSpotRating:
+    """Update admin review state for one visitor rating."""
+    allowed = {"pending", "approved", "rejected", "hidden"}
+    if review_status not in allowed:
+        raise ValueError(f"invalid review_status: {review_status}")
+    rating = get_rating_by_id(db, rating_id)
+    if rating is None:
+        raise FileNotFoundError(f"rating not found: {rating_id}")
+    rating.review_status = review_status
+    if is_public is not None:
+        rating.is_public = is_public
+    if review_status in {"rejected", "hidden"}:
+        rating.is_public = False
+    rating.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(rating)
+    return rating
+
+
+def get_admin_rating_insight_report(
+    db: Session,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> dict[str, Any]:
+    """Build a visitor sentiment report for operations and handoff docs."""
+    ratings = list_admin_ratings(db, {"start_date": start_date, "end_date": end_date})
+    if not ratings:
+        return {
+            "summary": {
+                "total_ratings": 0,
+                "average_overall": None,
+                "negative_count": 0,
+                "public_comment_count": 0,
+            },
+            "dimension_averages": {},
+            "top_rated_spots": [],
+            "bottom_rated_spots": [],
+            "photo_value_spots": [],
+            "facility_risk_spots": [],
+            "top_tags": [],
+            "negative_comments": [],
+            "service_suggestions": [],
+        }
+
+    tag_counter: Counter[str] = Counter()
+    for rating in ratings:
+        tag_counter.update(rating.user_tags or [])
+
+    ranking = _rank_rating_groups(db, ratings)
+    low_ranking = _rank_rating_groups(db, ratings, reverse=True)
+    negative_comments = [
+        {
+            "id": item.id,
+            "spot_id": item.spot_id,
+            "spot_name": item.spot.name if getattr(item, "spot", None) else None,
+            "comment": item.comment,
+            "sentiment_score": item.sentiment_score,
+            "created_at": item.created_at.isoformat(),
+        }
+        for item in ratings
+        if item.sentiment == "negative" and item.comment
+    ][:10]
+
+    photo_value_spots = sorted(
+        [item for item in ranking if item.get("average_photo") is not None],
+        key=lambda item: (item["average_photo"] or 0, item["total_ratings"]),
+        reverse=True,
+    )[:10]
+    facility_risk_spots = sorted(
+        [item for item in ranking if item.get("average_facility") is not None],
+        key=lambda item: (item["average_facility"] or 0, -item["total_ratings"]),
+    )[:10]
+
+    suggestions: list[str] = []
+    if negative_comments:
+        suggestions.append("优先复盘负向评论集中的景点，检查排队、遮阳、指引和服务响应。")
+    if facility_risk_spots:
+        spot_names = "、".join(str(item["spot_name"]) for item in facility_risk_spots[:3])
+        suggestions.append(f"设施便利评分偏低的景点包括 {spot_names}，建议补充厕所、休息区、动线和无障碍提示。")
+    if photo_value_spots:
+        spot_names = "、".join(str(item["spot_name"]) for item in photo_value_spots[:3])
+        suggestions.append(f"拍照价值高的景点包括 {spot_names}，可在导览和路线推荐中作为传播亮点。")
+    if not suggestions:
+        suggestions.append("当前评分样本偏少，建议在路线结束页和数字人追问中引导游客提交评价。")
+
+    return {
+        "summary": {
+            "total_ratings": len(ratings),
+            "average_overall": _avg([item.overall_rating for item in ratings]),
+            "negative_count": sum(1 for item in ratings if item.sentiment == "negative"),
+            "public_comment_count": sum(1 for item in ratings if item.is_public),
+        },
+        "dimension_averages": {
+            "culture": _avg([item.culture_rating for item in ratings]),
+            "nature": _avg([item.nature_rating for item in ratings]),
+            "photo": _avg([item.photo_rating for item in ratings]),
+            "facility": _avg([item.facility_rating for item in ratings]),
+        },
+        "top_rated_spots": ranking[:10],
+        "bottom_rated_spots": low_ranking[:10],
+        "photo_value_spots": photo_value_spots,
+        "facility_risk_spots": facility_risk_spots,
+        "top_tags": [{"tag": tag, "count": count} for tag, count in tag_counter.most_common(12)],
+        "negative_comments": negative_comments,
+        "service_suggestions": suggestions,
+    }
 
 
 def rating_to_response(rating: VisitorSpotRating) -> SpotRatingResponse:
