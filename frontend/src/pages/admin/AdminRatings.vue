@@ -50,6 +50,7 @@ onMounted(loadRatings);
     <nav class="top-nav">
       <strong>评分运营</strong>
       <router-link to="/admin">数据大屏</router-link>
+      <router-link to="/admin/users">管理员账号</router-link>
       <router-link to="/admin/knowledge">知识库</router-link>
       <router-link to="/admin/avatar">数字人配置</router-link>
       <button type="button" @click="logout">退出</button>

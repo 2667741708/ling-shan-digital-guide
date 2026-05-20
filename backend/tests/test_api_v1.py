@@ -150,3 +150,87 @@ def test_v1_admin_knowledge_and_system_status() -> None:
     assert embed.json()["data"]["embed_result"]["chunk_count"] >= 1
     assert rag.status_code == 200
     assert rag.json()["data"]["chunks"]
+
+
+def test_v1_admin_user_management_and_permissions() -> None:
+    _reset_v1_db()
+    client = TestClient(app)
+    token = _admin_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    created = client.post(
+        "/api/v1/admin/users",
+        headers=headers,
+        json={"username": "knowledge_editor", "password": "editor-pass-123", "role": "knowledge_manager"},
+    )
+    users = client.get("/api/v1/admin/users", headers=headers)
+    login = client.post("/api/v1/auth/login", json={"username": "knowledge_editor", "password": "editor-pass-123"})
+
+    assert created.status_code == 200
+    assert created.json()["data"]["role"] == "knowledge_manager"
+    assert users.status_code == 200
+    assert any(item["username"] == "knowledge_editor" for item in users.json()["data"])
+    assert login.status_code == 200
+    assert "knowledge:write" in login.json()["data"]["permissions"]
+
+    knowledge_headers = {"Authorization": f"Bearer {login.json()['data']['token']}"}
+    allowed_upload = client.post(
+        "/api/v1/admin/knowledge-bases/default/documents",
+        headers=knowledge_headers,
+        files={"file": ("permission-test.md", "权限测试知识".encode("utf-8"), "text/markdown")},
+        data={"title": "权限测试", "change_note": "permission upload"},
+    )
+    denied_users = client.get("/api/v1/admin/users", headers=knowledge_headers)
+
+    assert allowed_upload.status_code == 200
+    assert denied_users.status_code == 403
+
+
+def test_v1_operator_can_review_but_viewer_cannot() -> None:
+    _reset_v1_db()
+    client = TestClient(app)
+    token = _admin_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    client.post(
+        "/api/v1/admin/users",
+        headers=headers,
+        json={"username": "rating_operator", "password": "operator-pass-123", "role": "operator"},
+    )
+    client.post(
+        "/api/v1/admin/users",
+        headers=headers,
+        json={"username": "readonly_viewer", "password": "viewer-pass-123", "role": "viewer"},
+    )
+    rating = client.post(
+        "/api/v1/visitor/ratings",
+        json={
+            "session_uuid": "rbac_rating_session",
+            "spot_id": 6,
+            "overall_rating": 3,
+            "comment": "权限审核测试",
+            "is_public": True,
+        },
+    )
+    rating_id = rating.json()["data"]["id"]
+    operator_token = client.post(
+        "/api/v1/auth/login",
+        json={"username": "rating_operator", "password": "operator-pass-123"},
+    ).json()["data"]["token"]
+    viewer_token = client.post(
+        "/api/v1/auth/login",
+        json={"username": "readonly_viewer", "password": "viewer-pass-123"},
+    ).json()["data"]["token"]
+
+    operator_review = client.put(
+        f"/api/v1/admin/ratings/{rating_id}/review",
+        headers={"Authorization": f"Bearer {operator_token}"},
+        json={"review_status": "hidden", "is_public": False},
+    )
+    viewer_review = client.put(
+        f"/api/v1/admin/ratings/{rating_id}/review",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+        json={"review_status": "approved", "is_public": True},
+    )
+
+    assert operator_review.status_code == 200
+    assert viewer_review.status_code == 403

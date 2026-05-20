@@ -43,6 +43,7 @@ function logout() {
       <strong>数字人形象管理</strong>
       <span class="nav-actions">
         <router-link to="/admin">返回大屏</router-link>
+        <router-link to="/admin/users">管理员账号</router-link>
         <button type="button" @click="logout">退出</button>
       </span>
     </nav>

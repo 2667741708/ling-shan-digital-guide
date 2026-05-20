@@ -853,9 +853,9 @@ npm.cmd --prefix frontend run build
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 全身 GLB 生成 | 生成本地 procedural 灵灵全身模型和 8 个口型 shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 全身 GLB 生成 | 调用 MPFB/MakeHuman 基座并叠加灵灵服饰、发型和 8 个口型 shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662) |
 | GLB 检查 | 解析 GLB JSON chunk 并检查缺失 targets | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
-| 模型说明 | 模型路径、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 模型说明 | 模型路径、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
 | 前端加载 | GLTFLoader/VRM loader 和 fallback 事件 | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
 
 ### 修复方式
@@ -863,7 +863,8 @@ npm.cmd --prefix frontend run build
 重新生成并检查 GLB：
 
 ```powershell
-& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --reference-dir 数字人形象示例
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --online-mode --command extension install -s -e mpfb
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --mpfb-source-output frontend\public\avatar\models\source\lingling-mpfb-base.glb --reference-dir 数字人形象示例 --base-model mpfb
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 ```
 
@@ -895,13 +896,13 @@ python scripts\check_doc_links.py
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 本地模型说明 | 当前可用的 procedural GLB 和图生 3D 替换注意事项 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
-| 生成脚本 | 不依赖图生 3D 权重的 Blender fallback 资产链路 | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 本地模型说明 | 当前可用的 MPFB-based GLB 和图生 3D 替换注意事项 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
+| 生成脚本 | 不依赖图生 3D 权重的 MPFB/Blender fallback 资产链路 | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662) |
 | 检查脚本 | 替换外部 GLB 后必须先跑的口型合约检查 | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
 
 ### 建议路线
 
-先用当前 Blender procedural GLB 保证前端演示稳定。若要继续追求高保真图生 3D，先裁剪参考图到单个全身主体，再在 clean Conda 环境尝试 Hunyuan3D-2mini low-vram；TRELLIS.2/Pixal3D 建议换到 Linux/WSL/cloud 的 24GB+ VRAM 机器。
+先用当前 MPFB/MakeHuman 基座 GLB 保证前端演示稳定；MPFB 缺失时先运行 `blender --online-mode --command extension install -s -e mpfb`。若要继续追求高保真图生 3D，先裁剪参考图到单个全身主体，再在 clean Conda 环境尝试 Hunyuan3D-2mini low-vram；TRELLIS.2/Pixal3D 建议换到 Linux/WSL/cloud 的 24GB+ VRAM 机器。
 
 ```powershell
 conda create -n hy3d20 python=3.10 -y -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main --override-channels
@@ -915,6 +916,72 @@ python -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/s
 ```powershell
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 npm.cmd --prefix frontend run test:avatar
+```
+
+## TRB-025 生产加固后 RAG、权限、迁移或 E2E 验收失败
+
+### 错误现象
+
+- `python scripts\run_local.py build-kb` 失败，或输出的 `embedding_provider` 不是预期值；
+- `knowledge_manager`、`operator`、`viewer` 调用后台写接口返回 403；
+- `python scripts\run_local.py migrate-db` 没有写入 `alembic_version`；
+- `npm.cmd --prefix frontend run test:e2e` 报浏览器未安装、后端不可达或登录失败。
+
+### 常见原因
+
+1. `EMBEDDING_PROVIDER=openai` 但没有设置 `EMBEDDING_API_KEY`，系统按设计回退 hash；
+2. `EMBEDDING_DIMENSION` 与已有 `knowledge_chunk.embedding` pgvector 列维度不一致；
+3. 当前账号角色没有对应权限，例如 `viewer` 没有 `ratings:review` 或 `knowledge:write`；
+4. Alembic env 不能连接当前 `DATABASE_URL`，或 PostgreSQL 扩展权限不足；
+5. Playwright E2E 需要后端 `http://127.0.0.1:8000` 和前端 `http://127.0.0.1:5173` 可访问。
+
+### 定位文件
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| Embedding 配置 | provider、base_url、api_key、dimension、rerank 配置 | [Settings backend/app/core/config.py:L10-L20](../backend/app/core/config.py#L10-L20) |
+| Embedding 服务 | hash fallback、OpenAI 兼容调用和 rerank fallback | [embedding_service backend/app/services/embedding_service.py:L88-L190](../backend/app/services/embedding_service.py#L88-L190) |
+| 知识库构建 | provider 变化时刷新 chunk | [build_knowledge_base backend/app/services/vector_store.py:L456-L506](../backend/app/services/vector_store.py#L456-L506) |
+| 权限映射 | 角色到权限映射和权限依赖 | [ROLE_PERMISSIONS backend/app/services/auth_service.py:L22-L43](../backend/app/services/auth_service.py#L22-L43), [require_admin_permission backend/app/services/auth_service.py:L199-L206](../backend/app/services/auth_service.py#L199-L206) |
+| 管理员 API | 用户管理接口和知识库写接口权限 | [admin user APIs backend/app/api/v1.py:L291-L335](../backend/app/api/v1.py#L291-L335), [admin_upload_document_v1 backend/app/api/v1.py:L419-L432](../backend/app/api/v1.py#L419-L432) |
+| 迁移脚本 | Alembic upgrade/stamp 入口 | [migrate_db scripts/migrate_db.py:L1-L91](../scripts/migrate_db.py#L1-L91), [alembic env backend/alembic/env.py:L1-L46](../backend/alembic/env.py#L1-L46) |
+| E2E | Playwright 配置和生产加固验收场景 | [playwright.config.ts frontend/playwright.config.ts:L1-L17](../frontend/playwright.config.ts#L1-L17), [production-hardening.spec.ts frontend/e2e/production-hardening.spec.ts:L1-L81](../frontend/e2e/production-hardening.spec.ts#L1-L81) |
+
+### 修复方式
+
+先确认当前配置和迁移状态：
+
+```powershell
+python scripts\run_local.py migrate-db
+python scripts\run_local.py build-kb
+python scripts\run_local.py test-backend
+```
+
+如果使用真实 embedding：
+
+```powershell
+$env:EMBEDDING_PROVIDER="openai"
+$env:EMBEDDING_BASE_URL="https://api.openai.com/v1"
+$env:EMBEDDING_API_KEY="<real-key>"
+$env:EMBEDDING_MODEL="text-embedding-3-small"
+python scripts\run_local.py build-kb
+```
+
+如果 E2E 浏览器缺失，先安装 Chromium；网络不可用时用完整栈烟测兜底：
+
+```powershell
+npm.cmd --prefix frontend exec playwright install chromium
+npm.cmd --prefix frontend run test:e2e
+python scripts\smoke_vue_full_stack.py
+```
+
+### 验证方式
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-kb
+npm.cmd --prefix frontend run build
+python scripts\check_doc_links.py
 ```
 
 

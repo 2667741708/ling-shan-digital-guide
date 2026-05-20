@@ -299,6 +299,49 @@ def fit_objects_to_lingling_stage(objects: list[bpy.types.Object], target_height
         obj.scale = (obj.scale.x * scale, obj.scale.y * scale, obj.scale.z * scale)
 
 
+def apply_object_transform(obj: bpy.types.Object) -> None:
+    """Bake the current object transform so vertex edits operate in stage coordinates."""
+
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+
+def remove_existing_shape_keys(obj: bpy.types.Object) -> None:
+    """Remove inherited base mesh shape keys so only project visemes are exported."""
+
+    if not obj.data.shape_keys:
+        return
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.shape_key_remove(all=True)
+
+
+def soften_mpfb_t_pose(obj: bpy.types.Object) -> None:
+    """Fold MPFB's default T-pose arms closer to a front-facing guide stance."""
+
+    for vertex in obj.data.vertices:
+        x = vertex.co.x
+        z = vertex.co.z
+        abs_x = abs(x)
+        if abs_x <= 0.36 or not 1.05 <= z <= 2.18:
+            continue
+
+        side = 1 if x > 0 else -1
+        arm_factor = min(1.0, (abs_x - 0.36) / 0.62)
+        vertical_factor = max(0.0, min(1.0, (2.12 - z) / 0.98))
+        target_x = side * (0.34 + 0.18 * arm_factor)
+        target_z = z - (0.62 + 0.18 * vertical_factor) * arm_factor
+        target_y = min(vertex.co.y, -0.22)
+        vertex.co.x = x * 0.28 + target_x * 0.72
+        vertex.co.z = z * 0.35 + target_z * 0.65
+        vertex.co.y = vertex.co.y * 0.72 + target_y * 0.28
+
+    obj.data.update()
+
+
 def configure_mpfb_scene_defaults() -> None:
     """Set MPFB new-human scene properties for a young female Asian guide base."""
 
@@ -321,7 +364,7 @@ def configure_mpfb_scene_defaults() -> None:
     scene.MPFB_NH_preselect_group = "body"
 
 
-def create_mpfb_base() -> bpy.types.Object:
+def create_mpfb_base(skin_material: bpy.types.Material) -> bpy.types.Object:
     """Create a MakeHuman/MPFB base mesh using the installed Blender extension."""
 
     if not hasattr(bpy.ops, "mpfb") or not hasattr(bpy.ops.mpfb, "create_human"):
@@ -338,6 +381,10 @@ def create_mpfb_base() -> bpy.types.Object:
         raise RuntimeError("MPFB did not create a human mesh.")
     basemesh.name = "Lingling_MPFB_CC0_Base"
     fit_objects_to_lingling_stage([basemesh], target_height=3.02)
+    apply_object_transform(basemesh)
+    remove_existing_shape_keys(basemesh)
+    soften_mpfb_t_pose(basemesh)
+    assign_material(basemesh, skin_material)
     basemesh["lingling_source"] = "MPFB/MakeHuman core CC0 base mesh"
     return basemesh
 
@@ -438,7 +485,11 @@ def add_floral_motif(
         )
 
 
-def build_avatar() -> list[bpy.types.Object]:
+def build_avatar(
+    base_model: str = "mpfb",
+    base_model_path: Path | None = None,
+    mpfb_source_output: Path | None = None,
+) -> list[bpy.types.Object]:
     skin = make_material("warm_porcelain_skin", (1.0, 0.84, 0.72, 1.0), roughness=0.6)
     blush = make_material("soft_blush", (0.96, 0.42, 0.42, 0.5), roughness=0.78)
     hair = make_material("black_satin_hair", (0.02, 0.025, 0.022, 1.0), roughness=0.42)
@@ -455,24 +506,39 @@ def build_avatar() -> list[bpy.types.Object]:
     mountain = make_material("blue_green_landscape_embroidery", (0.24, 0.55, 0.58, 1.0), roughness=0.7)
 
     objects: list[bpy.types.Object] = []
+    procedural_base = base_model == "procedural"
+    if base_model == "mpfb":
+        objects.append(create_mpfb_base(skin))
+        if mpfb_source_output:
+            export_scene_glb(mpfb_source_output)
+    elif base_model == "import":
+        if not base_model_path:
+            raise ValueError("--base-model-path is required when --base-model=import")
+        objects.extend(import_base_model(base_model_path))
+    elif not procedural_base:
+        raise ValueError(f"Unsupported base model: {base_model}")
+
     objects.append(add_cone("Lingling_Long_Hanfu_Skirt", (0, 0, 0.83), 0.58, 0.31, 1.35, hanfu))
     objects.append(add_cone("Lingling_Upper_Hanfu", (0, -0.01, 1.55), 0.42, 0.25, 0.78, hanfu))
     objects.append(add_flat_panel("Lingling_Ivory_Inner_Robe", [(-0.18, -0.42, 1.9), (0.18, -0.42, 1.9), (0.26, -0.39, 0.78), (-0.26, -0.39, 0.78)], inner_robe))
     objects.append(add_cylinder_between("Lingling_Jade_Sash", (-0.42, -0.42, 1.25), (0.42, -0.42, 1.25), 0.035, sash, vertices=48))
 
-    add_cylinder_between("Lingling_Left_Arm", (-0.34, -0.03, 1.73), (-0.7, -0.2, 1.05), 0.055, skin)
-    add_cylinder_between("Lingling_Right_Arm", (0.34, -0.03, 1.73), (0.7, -0.2, 1.05), 0.055, skin)
+    if procedural_base:
+        add_cylinder_between("Lingling_Left_Arm", (-0.34, -0.03, 1.73), (-0.7, -0.2, 1.05), 0.055, skin)
+        add_cylinder_between("Lingling_Right_Arm", (0.34, -0.03, 1.73), (0.7, -0.2, 1.05), 0.055, skin)
     add_cylinder_between("Lingling_Left_Wide_Sleeve", (-0.38, -0.02, 1.68), (-0.75, -0.18, 1.03), 0.12, hanfu_light, vertices=48)
     add_cylinder_between("Lingling_Right_Wide_Sleeve", (0.38, -0.02, 1.68), (0.75, -0.18, 1.03), 0.12, hanfu_light, vertices=48)
-    add_uv_sphere("Lingling_Left_Hand", (-0.73, -0.22, 0.98), (0.08, 0.035, 0.055), skin, 24, 12)
-    add_uv_sphere("Lingling_Right_Hand", (0.73, -0.22, 0.98), (0.08, 0.035, 0.055), skin, 24, 12)
-
-    add_uv_sphere("Lingling_Neck", (0, -0.03, 1.95), (0.13, 0.1, 0.18), skin, 32, 16)
-    add_uv_sphere("Lingling_Head", (0, -0.08, 2.48), (0.3, 0.25, 0.39), skin, 64, 32)
+    if procedural_base:
+        add_uv_sphere("Lingling_Left_Hand", (-0.73, -0.22, 0.98), (0.08, 0.035, 0.055), skin, 24, 12)
+        add_uv_sphere("Lingling_Right_Hand", (0.73, -0.22, 0.98), (0.08, 0.035, 0.055), skin, 24, 12)
+        add_uv_sphere("Lingling_Neck", (0, -0.03, 1.95), (0.13, 0.1, 0.18), skin, 32, 16)
+        add_uv_sphere("Lingling_Head", (0, -0.08, 2.48), (0.3, 0.25, 0.39), skin, 64, 32)
     add_uv_sphere("Lingling_Hair_Crown", (0, -0.18, 2.74), (0.28, 0.12, 0.14), hair, 48, 16)
     add_uv_sphere("Lingling_Hair_Left_Wing", (-0.23, -0.18, 2.56), (0.055, 0.055, 0.24), hair, 32, 16)
     add_uv_sphere("Lingling_Hair_Right_Wing", (0.23, -0.18, 2.56), (0.055, 0.055, 0.24), hair, 32, 16)
     add_uv_sphere("Lingling_Hair_Front_Cap", (0, -0.29, 2.69), (0.25, 0.052, 0.095), hair, 48, 16)
+    add_uv_sphere("Lingling_Hair_Back_Cap", (0, -0.04, 2.78), (0.31, 0.22, 0.18), hair, 64, 24)
+    add_uv_sphere("Lingling_Hair_Top_Cover", (0, -0.03, 2.91), (0.22, 0.17, 0.12), hair, 48, 16)
     add_uv_sphere("Lingling_Top_Bun", (0, 0.0, 3.02), (0.16, 0.135, 0.145), hair, 48, 16)
     add_uv_sphere("Lingling_Left_Side_Lock", (-0.27, -0.23, 2.36), (0.035, 0.03, 0.22), hair, 24, 16)
     add_uv_sphere("Lingling_Right_Side_Lock", (0.27, -0.23, 2.36), (0.035, 0.03, 0.22), hair, 24, 16)
@@ -556,9 +622,8 @@ def setup_scene() -> None:
     bpy.context.scene.camera = bpy.context.object
 
 
-def export_avatar(output: Path, source_output: Path) -> None:
+def export_scene_glb(output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    source_output.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.export_scene.gltf(
         filepath=str(output.resolve()),
@@ -569,6 +634,12 @@ def export_avatar(output: Path, source_output: Path) -> None:
         export_materials="EXPORT",
         export_extras=True,
     )
+
+
+def export_avatar(output: Path, source_output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    source_output.parent.mkdir(parents=True, exist_ok=True)
+    export_scene_glb(output)
     if source_output.resolve() != output.resolve():
         shutil.copyfile(output, source_output)
 
@@ -577,10 +648,13 @@ def main() -> int:
     args = parse_args()
     setup_scene()
     apply_reference_metadata(args.reference_dir)
-    build_avatar()
+    apply_asset_metadata(args.base_model, args.base_model_path)
+    build_avatar(args.base_model, args.base_model_path, args.mpfb_source_output)
     export_avatar(args.output, args.source_output)
     print(f"exported {args.output.resolve()}")
     print(f"source-copy {args.source_output.resolve()}")
+    if args.base_model == "mpfb":
+        print(f"mpfb-base {args.mpfb_source_output.resolve()}")
     return 0
 
 

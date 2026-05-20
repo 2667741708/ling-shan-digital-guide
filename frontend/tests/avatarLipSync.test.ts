@@ -74,6 +74,8 @@ describe("avatar local-2d lip sync", () => {
 
   it("ships a realistic-3d Lingling GLB with the frontend viseme morph targets", () => {
     const modelPath = resolve(FRONTEND_ROOT, "public/avatar/models/lingling-realistic.glb");
+    const assetManifestPath = resolve(FRONTEND_ROOT, "public/avatar/models/lingling-avatar-manifest.json");
+    const assetManifest = JSON.parse(readFileSync(assetManifestPath, "utf-8"));
     const gltf = readGlbJson(modelPath);
     const targetNames = new Set<string>();
 
@@ -86,8 +88,14 @@ describe("avatar local-2d lip sync", () => {
     expect(gltf.meshes?.length ?? 0).toBeGreaterThan(0);
     expect(gltf.scenes?.[0]?.extras?.lingling_reference_dir).toContain("数字人形象示例");
     expect(gltf.scenes?.[0]?.extras?.lingling_design_brief).toContain("古风汉服");
+    expect(gltf.scenes?.[0]?.extras?.lingling_base_model).toBe("mpfb");
+    expect(gltf.scenes?.[0]?.extras?.lingling_asset_license_note).toContain("CC0");
+    expect(assetManifest.assetId).toBe("lingling-mpfb-realistic");
+    expect(assetManifest.integration.projectModelUrl).toBe(REALISTIC_AVATAR_MODEL_URL);
+    expect(assetManifest.baseModel).toBe("MPFB/MakeHuman");
     for (const viseme of ["closed", "mbp", "aa", "ee", "oh", "round", "fv", "smile"]) {
       expect(targetNames.has(viseme)).toBe(true);
+      expect(assetManifest.visemes).toContain(viseme);
     }
   });
 });

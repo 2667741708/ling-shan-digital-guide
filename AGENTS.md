@@ -226,12 +226,13 @@ npm.cmd --prefix frontend install -D @types/three --registry=https://registry.np
 npm.cmd --prefix frontend exec --registry=https://registry.npmmirror.com --package @gltf-transform/cli -- gltf-transform --help
 ```
 
-真实全身数字人由 [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) 加载，模型默认路径是 `frontend/public/avatar/models/lingling-realistic.glb`，目录说明见 [models README frontend/public/avatar/models/README.md:L1-L40](frontend/public/avatar/models/README.md#L1-L40)。本地 Blender 演示资产由 [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](scripts/blender_generate_lingling_avatar.py#L20-L449) 生成，并由 [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](scripts/inspect_glb_morph_targets.py#L11-L133) 校验 `closed/mbp/aa/ee/oh/round/fv/smile` 口型 morph targets。每次重做 3D 资产前必须先看 [数字人形象示例](数字人形象示例) 中 5 张参考图，当前主资产以浅青古风汉服、发髻发簪、花卉/山水刺绣、玉佩流苏和表情口型方向为优先；导游制服和户外服作为后续独立变体。模型缺失或加载失败时必须自动回退 local-2d。
+真实全身数字人由 [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) 加载，模型默认路径是 `frontend/public/avatar/models/lingling-realistic.glb`，目录说明见 [models README frontend/public/avatar/models/README.md:L1-L48](frontend/public/avatar/models/README.md#L1-L48)。当前 3D 资产基于 MPFB/MakeHuman 人体基座，再由 [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](scripts/blender_generate_lingling_avatar.py#L20-L662) 叠加汉服、发髻、发簪、玉佩、刺绣和独立嘴部 morph targets，并由 [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](scripts/inspect_glb_morph_targets.py#L11-L133) 校验 `closed/mbp/aa/ee/oh/round/fv/smile` 口型 morph targets。每次重做 3D 资产前必须先看 [数字人形象示例](数字人形象示例) 中 5 张参考图，当前主资产以浅青古风汉服、发髻发簪、花卉/山水刺绣、玉佩流苏和表情口型方向为优先；导游制服和户外服作为后续独立变体。模型缺失或加载失败时必须自动回退 local-2d。
 
 生成和验证命令：
 
 ```powershell
-& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --reference-dir 数字人形象示例
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --online-mode --command extension install -s -e mpfb
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --mpfb-source-output frontend\public\avatar\models\source\lingling-mpfb-base.glb --reference-dir 数字人形象示例 --base-model mpfb
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 ```
 
@@ -255,6 +256,3 @@ python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingli
 - 新增功能后不新增测试。
 - 新增配置后不写 `config_reference.md`。
 - 回答项目问题时不提供 implementation refs。
-
-
-

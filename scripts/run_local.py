@@ -114,8 +114,16 @@ def build_frontend() -> None:
     run(["npm", "run", "build"], cwd=FRONTEND)
 
 
-def build_knowledge_base() -> None:
+def migrate_database() -> None:
     ensure_postgres_service()
+    env = os.environ.copy()
+    env["DATABASE_URL"] = DEFAULT_DATABASE_URL
+    print(f"$ {sys.executable} scripts/migrate_db.py upgrade  (cwd={ROOT})")
+    subprocess.run([sys.executable, "scripts/migrate_db.py", "upgrade"], cwd=ROOT, env=env, check=True)
+
+
+def build_knowledge_base() -> None:
+    migrate_database()
     env = os.environ.copy()
     env["DATABASE_URL"] = DEFAULT_DATABASE_URL
     print(f"$ {sys.executable} scripts/build_knowledge_base.py  (cwd={ROOT})")
@@ -132,7 +140,7 @@ def test_backend() -> None:
 
 
 def start_backend() -> subprocess.Popen:
-    ensure_postgres_service()
+    migrate_database()
     env = os.environ.copy()
     env["DATABASE_URL"] = DEFAULT_DATABASE_URL
     env["PYTHONPATH"] = str(BACKEND)
@@ -210,6 +218,7 @@ def main() -> int:
             "install-backend",
             "install-frontend",
             "build-frontend",
+            "migrate-db",
             "build-kb",
             "test-backend",
             "serve-backend",
@@ -229,6 +238,8 @@ def main() -> int:
         install_frontend_deps()
     elif args.command == "build-frontend":
         build_frontend()
+    elif args.command == "migrate-db":
+        migrate_database()
     elif args.command == "build-kb":
         build_knowledge_base()
     elif args.command == "test-backend":
@@ -244,6 +255,7 @@ def main() -> int:
     elif args.command == "all":
         check_env()
         install_backend_deps()
+        migrate_database()
         build_knowledge_base()
         test_backend()
         serve_backend()

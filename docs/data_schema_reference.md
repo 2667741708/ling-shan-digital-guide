@@ -4,9 +4,11 @@
 
 | 项目 | 内容 |
 |---|---|
-| 用途 | 保存后台管理员账号、PBKDF2 密码哈希、角色、启用状态和最近登录时间 |
+| 用途 | 保存后台管理员账号、PBKDF2 密码哈希、角色、启用状态和最近登录时间；角色包括 `super_admin`、`knowledge_manager`、`operator`、`viewer` |
 | 模型 | [AdminUser backend/app/models/persistence.py:L51-L62](../backend/app/models/persistence.py#L51-L62) |
-| 初始化 | [ensure_admin_user backend/app/services/auth_service.py:L55-L74](../backend/app/services/auth_service.py#L55-L74) |
+| 权限映射 | [ROLE_PERMISSIONS backend/app/services/auth_service.py:L22-L43](../backend/app/services/auth_service.py#L22-L43) |
+| 初始化 | [ensure_admin_user backend/app/services/auth_service.py:L120-L151](../backend/app/services/auth_service.py#L120-L151) |
+| 账号管理 | [admin user service backend/app/services/auth_service.py:L208-L294](../backend/app/services/auth_service.py#L208-L294) |
 | 初始化方式 | [init_db backend/app/core/database.py:L67-L76](../backend/app/core/database.py#L67-L76) |
 
 ## DS-002 知识文档表 `knowledge_document`
@@ -53,24 +55,25 @@
 
 | 项目 | 内容 |
 |---|---|
-| 用途 | 保存知识库元数据、向量后端、embedding 维度和启用状态 |
+| 用途 | 保存知识库元数据、向量后端、实际 embedding 模型、维度和启用状态 |
 | 模型 | [KnowledgeBase backend/app/models/persistence.py:L220-L235](../backend/app/models/persistence.py#L220-L235) |
-| 默认知识库创建 | [ensure_default_knowledge_base backend/app/services/vector_store.py:L303-L329](../backend/app/services/vector_store.py#L303-L329) |
-| 后台列表接口 | [admin_knowledge_bases_v1 backend/app/api/v1.py:L245-L247](../backend/app/api/v1.py#L245-L247) |
+| Embedding 元数据 | [embedding_metadata backend/app/services/embedding_service.py:L134-L149](../backend/app/services/embedding_service.py#L134-L149) |
+| 默认知识库创建 | [ensure_default_knowledge_base backend/app/services/vector_store.py:L287-L316](../backend/app/services/vector_store.py#L287-L316) |
+| 后台列表接口 | [admin_knowledge_bases_v1 backend/app/api/v1.py:L409-L411](../backend/app/api/v1.py#L409-L411) |
 
 ## DS-007 知识块表 `knowledge_chunk`
 
 | 项目 | 内容 |
 |---|---|
 | 用途 | 保存切片文本、来源、类别、token 数、embedding 向量以及是否启用到检索中 |
-| PostgreSQL 列 | `embedding` 使用 `pgvector` 的 `vector(256)`，`embedding_payload` 仅保留调试导出所需的 JSON 向量副本 |
+| PostgreSQL 列 | `embedding` 使用 `pgvector` 的 `vector(EMBEDDING_DIMENSION)`，`embedding_payload` 仅保留调试导出所需的 JSON 向量副本 |
 | 自定义列类型 | [PgVector / EmbeddingType backend/app/models/persistence.py:L18-L48](../backend/app/models/persistence.py#L18-L48) |
 | 模型 | [KnowledgeChunk backend/app/models/persistence.py:L238-L269](../backend/app/models/persistence.py#L238-L269) |
-| 静态资料入库 | [_persist_static_entries backend/app/services/vector_store.py:L347-L372](../backend/app/services/vector_store.py#L347-L372) |
-| 文档版本嵌入 | [_upsert_document_version_chunks backend/app/services/vector_store.py:L392-L421](../backend/app/services/vector_store.py#L392-L421) |
-| 文档嵌入入口 | [embed_document backend/app/services/vector_store.py:L434-L464](../backend/app/services/vector_store.py#L434-L464) |
-| RAG 检索入口 | [retrieve_context backend/app/services/vector_store.py:L591-L614](../backend/app/services/vector_store.py#L591-L614) |
-| 管理端嵌入接口 | [admin_document_embed_v1 backend/app/api/v1.py:L359-L372](../backend/app/api/v1.py#L359-L372) |
+| 静态资料入库 | [_persist_static_entries backend/app/services/vector_store.py:L320-L348](../backend/app/services/vector_store.py#L320-L348) |
+| 文档版本嵌入 | [_upsert_document_version_chunks backend/app/services/vector_store.py:L371-L409](../backend/app/services/vector_store.py#L371-L409) |
+| 文档嵌入入口 | [embed_document backend/app/services/vector_store.py:L422-L454](../backend/app/services/vector_store.py#L422-L454) |
+| RAG 检索入口 | [retrieve_context backend/app/services/vector_store.py:L578-L599](../backend/app/services/vector_store.py#L578-L599) |
+| 管理端嵌入接口 | [admin_document_embed_v1 backend/app/api/v1.py:L522-L535](../backend/app/api/v1.py#L522-L535) |
 
 ## DS-008 导出索引文件
 
@@ -78,8 +81,8 @@
 |---|---|
 | 文件 | `data/vector_db/scenic_vector_store.json` |
 | 用途 | 当前作为数据库已启用 chunk 的导出视图，便于调试、审计和兼容旧脚本 |
-| 导出入口 | [load_vector_store backend/app/services/vector_store.py:L548-L586](../backend/app/services/vector_store.py#L548-L586) |
-| 重建入口 | [build_knowledge_base backend/app/services/vector_store.py:L467-L505](../backend/app/services/vector_store.py#L467-L505) |
+| 导出入口 | [load_vector_store backend/app/services/vector_store.py:L526-L576](../backend/app/services/vector_store.py#L526-L576) |
+| 重建入口 | [build_knowledge_base backend/app/services/vector_store.py:L456-L506](../backend/app/services/vector_store.py#L456-L506) |
 
 ## DS-009 景点主数据表 `scenic_spot`
 

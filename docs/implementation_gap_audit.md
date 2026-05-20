@@ -8,7 +8,7 @@
 | 计划项 | 当前状态 | 实现依据 |
 |---|---|---|
 | 游客端可打开 | 已完成 | [Vue 路由 frontend/src/router/index.ts:L10-L20](../frontend/src/router/index.ts#L10-L20) |
-| 数字人可显示 | 已增强 realistic-3d 渲染入口、本地 Blender 全身 GLB、local-2d 回退形象、高清 mouth sprite 和口型状态 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156), [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242), [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
+| 数字人可显示 | 已增强 realistic-3d 渲染入口、MPFB/MakeHuman 基座全身 GLB、local-2d 回退形象、高清 mouth sprite 和口型状态 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156), [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242), [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
 | 文本问答 | 已完成 | [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
 | 浏览器语音输入 | 部分完成 | [handleListen frontend/src/pages/visitor/ChatGuide.vue:L74-L98](../frontend/src/pages/visitor/ChatGuide.vue#L74-L98) |
 | 浏览器语音播报 | 部分完成，已接入口型生命周期 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L116-L137](../frontend/src/pages/visitor/ChatGuide.vue#L116-L137) |
@@ -51,6 +51,3 @@
 4. 展示回答依据、路线卡片和游客评分面板：[chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137)、[ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211)。
 5. 打开地图页展示真实点位和路线：[ScenicMap frontend/src/pages/visitor/ScenicMap.vue:L1-L62](../frontend/src/pages/visitor/ScenicMap.vue#L1-L62)。
 6. 打开管理大屏展示问答、路线、评分和情绪指标：[AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105)。
-
-
-

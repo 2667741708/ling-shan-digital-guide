@@ -51,7 +51,7 @@
 |---|---|
 | 方法与路径 | `GET /api/v1/scenic/spots`, `GET /api/v1/scenic/facilities` |
 | 响应字段 | 景点：`id/name/description/map_x/map_y/tags`；设施：`id/name/type/map_x/map_y/service_radius` |
-| API 入口 | [scenic_spots_v1 backend/app/api/v1.py:L216-L223](../backend/app/api/v1.py#L216-L223) |
+| API 入口 | [scenic_spots_v1 backend/app/api/v1.py:L227-L233](../backend/app/api/v1.py#L227-L233) |
 | 服务函数 | [list_scenic_spots backend/app/services/scenic_service.py:L245-L247](../backend/app/services/scenic_service.py#L245-L247), [list_facilities backend/app/services/scenic_service.py:L250-L252](../backend/app/services/scenic_service.py#L250-L252) |
 | 前端使用 | [fetchScenicSpots frontend/src/api/visitor.ts:L74-L76](../frontend/src/api/visitor.ts#L74-L76) |
 
@@ -62,7 +62,7 @@
 | 方法与路径 | `POST /api/v1/route/recommend` |
 | 请求字段 | `session_id?`, `start_point`, `available_minutes`, `interest_tags`, `group_type` |
 | 响应字段 | `route_id`, `route_name`, `total_duration`, `spots`, `reason`, `score_summary` |
-| API 入口 | [route_recommend_v1 backend/app/api/v1.py:L226-L229](../backend/app/api/v1.py#L226-L229) |
+| API 入口 | [route_recommend_v1 backend/app/api/v1.py:L237-L240](../backend/app/api/v1.py#L237-L240) |
 | 服务函数 | [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
 | 前端使用 | [recommendRoute frontend/src/api/visitor.ts:L78-L85](../frontend/src/api/visitor.ts#L78-L85) |
 
@@ -73,7 +73,7 @@
 | 方法与路径 | `POST /api/v1/visitor/ratings`, `GET /api/v1/visitor/sessions/{session_uuid}/ratings`, `GET /api/v1/visitor/spots/{spot_id}/ratings/stats`, `GET /api/v1/visitor/spots/{spot_id}/ratings/public` |
 | 请求字段 | 提交评分：`session_uuid`, `spot_id`, `overall_rating`, `culture_rating?`, `nature_rating?`, `photo_rating?`, `facility_rating?`, `comment?`, `user_tags`, `is_public`, `user_profile_snapshot`, `source` |
 | 响应字段 | 评分记录、`created_or_updated`、景点评分统计、公开评论列表 |
-| API 入口 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [session_ratings_v1 backend/app/api/v1.py:L238-L241](../backend/app/api/v1.py#L238-L241), [spot_rating_stats_v1 backend/app/api/v1.py:L244-L246](../backend/app/api/v1.py#L244-L246), [spot_public_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252) |
+| API 入口 | [submit_rating_v1 backend/app/api/v1.py:L243-L246](../backend/app/api/v1.py#L243-L246), [session_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252), [spot_rating_stats_v1 backend/app/api/v1.py:L255-L257](../backend/app/api/v1.py#L255-L257), [spot_public_ratings_v1 backend/app/api/v1.py:L260-L263](../backend/app/api/v1.py#L260-L263) |
 | 服务函数 | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [list_public_ratings backend/app/services/rating_service.py:L217-L233](../backend/app/services/rating_service.py#L217-L233) |
 | 前端使用 | [submitSpotRating frontend/src/api/visitor.ts:L87-L89](../frontend/src/api/visitor.ts#L87-L89), [fetchSpotRatingStats frontend/src/api/visitor.ts:L91-L93](../frontend/src/api/visitor.ts#L91-L93), [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L91-L114](../frontend/src/pages/visitor/ChatGuide.vue#L91-L114) |
 | 测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
@@ -83,12 +83,12 @@
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `GET /api/v1/admin/ratings`, `GET /api/v1/admin/ratings/ranking`, `GET /api/v1/admin/ratings/trend`, `GET /api/v1/admin/ratings/report`, `PUT /api/v1/admin/ratings/{rating_id}/review` |
-| 鉴权 | `Authorization: Bearer <token>` |
+| 鉴权 | `Authorization: Bearer <token>`；列表/排行/报告需要 `ratings:read`，审核需要 `ratings:review` |
 | 查询参数 | `spot_id`, `rating_min`, `rating_max`, `sentiment`, `is_public`, `review_status`, `source`, `start_date`, `end_date`, `keyword` |
 | 响应字段 | 评分列表、景点评分排行、日维度评分趋势、游客感受度报告、公开评论审核结果 |
-| API 入口 | [admin_ratings_v1 backend/app/api/v1.py:L283-L313](../backend/app/api/v1.py#L283-L313), [admin_rating_ranking_v1 backend/app/api/v1.py:L316-L317](../backend/app/api/v1.py#L316-L317), [admin_rating_trend_v1 backend/app/api/v1.py:L321-L322](../backend/app/api/v1.py#L321-L322), [admin_rating_report_v1 backend/app/api/v1.py:L326-L333](../backend/app/api/v1.py#L326-L333), [admin_rating_review_v1 backend/app/api/v1.py:L336-L354](../backend/app/api/v1.py#L336-L354) |
+| API 入口 | [admin_ratings_v1 backend/app/api/v1.py:L335-L365](../backend/app/api/v1.py#L335-L365), [admin_rating_ranking_v1 backend/app/api/v1.py:L368-L369](../backend/app/api/v1.py#L368-L369), [admin_rating_trend_v1 backend/app/api/v1.py:L373-L374](../backend/app/api/v1.py#L373-L374), [admin_rating_report_v1 backend/app/api/v1.py:L378-L385](../backend/app/api/v1.py#L378-L385), [admin_rating_review_v1 backend/app/api/v1.py:L388-L405](../backend/app/api/v1.py#L388-L405) |
 | 服务函数 | [list_admin_ratings backend/app/services/rating_service.py:L340-L367](../backend/app/services/rating_service.py#L340-L367), [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386), [get_admin_rating_trend backend/app/services/rating_service.py:L417-L433](../backend/app/services/rating_service.py#L417-L433), [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
-| 前端使用 | [fetchRatingRanking frontend/src/api/admin.ts:L7-L9](../frontend/src/api/admin.ts#L7-L9), [fetchRatingTrend frontend/src/api/admin.ts:L11-L13](../frontend/src/api/admin.ts#L11-L13), [fetchAdminRatings frontend/src/api/admin.ts:L15-L17](../frontend/src/api/admin.ts#L15-L17), [fetchRatingReport frontend/src/api/admin.ts:L19-L21](../frontend/src/api/admin.ts#L19-L21), [reviewRating frontend/src/api/admin.ts:L23-L25](../frontend/src/api/admin.ts#L23-L25), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167), [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L18-L109](../frontend/src/pages/admin/AdminDashboard.vue#L18-L109) |
+| 前端使用 | [fetchRatingRanking frontend/src/api/admin.ts:L7-L9](../frontend/src/api/admin.ts#L7-L9), [fetchRatingTrend frontend/src/api/admin.ts:L11-L13](../frontend/src/api/admin.ts#L11-L13), [fetchAdminRatings frontend/src/api/admin.ts:L15-L17](../frontend/src/api/admin.ts#L15-L17), [fetchRatingReport frontend/src/api/admin.ts:L19-L21](../frontend/src/api/admin.ts#L19-L21), [reviewRating frontend/src/api/admin.ts:L23-L25](../frontend/src/api/admin.ts#L23-L25), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167), [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L18-L110](../frontend/src/pages/admin/AdminDashboard.vue#L18-L110) |
 | 示例请求 | `GET /api/v1/admin/ratings/report?start_date=2026-05-01&end_date=2026-05-18`；`PUT /api/v1/admin/ratings/{id}/review` body: `{"review_status":"hidden","is_public":false}` |
 
 ## API-019 `/api/v1` 后台鉴权、知识库、数字人与系统状态
@@ -96,11 +96,24 @@
 | 项目 | 内容 |
 |---|---|
 | 方法与路径 | `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `GET /api/v1/admin/knowledge-bases`, `POST /api/v1/admin/knowledge-bases/default/documents`, `POST /api/v1/admin/documents/{document_id}/embed`, `GET /api/v1/admin/avatar/profiles`, `POST /api/v1/admin/avatar/profiles`, `GET /api/v1/admin/system/status` |
-| 鉴权 | 除登录外均需 `Authorization: Bearer <token>` |
-| API 入口 | [auth_login_v1 backend/app/api/v1.py:L260-L262](../backend/app/api/v1.py#L260-L262), [admin_knowledge_bases_v1 backend/app/api/v1.py:L315-L317](../backend/app/api/v1.py#L315-L317), [admin_upload_document_v1 backend/app/api/v1.py:L325-L338](../backend/app/api/v1.py#L325-L338), [admin_document_embed_v1 backend/app/api/v1.py:L428-L440](../backend/app/api/v1.py#L428-L440), [admin_avatar_profiles_v1 backend/app/api/v1.py:L445-L447](../backend/app/api/v1.py#L445-L447), [admin_create_avatar_profile_v1 backend/app/api/v1.py:L450-L452](../backend/app/api/v1.py#L450-L452), [admin_system_status_v1 backend/app/api/v1.py:L270-L272](../backend/app/api/v1.py#L270-L272) |
-| 服务函数 | [authenticate_admin backend/app/services/auth_service.py:L110-L131](../backend/app/services/auth_service.py#L110-L131), [list_knowledge_bases backend/app/services/knowledge_service.py:L56-L57](../backend/app/services/knowledge_service.py#L56-L57), [save_document backend/app/services/knowledge_service.py:L187-L259](../backend/app/services/knowledge_service.py#L187-L259), [embed_document backend/app/services/knowledge_service.py:L174-L184](../backend/app/services/knowledge_service.py#L174-L184), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
-| 前端使用 | [admin api frontend/src/api/admin.ts:L3-L78](../frontend/src/api/admin.ts#L3-L78) |
+| 鉴权 | 除登录外均需 `Authorization: Bearer <token>`；系统状态需要 `system:read`，知识库写操作需要 `knowledge:write`，数字人保存需要 `avatar:write` |
+| API 入口 | [auth_login_v1 backend/app/api/v1.py:L271-L273](../backend/app/api/v1.py#L271-L273), [admin_system_status_v1 backend/app/api/v1.py:L281-L283](../backend/app/api/v1.py#L281-L283), [admin_knowledge_bases_v1 backend/app/api/v1.py:L409-L411](../backend/app/api/v1.py#L409-L411), [admin_upload_document_v1 backend/app/api/v1.py:L419-L432](../backend/app/api/v1.py#L419-L432), [admin_document_embed_v1 backend/app/api/v1.py:L522-L535](../backend/app/api/v1.py#L522-L535), [admin_avatar_profiles_v1 backend/app/api/v1.py:L539-L541](../backend/app/api/v1.py#L539-L541), [admin_create_avatar_profile_v1 backend/app/api/v1.py:L544-L545](../backend/app/api/v1.py#L544-L545) |
+| 服务函数 | [authenticate_admin backend/app/services/auth_service.py:L156-L192](../backend/app/services/auth_service.py#L156-L192), [require_admin_permission backend/app/services/auth_service.py:L199-L206](../backend/app/services/auth_service.py#L199-L206), [list_knowledge_bases backend/app/services/knowledge_service.py:L56-L57](../backend/app/services/knowledge_service.py#L56-L57), [save_document backend/app/services/knowledge_service.py:L187-L259](../backend/app/services/knowledge_service.py#L187-L259), [embed_document backend/app/services/knowledge_service.py:L174-L184](../backend/app/services/knowledge_service.py#L174-L184), [save_avatar_config backend/app/services/avatar_service.py:L76-L99](../backend/app/services/avatar_service.py#L76-L99), [get_system_status backend/app/services/system_service.py:L19-L33](../backend/app/services/system_service.py#L19-L33) |
+| 前端使用 | [admin api frontend/src/api/admin.ts:L3-L102](../frontend/src/api/admin.ts#L3-L102) |
 | 系统状态字段 | `backend`, `postgres`, `llm`, `asr`, `tts`, `avatar`, `database_backend`, `vector_backend` |
+
+## API-023 `/api/v1` 管理员账号管理
+
+| 项目 | 内容 |
+|---|---|
+| 方法与路径 | `GET /api/v1/admin/users`, `POST /api/v1/admin/users`, `PUT /api/v1/admin/users/{user_id}/status`, `PUT /api/v1/admin/users/{user_id}/password` |
+| 鉴权 | 仅 `super_admin` 具备的 `users:manage` 权限 |
+| 请求字段 | 创建：`username`, `password`, `role`；状态：`enabled`；重置密码：`password` |
+| 响应字段 | `id`, `username`, `role`, `permissions`, `enabled`, `last_login_at`, `created_at`, `updated_at` |
+| API 入口 | [admin user APIs backend/app/api/v1.py:L291-L335](../backend/app/api/v1.py#L291-L335) |
+| 服务函数 | [list_admin_users backend/app/services/auth_service.py:L208-L218](../backend/app/services/auth_service.py#L208-L218), [create_admin_user backend/app/services/auth_service.py:L220-L255](../backend/app/services/auth_service.py#L220-L255), [set_admin_user_enabled backend/app/services/auth_service.py:L257-L278](../backend/app/services/auth_service.py#L257-L278), [reset_admin_password backend/app/services/auth_service.py:L280-L294](../backend/app/services/auth_service.py#L280-L294) |
+| 前端使用 | [AdminUsers frontend/src/pages/admin/AdminUsers.vue:L1-L171](../frontend/src/pages/admin/AdminUsers.vue#L1-L171), [admin user api frontend/src/api/admin.ts:L27-L41](../frontend/src/api/admin.ts#L27-L41) |
+| 测试 | [test_v1_admin_user_management_and_permissions backend/tests/test_api_v1.py:L155-L187](../backend/tests/test_api_v1.py#L155-L187), [test_v1_operator_can_review_but_viewer_cannot backend/tests/test_api_v1.py:L189-L236](../backend/tests/test_api_v1.py#L189-L236) |
 
 ## API-020 `/api/v1` RAG 检索
 
@@ -108,10 +121,10 @@
 |---|---|
 | 方法与路径 | `POST /api/v1/rag/retrieve` |
 | 请求字段 | `query`, `top_k` |
-| 响应字段 | `query`, `chunks[].chunk_id/source/category/title/text/score` |
-| API 入口 | [rag_retrieve_v1 backend/app/api/v1.py:L255-L257](../backend/app/api/v1.py#L255-L257) |
-| 服务函数 | [retrieve_context backend/app/services/knowledge_service.py:L32-L53](../backend/app/services/knowledge_service.py#L32-L53), [retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596) |
-| 测试 | [test_v1_admin_knowledge_and_system_status backend/tests/test_api_v1.py:L84-L113](../backend/tests/test_api_v1.py#L84-L113) |
+| 响应字段 | `query`, `chunks[].chunk_id/source/category/title/text/score`；配置 rerank 时可返回 `rerank_score` |
+| API 入口 | [rag_retrieve_v1 backend/app/api/v1.py:L266-L268](../backend/app/api/v1.py#L266-L268) |
+| 服务函数 | [retrieve_context backend/app/services/knowledge_service.py:L32-L53](../backend/app/services/knowledge_service.py#L32-L53), [embed_text backend/app/services/embedding_service.py:L122-L131](../backend/app/services/embedding_service.py#L122-L131), [rerank_hits backend/app/services/embedding_service.py:L152-L190](../backend/app/services/embedding_service.py#L152-L190), [retrieve_context backend/app/services/vector_store.py:L578-L599](../backend/app/services/vector_store.py#L578-L599) |
+| 测试 | [test_v1_admin_knowledge_and_system_status backend/tests/test_api_v1.py:L116-L153](../backend/tests/test_api_v1.py#L116-L153), [test_embedding_service backend/tests/test_embedding_service.py:L6-L63](../backend/tests/test_embedding_service.py#L6-L63) |
 
 ## API-002 游客文本问答
 

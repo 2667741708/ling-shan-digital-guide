@@ -1,0 +1,33 @@
+﻿{
+    "schemaVersion":  "1.0.0",
+    "assetId":  "lingling-mpfb-realistic",
+    "displayName":  "灵灵 MPFB realistic-3d",
+    "modelUrl":  "./lingling-realistic.glb",
+    "modelPath":  "dist/lingling-realistic.glb",
+    "baseModel":  "MPFB/MakeHuman",
+    "mode":  "realistic-3d",
+    "licenseNote":  "MPFB add-on code is GPL-3.0-or-later; MakeHuman/MPFB project documentation describes core graphical assets as CC0. Local clothing, hair, accessories, embroidery and mouth targets are script-generated.",
+    "sizeBytes":  1739712,
+    "sha256":  "6220D3B94F5EAD52E989DE69422C9DE54D2ECB0514ADDD47F6BEC7CD777BE9D3",
+    "sourceBase":  {
+                       "path":  "source/lingling-mpfb-base.glb",
+                       "sizeBytes":  924408,
+                       "sha256":  "A1A6303C77EAC2D1DD51B9E8BED65B268808A62D623D54F3D9709EFB36B74415"
+                   },
+    "visemes":  [
+                    "closed",
+                    "mbp",
+                    "aa",
+                    "ee",
+                    "oh",
+                    "round",
+                    "fv",
+                    "smile"
+                ],
+    "integration":  {
+                        "projectModelUrl":  "/avatar/models/lingling-realistic.glb",
+                        "projectManifestUrl":  "/avatar/models/lingling-avatar-manifest.json",
+                        "fallback":  "local-2d"
+                    },
+    "generatedAt":  "2026-05-20T14:00:30+08:00"
+}

@@ -1,6 +1,6 @@
-# LingTour AI 数字人导游平台
+﻿# LingTour AI 数字人导游平台
 
-LingTour AI 是面向中国软件杯 A5「景区导览服务 AI 数字人」赛题的全栈项目。当前版本已经跑通游客导览、PostgreSQL + pgvector 知识库、游客个性化评分、路线推荐反哺、管理后台大屏、数字人配置和 Docker 容器化运行。
+LingTour AI 是面向中国软件杯 A5「景区导览服务 AI 数字人」赛题的全栈项目。当前版本已经跑通游客导览、PostgreSQL + pgvector 知识库、OpenAI 兼容 embedding/rerank fallback、RBAC 管理后台、游客个性化评分、路线推荐反哺、管理后台大屏、数字人配置、Alembic 迁移和 Docker 容器化运行。
 
 当前远程仓库：
 
@@ -11,7 +11,7 @@ https://github.com/2667741708/ling-shan-digital-guide.git
 当前开发分支：
 
 ```text
-codex/optimize-map-avatar-v0.1
+codex/production-hardening-v1
 ```
 
 ## 当前能力
@@ -19,11 +19,12 @@ codex/optimize-map-avatar-v0.1
 | 模块 | 当前状态 | 入口 |
 |---|---|---|
 | 游客问答 | 支持 `/api/v1/guide/ask`，写入问答日志并返回引用和数字人指令 | [API-015 docs/api_reference.md:L25-L34](docs/api_reference.md#L25-L34) |
-| 知识库/RAG | 统一使用 PostgreSQL + pgvector，不依赖 Chroma/Milvus/Qdrant/SQLite | [REQ-017 docs/requirements_traceability.md:L401-L436](docs/requirements_traceability.md#L401-L436) |
+| 知识库/RAG | 统一使用 PostgreSQL + pgvector，支持 OpenAI 兼容 embedding/rerank provider，默认 hash fallback | [REQ-017 docs/requirements_traceability.md:L679-L708](docs/requirements_traceability.md#L679-L708), [REQ-022 docs/requirements_traceability.md:L730-L779](docs/requirements_traceability.md#L730-L779) |
+| 后台权限 | `super_admin`、`knowledge_manager`、`operator`、`viewer` 分权，新增管理员账号管理 | [API-023 docs/api_reference.md:L114-L127](docs/api_reference.md#L114-L127) |
 | 游客评分 | 支持多维评分、公开评论、游客画像、后台排行和趋势 | [REQ-021 docs/requirements_traceability.md:L539-L581](docs/requirements_traceability.md#L539-L581) |
 | 路线推荐 | 接入兴趣、时间、体力、游客评分和偏好画像，并持久化路线日志 | [路线推荐 backend/app/services/route_service.py:L152-L196](backend/app/services/route_service.py#L152-L196) |
 | 数据大屏 | 从问答、路线、评分、景点表聚合真实运营数据 | [数据大屏 backend/app/services/analytics_service.py:L34-L89](backend/app/services/analytics_service.py#L34-L89) |
-| 前端 App | Vue 3 游客端、地图页、已内置参考 `数字人形象示例` 生成的 `lingling-realistic.glb` realistic-3d 数字人、local-2d 口型回退、高清嘴型素材、后台登录、知识库管理、评分面板和管理大屏 | [前端入口 docs/program_index.md:L40-L66](docs/program_index.md#L40-L66) |
+| 前端 App | Vue 3 游客端、地图页、已内置参考 `数字人形象示例` 和 MPFB/MakeHuman 基座生成的 `lingling-realistic.glb` realistic-3d 数字人、local-2d 口型回退、高清嘴型素材、后台登录、知识库管理、评分面板和管理大屏 | [前端入口 docs/program_index.md:L40-L66](docs/program_index.md#L40-L66) |
 | Docker 部署 | 支持 Compose 双容器和 All-in-One 单容器，单容器内包含 PostgreSQL + pgvector | [TEST-019 docs/test_reference.md:L218-L227](docs/test_reference.md#L218-L227), [TEST-020 docs/test_reference.md:L230-L241](docs/test_reference.md#L230-L241) |
 
 ## 技术栈
@@ -31,7 +32,7 @@ codex/optimize-map-avatar-v0.1
 - 前端：Vue 3、TypeScript、Vite、Pinia、Element Plus、ECharts。
 - 后端：FastAPI、SQLAlchemy、Pydantic。
 - 数据层：PostgreSQL + pgvector 单库架构。
-- AI 能力：RAG 检索、DeepSeek/OpenAI 兼容模型适配、ASR/TTS/Avatar 演示接口。
+- AI 能力：RAG 检索、OpenAI 兼容 embedding/rerank、DeepSeek/OpenAI 兼容文本模型适配、ASR/TTS/Avatar 演示接口。
 - 部署：Docker Compose、All-in-One Docker、GHCR 发布脚本。
 
 ## 快速启动
@@ -64,7 +65,7 @@ All-in-One 单容器运行：
 docker compose -f deploy/docker-compose.allinone.yml up --build
 ```
 
-更多命令见 [CLI 使用说明 docs/cli_usage.md:L1-L154](docs/cli_usage.md#L1-L154)。
+更多命令见 [CLI 使用说明 docs/cli_usage.md:L1-L177](docs/cli_usage.md#L1-L177)。
 
 ## 核心 API 链路
 
@@ -83,8 +84,10 @@ docker compose -f deploy/docker-compose.allinone.yml up --build
 
 ```powershell
 python scripts\run_local.py test-backend
+python scripts\run_local.py build-kb
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 npm --prefix frontend run test:avatar
+npm.cmd --prefix frontend run test:e2e
 python scripts\run_local.py build-frontend
 python scripts\check_doc_links.py
 ```

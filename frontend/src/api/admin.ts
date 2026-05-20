@@ -24,6 +24,22 @@ export function reviewRating(ratingId: string, payload: { review_status: string;
   return unwrap(http.put(`/api/v1/admin/ratings/${encodeURIComponent(ratingId)}/review`, payload));
 }
 
+export function fetchAdminUsers() {
+  return unwrap(http.get("/api/v1/admin/users"));
+}
+
+export function createAdminUser(payload: { username: string; password: string; role: string }) {
+  return unwrap(http.post("/api/v1/admin/users", payload));
+}
+
+export function updateAdminUserStatus(userId: string, enabled: boolean) {
+  return unwrap(http.put(`/api/v1/admin/users/${encodeURIComponent(userId)}/status`, { enabled }));
+}
+
+export function resetAdminUserPassword(userId: string, password: string) {
+  return unwrap(http.put(`/api/v1/admin/users/${encodeURIComponent(userId)}/password`, { password }));
+}
+
 export function loginAdmin(username: string, password: string) {
   return unwrap(http.post("/api/v1/auth/login", { username, password }));
 }

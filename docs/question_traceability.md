@@ -821,7 +821,7 @@ python scripts\check_doc_links.py
 
 ### 回答摘要
 
-已使用 `registry.npmmirror.com` 安装前端 3D 运行时依赖 `three`、`@pixiv/three-vrm` 和 `@types/three`。Blender/OpenSCAD/FreeCAD 已由 winget 确认安装；当前 shell 未加入 PATH，可用完整路径运行。前端已新增 `AvatarRenderer`，优先加载 `/avatar/models/lingling-realistic.glb`，模型缺失或 WebGL/加载失败时自动回退当前 2D 数字人。当前已补充本地 Blender procedural 全身 GLB 演示资产，并通过 8 个 viseme morph targets 检查。
+已使用 `registry.npmmirror.com` 安装前端 3D 运行时依赖 `three`、`@pixiv/three-vrm` 和 `@types/three`。Blender/OpenSCAD/FreeCAD 已由 winget 确认安装；当前 shell 未加入 PATH，可用完整路径运行。前端已新增 `AvatarRenderer`，优先加载 `/avatar/models/lingling-realistic.glb`，模型缺失或 WebGL/加载失败时自动回退当前 2D 数字人。当前已补充 MPFB/MakeHuman 基座 + 本地 Blender 精修全身 GLB 演示资产，并通过 8 个 viseme morph targets 检查。
 
 ### 对应实现位置
 
@@ -831,8 +831,8 @@ python scripts\check_doc_links.py
 | 渲染器 | Three.js/GLTFLoader/three-vrm 加载 GLB/VRM 并驱动 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) |
 | 容器/fallback | realistic-3d 就绪时显示 3D，失败时显示 local-2d | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156) |
 | 口型映射 | VRM expression、mesh morph target 候选名和权重算法 | [avatarRenderer frontend/src/store/avatarRenderer.ts:L1-L46](../frontend/src/store/avatarRenderer.ts#L1-L46) |
-| 模型目录 | 本地 full-body GLB、source copy、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
-| 生成脚本 | Blender procedural full-body avatar 和 viseme shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 模型目录 | MPFB base、最终 full-body GLB、source copy、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
+| 生成脚本 | MPFB/MakeHuman base、Blender hanfu/accessory overlays 和 viseme shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662) |
 | 检查脚本 | GLB morph target 合约检查 | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
 | 构建排错 | `@gltf-transform/cli` 不固定到前端 devDependency，使用 `npm exec` 临时运行 | [TRB-022 docs/troubleshooting.md:L806-L836](./troubleshooting.md#L806-L836) |
 
@@ -851,7 +851,7 @@ python scripts\check_doc_links.py
 
 ### 影响范围
 
-影响游客端数字人渲染方式、前端依赖包、构建产物大小、数字人静态模型目录和口型测试；不影响后端 API、数据库结构、RAG 检索或后台配置表。当前内置模型是本地 procedural 演示资产，真人级完全匹配仍依赖外部高保真图生 3D 或人工建模。
+影响游客端数字人渲染方式、前端依赖包、构建产物大小、数字人静态模型目录和口型测试；不影响后端 API、数据库结构、RAG 检索或后台配置表。当前内置模型是 MPFB/MakeHuman 基座演示资产，真人级完全匹配仍依赖外部高保真图生 3D 或人工建模。
 
 ## Q-0027 本机能否用 Hunyuan3D/Pixal3D/TRELLIS.2 直接生成灵灵高保真 3D 模型？
 
@@ -861,14 +861,14 @@ python scripts\check_doc_links.py
 
 ### 回答摘要
 
-本机 RTX 5070 Laptop GPU 只有约 8GB VRAM，更适合谨慎尝试 Hunyuan3D-2/2mini low-vram 的 shape-only 初模；TRELLIS.2 官方要求 Linux 和 24GB+ VRAM，Pixal3D 官方安装先依赖 TRELLIS.2，因此不适合作为本机稳定生产链路。当前先交付本地 Blender procedural `lingling-realistic.glb`，后续可用裁剪后的单主体图片在外部 24GB+ VRAM 环境生成初模，再回到 Blender 增加口型 shape keys。
+本机 RTX 5070 Laptop GPU 只有约 8GB VRAM，更适合谨慎尝试 Hunyuan3D-2/2mini low-vram 的 shape-only 初模；TRELLIS.2 官方要求 Linux 和 24GB+ VRAM，Pixal3D 官方安装先依赖 TRELLIS.2，因此不适合作为本机稳定生产链路。当前先交付 MPFB/MakeHuman 基座 + 本地 Blender 精修的 `lingling-realistic.glb`，后续可用裁剪后的单主体图片在外部 24GB+ VRAM 环境生成初模，再回到 Blender 增加或保留口型 shape keys。
 
 ### 对应实现位置
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 本地 procedural GLB | 已提交的全身演示资产说明、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
-| Blender 生成脚本 | 本地生成浅青汉服、发髻、发簪、面部和口型 shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 本地 MPFB-based GLB | 已提交的全身演示资产说明、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
+| Blender 生成脚本 | 调用 MPFB/MakeHuman 基座，生成浅青汉服、发髻、发簪、面部和口型 shape keys | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662) |
 | GLB 口型检查 | 校验 `closed/mbp/aa/ee/oh/round/fv/smile` | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
 | 前端加载 | 加载 GLB/VRM 并按 viseme 驱动 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
 
@@ -899,15 +899,15 @@ npm.cmd --prefix frontend run build
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
 | 设计参考目录 | 5 张灵灵形象、服饰、表情、口型和材质参考图 | [数字人形象示例](../数字人形象示例) |
-| 模型说明 | 当前 GLB 哈希、参考目录、形象优先级和替换注意事项 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 模型说明 | 当前 GLB 哈希、参考目录、形象优先级和替换注意事项 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
 | 参考图 metadata | `REFERENCE_DESIGN_BRIEF`、`--reference-dir`、图片名收集和 GLB extras 写入 | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L31-L87](../scripts/blender_generate_lingling_avatar.py#L31-L87) |
-| 资产生成 | 构建浅青汉服、发髻、发簪、面部、口型和装饰件 | [build_avatar scripts/blender_generate_lingling_avatar.py:L302-L400](../scripts/blender_generate_lingling_avatar.py#L302-L400) |
+| 资产生成 | 调用 MPFB/MakeHuman 基座并构建浅青汉服、发髻、发簪、面部、口型和装饰件 | [build_avatar scripts/blender_generate_lingling_avatar.py:L488-L606](../scripts/blender_generate_lingling_avatar.py#L488-L606) |
 | 前端验收 | 加载 `lingling-realistic.glb` 并按 viseme 更新 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
 
 ### 验证命令
 
 ```powershell
-& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --reference-dir 数字人形象示例
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --mpfb-source-output frontend\public\avatar\models\source\lingling-mpfb-base.glb --reference-dir 数字人形象示例 --base-model mpfb
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 npm.cmd --prefix frontend run test:avatar
 ```
@@ -934,7 +934,7 @@ npm.cmd --prefix frontend run test:avatar
 | 当前 2D 口型 | 文本、语速、标点和字符启发式生成 viseme 时间线 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
 | 当前 2D 渲染 | SVG 汉服导游形象和 8 个 mouth sprite 回退 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L89-L144](../frontend/src/components/Avatar/DigitalAvatar.vue#L89-L144) |
 | 当前 3D 对比 | Three.js/VRM 加载 GLB，并按 viseme 驱动 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
-| 当前 3D 资产 | `lingling-realistic.glb`、哈希、8 个 morph target 和替换规则 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 当前 3D 资产 | `lingling-realistic.glb`、哈希、8 个 morph target 和替换规则 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
 | 参考项目 | README 已记录 AIAvatarKit、Magic-Voice-Chat、pixi-live2d-display | [README README.md:L113-L118](../README.md#L113-L118) |
 
 ### 建议隔离目录
@@ -1018,6 +1018,303 @@ python scripts\run_local.py smoke-backend
 
 本次核验不改变代码逻辑；影响项目验收判断、后续排期、文档追踪和交接说明。当前结论是：除数字人外，核心业务闭环已经较完整，适合作为比赛演示版；若按生产系统标准，还需要继续补齐权限、检索质量、运维迁移和端到端验收。
 
+## Q-0031 如何在 D 盘英文路径运行 Open-LLM-VTuber 原版对比演示？
 
+### 用户原始问题
 
+先在英文路径跑一个 Open-LLM-VTuber 原版对比演示。可以在 D 盘创建一个英文项目。
 
+### 回答摘要
+
+已在本机单独创建外部对比工程 `D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main`，不混入当前灵山项目源码和数字人资产目录。原版服务已用 Python 3.11 虚拟环境、Ollama `qwen2.5:0.5b`、Live2D `mao_pro`、Sherpa-ONNX SenseVoice ASR 和 Edge TTS 跑通，访问地址为 `http://localhost:12393/`。
+
+本次验证结论：Live2D 前端、WebSocket 对话、LLM 文本回复和 TTS 音频 payload 已跑通；浏览器麦克风 VAD 因未授权而被拦截，属于权限问题，不影响文本输入演示。首次 TTS 失败来自缺少 `ffprobe.exe`，补齐 `tools\ffmpeg\ffmpeg.exe` 和 `tools\ffmpeg\ffprobe.exe` 后已恢复音频 payload 生成。
+
+### 外部演示工程
+
+该目录是原版对比演示工程，不属于当前仓库，不作为本项目源码改动：
+
+```text
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main
+```
+
+保留该英文路径的原因：Open-LLM-VTuber 快速启动和 Python/前端依赖更适合在无中文字符路径中运行，避免模型、子模块、缓存和音频工具在 Windows 下出现路径兼容问题。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 当前 2D/3D 资产约定 | 本项目已规定 2D/3D 数字人资产隔离方式和原版对比说明 | [AGENTS.md:L130-L185](../AGENTS.md#L130-L185) |
+| 当前 2D 口型 | 本项目 local-2d viseme 时间线生成逻辑 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
+| 当前 3D 对比 | 本项目 3D GLB/VRM 加载和 morph target 驱动逻辑 | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
+| 二次元方案评估 | Open-LLM-VTuber 更适合作为二次元流畅互动对比方案 | [Q-0029 docs/question_traceability.md:L919-L963](./question_traceability.md#L919-L963) |
+
+外部 Open-LLM-VTuber 关键代码定位（不纳入当前仓库链接检查）：
+
+```text
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\run_server.py:L50-L107
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\run_server.py:L120-L164
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\server.py:L111-L149
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\tts\edge_tts.py:L40-L50
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\utils\stream_audio.py:L62-L70
+```
+
+### 启动命令
+
+从外部英文目录运行：
+
+```powershell
+cd D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main
+uv sync --python 3.11
+copy config_templates\conf.ZH.default.yaml conf.yaml
+```
+
+`conf.yaml` 当前关键配置：
+
+```text
+system_config.host = localhost
+system_config.port = 12393
+character_config.live2d_model_name = mao_pro
+agent_settings.basic_memory_agent.llm_provider = ollama_llm
+llm_configs.ollama_llm.base_url = http://localhost:11434/v1
+llm_configs.ollama_llm.model = qwen2.5:0.5b
+asr_config.asr_model = sherpa_onnx_asr
+tts_config.tts_model = edge_tts
+edge_tts.voice = zh-CN-XiaoxiaoNeural
+```
+
+启动服务：
+
+```powershell
+cd D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main
+$env:PATH = "D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg;$env:PATH"
+.\.venv\Scripts\python.exe run_server.py --verbose
+```
+
+当前后台演示服务监听：
+
+```text
+http://localhost:12393/
+```
+
+### 本次验证结果
+
+- `uv sync --python 3.11`：通过，创建 `.venv` 并安装 Open-LLM-VTuber 后端依赖。
+- 首次启动：自动下载并解压 Sherpa-ONNX SenseVoice ASR 模型。
+- 浏览器前端：页面标题为 `Open-LLM-Vtuber`，DOM 中存在 1 个 Live2D canvas，控制台日志显示 Cubism Core 与 `mao_pro` 模型初始化成功。
+- 文本对话：输入“你好，请用一句话介绍你自己。”后，Ollama 返回文本回复并写入聊天历史。
+- 音频链路：首次因缺少 `ffprobe.exe` 产生静默 payload；补齐 FFmpeg 8.1.1 essentials 的 `ffmpeg.exe` 和 `ffprobe.exe` 后，复测生成 wav/base64 音频 payload 并完成前端播放回执。
+- 麦克风链路：浏览器未授权麦克风时 VAD 报 `Permission denied`，需要用户手动授权后才能评估语音输入和打断体验。
+
+### 已知限制
+
+1. 当前用本机已有 Ollama `qwen2.5:0.5b` 跑通原版链路，小模型回复质量只能代表工程链路，不代表最终导览人格质量。
+2. Live2D 嘴型主要随音频能量/参数变化，适合二次元观感对比，不等同于真人逐音素口腔形变。
+3. 本次截图接口在 in-app browser 中对该 WebGL 页面超时；页面、DOM、控制台日志、WebSocket 文本对话和服务端音频 payload 已作为验证依据。
+4. 原版工程目前保留在外部英文路径，后续若要引入本项目，应只抽取 Live2D 资产和渲染适配层，避免把上游完整后端嵌入当前游客导览系统。
+
+### 影响范围
+
+本次没有修改当前灵山项目代码；只新增外部原版对比演示工程和本追踪记录。后续对比会影响数字人验收标准、Live2D 资产隔离目录、前端渲染模式选择和 2D/3D 效果评估，不影响当前 RAG、后端 API、数据库和管理员系统。
+
+## Q-0033 Open-LLM-VTuber 原版如何换形象、对话和评估口型？
+
+### 用户原始问题
+
+如何修改这个数字人的形象？如何让它对话？是否需要提供多模态大模型 API key？希望看这个数字人说话时嘴巴是否自然，并允许授权麦克风。
+
+### 回答摘要
+
+原版 Open-LLM-VTuber 的形象由 Live2D 模型、模型索引和角色配置共同决定：Live2D 资产放在 `live2d-models`，模型索引写在 `model_dict.json`，角色人格、头像、TTS、LLM 和 `live2d_model_name` 写在 `conf.yaml` 或 `characters/*.yaml`。当前外部演示工程已用文本输入触发 TTS 说话，服务端生成多段 wav/base64 音频 payload，前端收到 `audio-play-start` 和 `frontend-playback-complete`，足以观察 TTS 播放时的 Live2D 口型。
+
+当前 in-app browser 不暴露 `window.navigator.mediaDevices`，因此即使用户同意授权，也无法在该浏览器内完成真实麦克风输入；要测语音输入和打断，需要用系统 Chrome/Edge 打开 `http://localhost:12393/` 并允许麦克风。本次原版口型评估结论：它是音频驱动 Live2D 嘴型，观感适合二次元 VTuber 对比，但不是逐音素真人级嘴型。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 当前 2D 对比 | 本项目 local-2d 由文本生成 viseme 时间线，作为轻量对照 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
+| 当前 3D 对比 | 本项目 3D 数字人按 viseme 驱动 GLB morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
+| 原版演示记录 | Open-LLM-VTuber 原版英文路径启动与验证记录 | [Q-0031 docs/question_traceability.md:L1021-L1122](./question_traceability.md#L1021-L1122) |
+| 原版 TTS 修复 | 缺 `ffprobe.exe` 会导致 TTS 静默，已补齐 | [ERR-0014 docs/error_traceability.md:L195-L264](./error_traceability.md#L195-L264) |
+
+外部 Open-LLM-VTuber 关键位置（不纳入当前仓库链接检查）：
+
+```text
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\conf.yaml:L30-L45
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\conf.yaml:L52-L72
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\conf.yaml:L128-L135
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\conf.yaml:L172-L176
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\conf.yaml:L270-L305
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\model_dict.json:L1-L29
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\characters\README.md:L1-L67
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\characters\README.md:L85-L108
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\utils\stream_audio.py:L8-L24
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\utils\stream_audio.py:L62-L80
+```
+
+### 修改形象方式
+
+1. 快速换现有模型：把 Live2D 模型目录放到 `live2d-models/<model-name>/runtime`，在 `model_dict.json` 增加同名条目，再把 `conf.yaml` 或 `characters/*.yaml` 的 `character_config.live2d_model_name` 改成该名称。
+2. 只换聊天头像：把头像图片放到 `avatars/`，修改 `character_config.avatar`。
+3. 改人格与说话风格：修改 `character_config.persona_prompt`。
+4. 改声音：修改 `tts_config.tts_model` 和对应 TTS 配置，例如 `edge_tts.voice`。
+5. 改模型外观细节：简单换色可改 Live2D 纹理 png；结构、口型参数、动作和表情需要用 Live2D Cubism Editor 重新导出 `.moc3`、`.model3.json`、texture、motion 和 expression。
+
+### 如何让它对话
+
+当前已经可用的链路：
+
+```text
+文本输入框 / 麦克风 ASR
+  -> LLM: Ollama qwen2.5:0.5b
+  -> TTS: Edge TTS zh-CN-XiaoxiaoNeural
+  -> 前端播放 wav/base64
+  -> Live2D 音频驱动口型
+```
+
+在 in-app browser 中可直接用文本框输入并按 Enter；要用麦克风，需要改用系统 Chrome/Edge 打开 `http://localhost:12393/`，允许麦克风后点击左下角麦克风按钮。当前 ASR 用本地 Sherpa-ONNX SenseVoice，不需要云端 ASR key。
+
+### API Key 判断
+
+- 不需要 API key：只跑当前原版对比演示，使用本机 Ollama、Sherpa-ONNX ASR、Edge TTS。
+- 需要 API key：要换成 OpenAI/Gemini/Claude/DeepSeek 等云端模型，或者要让相机截图/图片附件真正被多模态模型理解。
+- 建议不要把 key 直接写进聊天记录；后续若要接云端多模态模型，应通过本机配置文件或环境变量注入，并在文档中只记录字段位置和占位符。
+
+### 口型评估结论
+
+本次文本触发测试语句：
+
+```text
+请用自然语速说一句中文：大家好，我是灵山数字导游，现在正在测试二次元数字人的口型同步效果。
+```
+
+服务端日志显示该句被拆成多段 TTS，生成非空音频 payload，并收到前端播放回执。原版口型由音频 RMS/Live2D `_wavFileHandler` 与 Talk motion 驱动，嘴巴会随音量自然开合，适合二次元虚拟主播观感；但它不是逐音素 viseme，对中文具体韵母、唇齿音、闭口音的匹配不会像 3D morph targets 那样可控。若比赛验收要求“二次元流畅自然”，可作为对比基线；若要求“真人级唇形准确”，仍应优先建设 3D morph target 或音素级 2D 口型驱动。
+
+### 影响范围
+
+该结论影响后续 Live2D 资产接入、原版对比测试、麦克风验收方式和多模态模型选型；不改变当前灵山项目的后端 RAG、数据库、游客接口或管理员系统。
+
+## Q-0032 能否基于开源 MPFB/MakeHuman 人体基座制作灵灵 3D 数字人？
+
+### 用户原始问题
+
+希望不从头建模，而是找到开源 3D 数字人基座，在其基础上修改为更接近参考图的真实灵灵形象，并继续保留 8 个口型 morph targets 接回前端。
+
+### 回答摘要
+
+可以。当前已安装 Blender MPFB2 扩展，并把默认 3D 资产链路切换为 MPFB/MakeHuman 人体基座：先生成 `source/lingling-mpfb-base.glb`，再用本地 Blender 脚本叠加浅青汉服、发髻、发簪、玉佩、刺绣和独立嘴部 `Lingling_Mouth_Viseme_Targets`，最终输出 `frontend/public/avatar/models/lingling-realistic.glb`。前端 `AvatarRenderer` 接口不变，仍通过 `closed/mbp/aa/ee/oh/round/fv/smile` 8 个 morph targets 做口型同步；模型缺失时仍回退 `local-2d`。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| MPFB 生成参数 | `--base-model mpfb`、`--mpfb-source-output` 和 MPFB scene properties | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L46-L80](../scripts/blender_generate_lingling_avatar.py#L46-L80) |
+| MPFB 基座创建 | 配置 young/female/asian 等 MPFB 属性并调用 `bpy.ops.mpfb.create_human()` | [create_mpfb_base scripts/blender_generate_lingling_avatar.py:L345-L389](../scripts/blender_generate_lingling_avatar.py#L345-L389) |
+| 最终资产构建 | 叠加服饰、发型、发饰、独立嘴部 morph targets 和参考图 metadata | [build_avatar scripts/blender_generate_lingling_avatar.py:L488-L606](../scripts/blender_generate_lingling_avatar.py#L488-L606) |
+| 模型说明 | MPFB base、最终 GLB 哈希、文件大小、许可说明和替换规则 | [models README frontend/public/avatar/models/README.md:L13-L31](../frontend/public/avatar/models/README.md#L13-L31) |
+| 前端口型测试 | 校验 GLB 参考 metadata、MPFB base metadata 和 8 个 viseme morph targets | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L75-L92](../frontend/tests/avatarLipSync.test.ts#L75-L92) |
+
+### 验证命令
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --online-mode --command extension install -s -e mpfb
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --mpfb-source-output frontend\public\avatar\models\source\lingling-mpfb-base.glb --reference-dir 数字人形象示例 --base-model mpfb
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
+npm.cmd --prefix frontend run test:avatar
+npm.cmd --prefix frontend run build
+python scripts\check_doc_links.py
+```
+
+### 影响范围
+
+影响 `realistic-3d` 模型资产来源、模型 README、资产生成脚本、前端口型测试和视觉验收标准；不改变游客问答 API、后端数据库、数字人配置表或 `AvatarRenderer` 对外路径。当前资产明显比纯程序化模型更接近人体比例，但仍不是参考图人物的 100% 复刻，后续若要继续提升面部相似度，需要单主体图生 3D 或人工雕刻/贴图精修。
+
+## Q-0033 能否把 3D 数字人作为独立资产包维护，主项目只保留固定调用接口？
+
+### 用户原始问题
+
+希望单独维护 3D 数字人，与主项目分开，只保留固定接口方便主项目调用，并确认去哪里获取这个 3D MPFB 数字人资产。
+
+### 回答摘要
+
+可以。当前已经把可维护资产包放到 `D:/文件/lingling-3d-avatar-assets`，主项目只保留运行时副本和固定接口：`/avatar/models/lingling-realistic.glb`、`/avatar/models/lingling-avatar-manifest.json`。MPFB 上游只提供 MakeHuman/MPFB 人体基座和 Blender 生成器，不直接提供“灵灵”成品；“灵灵”成品是本地通过 MPFB 基座 + Blender 脚本生成的资产，当前可从独立资产包的 `dist/lingling-realistic.glb` 获取，并用 `scripts/sync_to_lingtour.ps1` 同步到主项目。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 主项目固定模型 URL | `AvatarRenderer` 默认加载 `/avatar/models/lingling-realistic.glb` | [REALISTIC_AVATAR_MODEL_URL frontend/src/store/avatarRenderer.ts:L4-L4](../frontend/src/store/avatarRenderer.ts#L4-L4) |
+| 主项目运行时 manifest | 资产包同步到主项目后的固定接口 | [lingling-avatar-manifest frontend/public/avatar/models/lingling-avatar-manifest.json:L1-L33](../frontend/public/avatar/models/lingling-avatar-manifest.json#L1-L33) |
+| 主项目模型说明 | 说明 runtime copy 与外部资产包的职责边界 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
+| 前端接口测试 | 校验 manifest、GLB metadata 和 8 个 viseme targets | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L75-L100](../frontend/tests/avatarLipSync.test.ts#L75-L100) |
+
+### 独立资产包位置
+
+```text
+D:/文件/lingling-3d-avatar-assets/
+├── README.md
+├── INTERFACE.md
+├── dist/lingling-avatar-manifest.json
+├── dist/lingling-realistic.glb
+├── source/lingling-mpfb-base.glb
+├── source/lingling-ai-base.glb
+├── scripts/blender_generate_lingling_avatar.py
+└── scripts/sync_to_lingtour.ps1
+```
+
+### 获取方式
+
+1. 获取上游 MPFB/MakeHuman 基座：在 Blender 中安装 MPFB2 扩展，命令为 `blender --online-mode --command extension install -s -e mpfb`。
+2. 获取当前灵灵成品：直接使用 `D:/文件/lingling-3d-avatar-assets/dist/lingling-realistic.glb`。
+3. 同步到主项目：运行 `powershell -ExecutionPolicy Bypass -File D:/文件/lingling-3d-avatar-assets/scripts/sync_to_lingtour.ps1`。
+
+### 验证命令
+
+```powershell
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
+npm.cmd --prefix frontend run test:avatar
+npm.cmd --prefix frontend run build
+python scripts\check_doc_links.py
+```
+
+### 影响范围
+
+后续 3D 数字人可以在独立资产包中迭代，主项目只需要同步 manifest 和 GLB；这降低了主项目代码与 Blender/MPFB 建模链路的耦合。不改变后端 API、数据库、游客问答或当前 `AvatarRenderer` 组件接口。
+
+## Q-0033 除数字人外，RAG、后端、管理员、游客系统和后台数据是否完善？
+
+### 用户原始问题
+
+核验当前项目中除了数字人之外，知识库 RAG、后端服务、管理员和游客系统以及后台数据是否设计完善，并继续完善后推送 GitHub。
+
+### 回答摘要
+
+当前系统已经从演示级推进到生产加固基线：RAG 默认 PostgreSQL + pgvector，并新增 OpenAI 兼容 embedding/rerank provider 抽象和 hash fallback；后台账号从单一管理员升级为 `super_admin`、`knowledge_manager`、`operator`、`viewer`；知识库写入、评分审核、用户管理和系统状态按权限保护；数据库引入 Alembic baseline 和备份恢复脚本；前端新增管理员账号页；Playwright E2E 覆盖后台登录、知识库发布检索、游客问答、评分提交和审核。真实 ASR/TTS/图片识景仍按计划留到后续专项。
+
+### 对应实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| RAG provider | hash fallback、OpenAI 兼容 embedding 和可选 rerank | [embedding_service backend/app/services/embedding_service.py:L14-L190](../backend/app/services/embedding_service.py#L14-L190) |
+| RAG 构建 | provider/model/dimension 写入知识库并刷新 chunk | [build_knowledge_base backend/app/services/vector_store.py:L456-L506](../backend/app/services/vector_store.py#L456-L506) |
+| 后台 RBAC | 角色权限和权限依赖 | [ROLE_PERMISSIONS backend/app/services/auth_service.py:L22-L43](../backend/app/services/auth_service.py#L22-L43), [require_admin_permission backend/app/services/auth_service.py:L199-L206](../backend/app/services/auth_service.py#L199-L206) |
+| 管理员账号 API | 账号列表、创建、状态和密码重置 | [admin user APIs backend/app/api/v1.py:L291-L335](../backend/app/api/v1.py#L291-L335) |
+| 前端账号页 | 管理员账号维护入口 | [AdminUsers frontend/src/pages/admin/AdminUsers.vue:L1-L171](../frontend/src/pages/admin/AdminUsers.vue#L1-L171) |
+| 数据迁移 | Alembic baseline 与已有库 stamp | [migrate_db scripts/migrate_db.py:L1-L91](../scripts/migrate_db.py#L1-L91) |
+| 备份恢复 | 本机或 Docker 容器内 `pg_dump` / `pg_restore` 封装 | [postgres_backup scripts/postgres_backup.py:L1-L142](../scripts/postgres_backup.py#L1-L142) |
+| E2E | 生产加固验收场景 | [production-hardening.spec.ts frontend/e2e/production-hardening.spec.ts:L1-L81](../frontend/e2e/production-hardening.spec.ts#L1-L81) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-kb
+npm.cmd --prefix frontend run build
+npm.cmd --prefix frontend run test:e2e
+python scripts\check_doc_links.py
+```
+
+### 影响范围
+
+影响游客问答检索质量、后台知识库发布权限、评分审核权限、后台账号管理、数据库发布流程、数据备份恢复和 GitHub PR 验收说明；不改变本轮明确排除的真实 ASR/TTS/图片识景范围。

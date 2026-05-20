@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.admin import LoginRequest
+from app.schemas.admin import AdminUserCreateRequest, AdminUserPasswordResetRequest, AdminUserStatusRequest, LoginRequest
 from app.schemas.api_v1 import (
     AvatarSpeakRequestV1,
     GuideAskRequestV1,
@@ -17,7 +17,15 @@ from app.schemas.api_v1 import (
 )
 from app.schemas.visitor import ChatTextRequest, CreateSessionRequest, RouteRecommendRequest, SpotRatingRequest
 from app.services.analytics_service import dashboard_overview
-from app.services.auth_service import authenticate_admin, require_admin_user
+from app.services.auth_service import (
+    authenticate_admin,
+    create_admin_user,
+    list_admin_users,
+    require_admin_permission,
+    require_admin_user,
+    reset_admin_password,
+    set_admin_user_enabled,
+)
 from app.services.avatar_service import get_active_avatar, save_avatar_config
 from app.services.chat_service import chat_with_text, create_session, voice_chat
 from app.services.knowledge_service import (
@@ -270,13 +278,57 @@ def auth_me_v1(admin=Depends(require_admin_user)):
 
 
 @router.get("/admin/system/status")
-def admin_system_status_v1(admin=Depends(require_admin_user)):
+def admin_system_status_v1(admin=Depends(require_admin_permission("system:read"))):
     return {"code": 0, "message": "success", "data": get_system_status()}
 
 
 @router.get("/admin/analytics/overview")
-def admin_analytics_overview_v1(admin=Depends(require_admin_user)):
+def admin_analytics_overview_v1(admin=Depends(require_admin_permission("dashboard:read"))):
     return {"code": 0, "message": "success", "data": dashboard_overview()}
+
+
+@router.get("/admin/users")
+def admin_users_v1(admin=Depends(require_admin_permission("users:manage"))):
+    return {"code": 0, "message": "success", "data": list_admin_users()}
+
+
+@router.post("/admin/users")
+def admin_create_user_v1(payload: AdminUserCreateRequest, admin=Depends(require_admin_permission("users:manage"))):
+    try:
+        user = create_admin_user(payload.username, payload.password, payload.role)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": user}
+
+
+@router.put("/admin/users/{user_id}/status")
+def admin_update_user_status_v1(
+    user_id: str,
+    payload: AdminUserStatusRequest,
+    admin=Depends(require_admin_permission("users:manage")),
+):
+    try:
+        user = set_admin_user_enabled(user_id, payload.enabled)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": user}
+
+
+@router.put("/admin/users/{user_id}/password")
+def admin_reset_user_password_v1(
+    user_id: str,
+    payload: AdminUserPasswordResetRequest,
+    admin=Depends(require_admin_permission("users:manage")),
+):
+    try:
+        user = reset_admin_password(user_id, payload.password)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": user}
 
 
 @router.get("/admin/ratings")
@@ -291,7 +343,7 @@ def admin_ratings_v1(
     start_date: str | None = None,
     end_date: str | None = None,
     keyword: str = "",
-    admin=Depends(require_admin_user),
+    admin=Depends(require_admin_permission("ratings:read")),
     db: Session = Depends(get_db),
 ):
     ratings = list_admin_ratings(
@@ -313,12 +365,12 @@ def admin_ratings_v1(
 
 
 @router.get("/admin/ratings/ranking")
-def admin_rating_ranking_v1(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+def admin_rating_ranking_v1(admin=Depends(require_admin_permission("ratings:read")), db: Session = Depends(get_db)):
     return {"code": 0, "message": "success", "data": get_admin_rating_ranking(db)}
 
 
 @router.get("/admin/ratings/trend")
-def admin_rating_trend_v1(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
+def admin_rating_trend_v1(admin=Depends(require_admin_permission("ratings:read")), db: Session = Depends(get_db)):
     return {"code": 0, "message": "success", "data": get_admin_rating_trend(db)}
 
 
@@ -326,7 +378,7 @@ def admin_rating_trend_v1(admin=Depends(require_admin_user), db: Session = Depen
 def admin_rating_report_v1(
     start_date: str | None = None,
     end_date: str | None = None,
-    admin=Depends(require_admin_user),
+    admin=Depends(require_admin_permission("ratings:read")),
     db: Session = Depends(get_db),
 ):
     return {"code": 0, "message": "success", "data": get_admin_rating_insight_report(db, start_date, end_date)}
@@ -336,7 +388,7 @@ def admin_rating_report_v1(
 def admin_rating_review_v1(
     rating_id: str,
     payload: dict,
-    admin=Depends(require_admin_user),
+    admin=Depends(require_admin_permission("ratings:review")),
     db: Session = Depends(get_db),
 ):
     try:
@@ -354,12 +406,12 @@ def admin_rating_review_v1(
 
 
 @router.get("/admin/knowledge-bases")
-def admin_knowledge_bases_v1(admin=Depends(require_admin_user)):
+def admin_knowledge_bases_v1(admin=Depends(require_admin_permission("knowledge:read"))):
     return {"code": 0, "message": "success", "data": list_knowledge_bases()}
 
 
 @router.get("/admin/knowledge-bases/{kb_id}/documents")
-def admin_knowledge_base_documents_v1(kb_id: str, status: str = "all", admin=Depends(require_admin_user)):
+def admin_knowledge_base_documents_v1(kb_id: str, status: str = "all", admin=Depends(require_admin_permission("knowledge:read"))):
     return {"code": 0, "message": "success", "data": list_documents(status=status)}
 
 
@@ -369,7 +421,7 @@ async def admin_upload_document_v1(
     file: UploadFile = File(...),
     title: str = Form(""),
     change_note: str = Form("initial upload"),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_admin_permission("knowledge:write")),
 ):
     try:
         data = await file.read()
@@ -380,17 +432,17 @@ async def admin_upload_document_v1(
 
 
 @router.post("/admin/knowledge-bases/{kb_id}/reindex")
-def admin_reindex_v1(kb_id: str, admin=Depends(require_admin_user)):
+def admin_reindex_v1(kb_id: str, admin=Depends(require_admin_permission("knowledge:write"))):
     return {"code": 0, "message": "success", "data": {**rebuild_index(admin["username"]), "knowledge_base_id": kb_id}}
 
 
 @router.post("/admin/knowledge-bases/{kb_id}/test-retrieve")
-def admin_test_retrieve_v1(kb_id: str, payload: dict, admin=Depends(require_admin_user)):
+def admin_test_retrieve_v1(kb_id: str, payload: dict, admin=Depends(require_admin_permission("knowledge:read"))):
     return {"code": 0, "message": "success", "data": {**search_test(payload.get("query", "")), "knowledge_base_id": kb_id}}
 
 
 @router.put("/admin/documents/{document_id}")
-def admin_update_document_v1(document_id: str, payload: dict, admin=Depends(require_admin_user)):
+def admin_update_document_v1(document_id: str, payload: dict, admin=Depends(require_admin_permission("knowledge:write"))):
     try:
         document = update_document(
             document_id,
@@ -407,7 +459,7 @@ def admin_update_document_v1(document_id: str, payload: dict, admin=Depends(requ
 
 
 @router.delete("/admin/documents/{document_id}")
-def admin_delete_document_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_delete_document_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:write"))):
     try:
         document = delete_document(document_id, admin["username"])
     except FileNotFoundError as exc:
@@ -416,7 +468,7 @@ def admin_delete_document_v1(document_id: str, admin=Depends(require_admin_user)
 
 
 @router.get("/admin/documents/{document_id}/versions")
-def admin_document_versions_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_versions_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:read"))):
     try:
         versions = list_versions(document_id)
     except FileNotFoundError as exc:
@@ -425,7 +477,7 @@ def admin_document_versions_v1(document_id: str, admin=Depends(require_admin_use
 
 
 @router.get("/admin/documents/{document_id}/history")
-def admin_document_history_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_history_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:read"))):
     try:
         history = list_history(document_id)
     except FileNotFoundError as exc:
@@ -434,7 +486,7 @@ def admin_document_history_v1(document_id: str, admin=Depends(require_admin_user
 
 
 @router.post("/admin/documents/{document_id}/publish")
-def admin_document_publish_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_publish_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:write"))):
     try:
         document = publish_document(document_id, admin["username"])
     except FileNotFoundError as exc:
@@ -443,7 +495,7 @@ def admin_document_publish_v1(document_id: str, admin=Depends(require_admin_user
 
 
 @router.post("/admin/documents/{document_id}/archive")
-def admin_document_archive_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_archive_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:write"))):
     try:
         document = archive_document(document_id, admin["username"])
     except FileNotFoundError as exc:
@@ -452,7 +504,7 @@ def admin_document_archive_v1(document_id: str, admin=Depends(require_admin_user
 
 
 @router.get("/admin/documents/{document_id}/chunks")
-def admin_document_chunks_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_chunks_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:read"))):
     document = _find_document_or_404(document_id)
     return {
         "code": 0,
@@ -467,7 +519,7 @@ def admin_document_chunks_v1(document_id: str, admin=Depends(require_admin_user)
 
 
 @router.post("/admin/documents/{document_id}/embed")
-def admin_document_embed_v1(document_id: str, admin=Depends(require_admin_user)):
+def admin_document_embed_v1(document_id: str, admin=Depends(require_admin_permission("knowledge:write"))):
     document = _find_document_or_404(document_id)
     result = embed_document(document_id, admin["username"])
     return {
@@ -484,10 +536,10 @@ def admin_document_embed_v1(document_id: str, admin=Depends(require_admin_user))
 
 
 @router.get("/admin/avatar/profiles")
-def admin_avatar_profiles_v1(admin=Depends(require_admin_user)):
+def admin_avatar_profiles_v1(admin=Depends(require_admin_permission("dashboard:read"))):
     return {"code": 0, "message": "success", "data": [get_active_avatar()]}
 
 
 @router.post("/admin/avatar/profiles")
-def admin_create_avatar_profile_v1(payload: dict, admin=Depends(require_admin_user)):
+def admin_create_avatar_profile_v1(payload: dict, admin=Depends(require_admin_permission("avatar:write"))):
     return {"code": 0, "message": "success", "data": save_avatar_config(payload)}

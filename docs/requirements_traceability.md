@@ -131,7 +131,7 @@ python scripts\run_local.py build-frontend
 
 ### 用户场景
 
-游客在数字人导览页看到可辨识的“灵灵”导游形象，支持文本提问、浏览器语音输入、浏览器语音播报、local-2d 口型同步、知识引用和推荐路线展示。本地 2D 模式参考 Live2D/pixi-live2d-display 一类开源 Web 数字人渲染思路，先以轻量 SVG + viseme 时间线作为实时互动兜底；口型素材已升级为 8 个高清 SVG 嘴型和 OBJ 参考网格；3D 路线已接入 Three.js/VRM `AvatarRenderer`，并内置本地 Blender 生成的 `lingling-realistic.glb` 全身演示数字人。后续每次制作或替换 3D 资产时，必须先参考 `数字人形象示例` 目录中的 5 张设计图，优先保持浅青古风汉服、透纱宽袖、发髻发簪、花卉/山水刺绣、玉佩流苏、表情和口型方向一致。
+游客在数字人导览页看到可辨识的“灵灵”导游形象，支持文本提问、浏览器语音输入、浏览器语音播报、local-2d 口型同步、知识引用和推荐路线展示。本地 2D 模式参考 Live2D/pixi-live2d-display 一类开源 Web 数字人渲染思路，先以轻量 SVG + viseme 时间线作为实时互动兜底；口型素材已升级为 8 个高清 SVG 嘴型和 OBJ 参考网格；3D 路线已接入 Three.js/VRM `AvatarRenderer`，并内置基于 MPFB/MakeHuman 人体基座 + 本地 Blender 叠加生成的 `lingling-realistic.glb` 全身演示数字人。后续每次制作或替换 3D 资产时，必须先参考 `数字人形象示例` 目录中的 5 张设计图，优先保持浅青古风汉服、透纱宽袖、发髻发簪、花卉/山水刺绣、玉佩流苏、表情和口型方向一致。
 
 ### 实现位置
 
@@ -142,18 +142,19 @@ python scripts\run_local.py build-frontend
 | 数字人形象 | 优先加载 3D AvatarRenderer，失败时回退 SVG 汉服导游形象和高清 mouth sprite | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156) |
 | 3D 渲染器 | Three.js/GLTFLoader/three-vrm 加载本地 GLB/VRM，全身模型按 viseme 更新 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) |
 | 3D 口型映射 | realistic-3d 模型路径、VRM expression 和 morph target 候选名 | [avatarRenderer frontend/src/store/avatarRenderer.ts:L1-L46](../frontend/src/store/avatarRenderer.ts#L1-L46) |
-| 3D 模型目录 | 本地 Blender 全身演示 GLB、source copy、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 3D 模型目录 | MPFB 基座、最终全身 GLB、source copy、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48) |
+| 3D 资产 manifest | 主项目消费的固定资产接口，源资产包维护在 `D:/文件/lingling-3d-avatar-assets` | [lingling-avatar-manifest frontend/public/avatar/models/lingling-avatar-manifest.json:L1-L33](../frontend/public/avatar/models/lingling-avatar-manifest.json#L1-L33) |
 | 3D 设计参考 | 5 张本地数字人形象设计板，覆盖汉服、制服、户外服、表情、口型和材质细节 | [数字人形象示例](../数字人形象示例) |
 | 3D 前端依赖 | Three.js、three-vrm 和 Three 类型依赖 | [package.json frontend/package.json:L13-L24](../frontend/package.json#L13-L24) |
 | 2D/OBJ 嘴型素材 | 生成 8 个高清 SVG 嘴型、OBJ pose 和 manifest | [generate_mouth_assets scripts/generate_mouth_assets.py:L11-L266](../scripts/generate_mouth_assets.py#L11-L266), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
 | 嘴型素材预览 | 浏览器查看 8 个 mouth sprite 的独立预览页 | [mouth-preview frontend/public/avatar/mouth-preview.html:L1-L96](../frontend/public/avatar/mouth-preview.html#L1-L96) |
 | 3D GLB 建模脚本 | Blender 安装后生成带 shape keys 的嘴部 GLB 模型 | [blender_generate_mouth_model.py scripts/blender_generate_mouth_model.py:L1-L113](../scripts/blender_generate_mouth_model.py#L1-L113) |
-| 全身 GLB 生成脚本 | 生成带汉服、发髻、发簪、面部、参考图 metadata 和 8 个口型 shape keys 的 `lingling-realistic.glb` | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 全身 GLB 生成脚本 | 调用 MPFB/MakeHuman 基座，叠加汉服、发髻、发簪、参考图 metadata 和 8 个口型 shape keys 的 `lingling-realistic.glb` | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662) |
 | GLB 口型检查 | 解析 GLB JSON chunk 并校验 frontend viseme morph targets | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
 | 问答页 | 快捷问题、浏览器语音识别、语音播报生命周期、引用和路线卡片 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L116-L137](../frontend/src/pages/visitor/ChatGuide.vue#L116-L137) |
 | 聊天面板 | 文字输入、语音按钮和快捷问题 | [ChatPanel frontend/src/components/ChatPanel.vue:L1-L49](../frontend/src/components/ChatPanel.vue#L1-L49) |
 | 视觉样式 | 3D renderer 覆盖层、数字人、高清嘴型、播放进度、问答区、路线和引用区响应式布局 | [avatar renderer styles frontend/src/styles.css:L199-L220](../frontend/src/styles.css#L199-L220), [avatar mouth styles frontend/src/styles.css:L268-L295](../frontend/src/styles.css#L268-L295) |
-| 测试 | local-2d 口型时间线、接触音映射、素材 manifest、GLB 参考 metadata 和 3D morph 映射单元测试 | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L1-L93](../frontend/tests/avatarLipSync.test.ts#L1-L93) |
+| 测试 | local-2d 口型时间线、接触音映射、素材 manifest、GLB 参考 metadata、外部资产 manifest 和 3D morph 映射单元测试 | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L1-L101](../frontend/tests/avatarLipSync.test.ts#L1-L101) |
 
 ### 验证命令
 
@@ -167,7 +168,7 @@ python scripts\smoke_vue_full_stack.py
 
 ### 影响范围
 
-影响游客端数字人导览页的口型表现、浏览器 TTS 播放期间的数字人状态、前端构建、静态素材目录和 `test:avatar` 前端单测；不改变后端 API、数据库结构或数字人配置表。当前 3D 渲染器已接入并内置本地 procedural GLB，模型缺失或加载失败时仍会自动回退到 2D。
+影响游客端数字人导览页的口型表现、浏览器 TTS 播放期间的数字人状态、前端构建、静态素材目录和 `test:avatar` 前端单测；不改变后端 API、数据库结构或数字人配置表。当前 3D 渲染器已接入并内置 MPFB/MakeHuman 基座 GLB，模型缺失或加载失败时仍会自动回退到 2D。
 
 ## REQ-009 GitHub 发布与版本交付
 
@@ -738,6 +739,45 @@ python scripts\run_local.py smoke-docker-postgres
 
 影响本地开发、容器部署、测试隔离策略、仓库清洁度，以及新同事对数据库后端的默认认知。
 
+## REQ-022 生产级 RAG、权限、迁移与 E2E 加固
 
+### 用户场景
 
+项目发布到 GitHub 前，需要把 RAG、后台账号权限、数据库迁移、备份恢复和端到端验收提升到可交接的生产级基线；未配置真实 embedding/rerank key 时，本地和测试仍必须可复现运行。
+
+### 实现位置
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 配置 | 新增 OpenAI 兼容 embedding/rerank 环境变量，默认 hash fallback | [.env.example:L13-L23](../.env.example#L13-L23), [Settings backend/app/core/config.py:L10-L20](../backend/app/core/config.py#L10-L20) |
+| Embedding 服务 | hash fallback、OpenAI 兼容 `/embeddings`、provider 元数据和可选 rerank | [embedding_service backend/app/services/embedding_service.py:L14-L190](../backend/app/services/embedding_service.py#L14-L190) |
+| 知识库构建 | provider/model/dimension 写入 `knowledge_base`，provider 变化时刷新文档 chunk | [ensure_default_knowledge_base backend/app/services/vector_store.py:L287-L316](../backend/app/services/vector_store.py#L287-L316), [build_knowledge_base backend/app/services/vector_store.py:L456-L506](../backend/app/services/vector_store.py#L456-L506) |
+| 权限服务 | `super_admin`、`knowledge_manager`、`operator`、`viewer` 和 `require_admin_permission()` | [ROLE_PERMISSIONS backend/app/services/auth_service.py:L22-L43](../backend/app/services/auth_service.py#L22-L43), [require_admin_permission backend/app/services/auth_service.py:L199-L206](../backend/app/services/auth_service.py#L199-L206) |
+| 管理员账号 API | 列表、创建、启用/禁用、重置密码，仅 `super_admin` 可用 | [admin user APIs backend/app/api/v1.py:L291-L335](../backend/app/api/v1.py#L291-L335), [admin user service backend/app/services/auth_service.py:L208-L294](../backend/app/services/auth_service.py#L208-L294) |
+| 写操作保护 | 知识库写入、评分审核、系统状态和账号管理按权限保护 | [admin_rating_review_v1 backend/app/api/v1.py:L388-L405](../backend/app/api/v1.py#L388-L405), [admin_upload_document_v1 backend/app/api/v1.py:L419-L432](../backend/app/api/v1.py#L419-L432) |
+| 前端账号管理 | 后台新增“管理员账号”页面与 API 封装 | [AdminUsers frontend/src/pages/admin/AdminUsers.vue:L1-L168](../frontend/src/pages/admin/AdminUsers.vue#L1-L168), [admin api frontend/src/api/admin.ts:L27-L41](../frontend/src/api/admin.ts#L27-L41) |
+| 数据库迁移 | Alembic baseline、已有开发库 stamp、空库 upgrade | [migrate_db scripts/migrate_db.py:L1-L82](../scripts/migrate_db.py#L1-L82), [alembic env backend/alembic/env.py:L1-L46](../backend/alembic/env.py#L1-L46), [baseline backend/alembic/versions/0001_production_baseline.py:L1-L29](../backend/alembic/versions/0001_production_baseline.py#L1-L29) |
+| 备份恢复 | 本机或 Docker 容器内 `pg_dump` / `pg_restore` 封装脚本 | [postgres_backup scripts/postgres_backup.py:L1-L142](../scripts/postgres_backup.py#L1-L142) |
+| E2E 验收 | Playwright 覆盖后台登录、知识库发布、游客问答、评分提交和审核 | [Playwright spec frontend/e2e/production-hardening.spec.ts:L1-L79](../frontend/e2e/production-hardening.spec.ts#L1-L79), [Playwright config frontend/playwright.config.ts:L1-L17](../frontend/playwright.config.ts#L1-L17) |
+
+### 验证命令
+
+```powershell
+python scripts\run_local.py migrate-db
+python scripts\run_local.py test-backend
+python scripts\run_local.py build-kb
+npm.cmd --prefix frontend run build
+npm.cmd --prefix frontend run test:e2e
+python scripts\check_doc_links.py
+```
+
+### 当前限制
+
+- `EMBEDDING_PROVIDER=openai` 需要真实兼容 API key；无 key 时会回退 hash。
+- rerank 接口按通用 `/rerank` 响应解析，供应商格式不兼容时会回退向量分数排序。
+- ASR/TTS/图片识景仍按本轮计划留到后续专项。
+
+### 影响范围
+
+影响游客 RAG 命中质量、后台知识库写入权限、评分审核权限、管理员账号生命周期、数据库发布流程、备份恢复流程和端到端验收脚本。
 

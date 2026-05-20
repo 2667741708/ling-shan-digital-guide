@@ -8,14 +8,22 @@ frontend/public/avatar/models/lingling-realistic.glb
 
 The frontend `AvatarRenderer` loads this file first. If it is missing, WebGL is unavailable, or the file has no compatible mouth morph targets, the visitor guide falls back to the current `local-2d` avatar.
 
+The canonical maintainable copy is now split into the external package `D:/文件/lingling-3d-avatar-assets`. This app directory keeps the runtime copy only.
+
 Current generated asset:
 
 - Generator: `scripts/blender_generate_lingling_avatar.py`
-- Source copy: `frontend/public/avatar/models/source/lingling-ai-base.glb`
+- Base route: MPFB/MakeHuman generated human base plus local Blender skin material, softened arm pose, hanfu/accessory/viseme overlays.
+- MPFB source base: `frontend/public/avatar/models/source/lingling-mpfb-base.glb`
+- Source copy of final asset: `frontend/public/avatar/models/source/lingling-ai-base.glb`
+- Runtime manifest: `frontend/public/avatar/models/lingling-avatar-manifest.json`
 - Reference folder: `数字人形象示例` with five PNG design boards for hanfu, guide uniform, outdoor outfit, expression, mouth, fabric, embroidery, jade pendant, and hairpin details.
-- Mesh summary: `100` primitives, `8` morph targets.
-- SHA-256: `E2A4B4F71D7EB6D9D5BEB090C41DE92C2C70BD3C61FAB9A36FD829740CE1A931`
+- Mesh summary: `97` primitives, `8` morph targets total; only the frontend-required viseme targets are exported.
+- Final GLB size: `1,739,712` bytes.
+- Final SHA-256: `6220D3B94F5EAD52E989DE69422C9DE54D2ECB0514ADDD47F6BEC7CD777BE9D3`
+- MPFB base SHA-256: `A1A6303C77EAC2D1DD51B9E8BED65B268808A62D623D54F3D9709EFB36B74415`
 - Required morph targets: `closed`, `mbp`, `aa`, `ee`, `oh`, `round`, `fv`, `smile`
+- License note: MPFB add-on `2.0.15` is GPL-3.0-or-later code; MakeHuman/MPFB project documentation describes core graphical assets as CC0. No unverified third-party clothes, hair, or texture assets are bundled here.
 
 Validation:
 
@@ -23,7 +31,7 @@ Validation:
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 ```
 
-This is a local procedural Blender asset for project demonstration. It approximates the reference image's black updo, hairpin, soft face, and light cyan hanfu, but it is not a mathematically exact reconstruction of the PNG.
+This is a local MPFB/MakeHuman-based Blender asset for project demonstration. It improves the body and face base compared with the earlier fully procedural model, bakes a softer guide stance, then layers local scripted hanfu, hair, hairpin, jade pendant, embroidery, and mouth morph targets. It is not a mathematically exact reconstruction of the PNG.
 
 Design priority from the local reference boards:
 

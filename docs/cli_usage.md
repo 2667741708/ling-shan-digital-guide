@@ -12,7 +12,7 @@ python scripts\run_local.py --help
 
 实现位置：
 
-[run_local main scripts/run_local.py:L204-L254](../scripts/run_local.py#L204-L254)
+[run_local main scripts/run_local.py:L211-L266](../scripts/run_local.py#L211-L266)
 
 支持命令：
 
@@ -21,6 +21,7 @@ check-env
 install-backend
 install-frontend
 build-frontend
+migrate-db
 build-kb
 test-backend
 serve-backend
@@ -39,12 +40,20 @@ all
 | 安装前端依赖 | `python scripts\run_local.py install-frontend` | 执行前端 npm 安装 |
 | 构建前端 | `python scripts\run_local.py build-frontend` | 执行 Vue 类型检查和 Vite build |
 | 数字人口型单测 | `npm --prefix frontend run test:avatar` | 验证 local-2d viseme 时间线和语速估算 |
+| Playwright E2E | `npm.cmd --prefix frontend run test:e2e` | 需要前后端服务可访问，覆盖后台登录、知识库发布、游客问答、评分提交和后台审核 |
 | 生成数字人嘴型素材 | `python scripts\generate_mouth_assets.py` | 生成高清 SVG 嘴型、OBJ pose、OpenSCAD 参考体和 mouth manifest |
 | 安装 3D 前端依赖 | `npm.cmd --prefix frontend install three @pixiv/three-vrm --registry=https://registry.npmmirror.com` | 使用国内 npm 镜像安装 Three.js/VRM 运行时 |
-| 构建知识库 | `python scripts\run_local.py build-kb` | 生成/刷新 PostgreSQL 知识库 chunk |
+| 执行数据库迁移 | `python scripts\run_local.py migrate-db` | 对已有开发库 stamp，对空库 upgrade 到 Alembic baseline |
+| 构建知识库 | `python scripts\run_local.py build-kb` | 先执行迁移，再生成/刷新 PostgreSQL 知识库 chunk |
 | 后端测试 | `python scripts\run_local.py test-backend` | 自动拉起 PostgreSQL 后运行 pytest |
 | 启动后端 | `python scripts\run_local.py serve-backend` | 启动 FastAPI 服务 |
 | 后端烟测 | `python scripts\run_local.py smoke-backend` | 验证登录、知识库、RAG 和问答链路 |
+
+迁移和知识库构建入口：
+
+- [migrate_database scripts/run_local.py:L117-L123](../scripts/run_local.py#L117-L123)
+- [migrate_db scripts/migrate_db.py:L1-L91](../scripts/migrate_db.py#L1-L91)
+- [build_knowledge_base scripts/run_local.py:L125-L130](../scripts/run_local.py#L125-L130)
 
 ## 3. 前后端联调
 
@@ -82,14 +91,15 @@ python scripts\generate_mouth_assets.py
 
 实现位置：[generate_mouth_assets scripts/generate_mouth_assets.py:L11-L266](../scripts/generate_mouth_assets.py#L11-L266)
 
-真实 3D 灵灵全身演示 GLB 生成和 morph target 检查：
+真实 3D 灵灵全身演示 GLB 生成和 morph target 检查。若 Blender 尚未安装 MPFB2 扩展，先安装一次：
 
 ```powershell
-& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --reference-dir 数字人形象示例
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --online-mode --command extension install -s -e mpfb
+& "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background --python scripts\blender_generate_lingling_avatar.py -- --output frontend\public\avatar\models\lingling-realistic.glb --source-output frontend\public\avatar\models\source\lingling-ai-base.glb --mpfb-source-output frontend\public\avatar\models\source\lingling-mpfb-base.glb --reference-dir 数字人形象示例 --base-model mpfb
 python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 ```
 
-实现位置：[blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449)、[models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40)、[inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133)
+实现位置：[blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662)、[models README frontend/public/avatar/models/README.md:L1-L48](../frontend/public/avatar/models/README.md#L1-L48)、[inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133)
 
 真实 3D 数字人前端依赖已记录在 [package.json frontend/package.json:L13-L24](../frontend/package.json#L13-L24)。如果需要临时使用 glTF-Transform CLI 检查或压缩模型，使用 `npx` 走国内源，不把 CLI 固定到前端 devDependency：
 
@@ -131,7 +141,23 @@ python scripts\run_local.py smoke-docker-allinone
 
 [smoke_docker_allinone scripts/smoke_docker_allinone.py:L70-L114](../scripts/smoke_docker_allinone.py#L70-L114)
 
-## 5. GHCR 发布
+## 5. PostgreSQL 备份与恢复
+
+备份为 custom dump：
+
+```powershell
+python scripts\postgres_backup.py backup --output data\backups\lingtour.dump
+```
+
+恢复到当前 `DATABASE_URL`：
+
+```powershell
+python scripts\postgres_backup.py restore --input data\backups\lingtour.dump --clean
+```
+
+实现位置：[postgres_backup scripts/postgres_backup.py:L1-L142](../scripts/postgres_backup.py#L1-L142)
+
+## 6. GHCR 发布
 
 查看参数：
 
@@ -151,7 +177,7 @@ python scripts\publish_ghcr_allinone.py --no-push --tag latest
 
 [publish_ghcr_allinone main scripts/publish_ghcr_allinone.py:L123-L160](../scripts/publish_ghcr_allinone.py#L123-L160)
 
-## 6. GitHub 发布脚本
+## 7. GitHub 发布脚本
 
 查看参数：
 
@@ -165,7 +191,7 @@ python scripts\publish_github.py --help
 
 [publish_github main scripts/publish_github.py:L56-L84](../scripts/publish_github.py#L56-L84)
 
-## 7. 文档链接检查
+## 8. 文档链接检查
 
 ```powershell
 python scripts\check_doc_links.py
@@ -177,7 +203,7 @@ python scripts\check_doc_links.py
 
 [TEST-023 docs/test_reference.md:L267-L276](./test_reference.md#L267-L276)
 
-## 8. 常见失败入口
+## 9. 常见失败入口
 
 | 现象 | 先看文档 |
 |---|---|
@@ -185,6 +211,3 @@ python scripts\check_doc_links.py
 | PostgreSQL 连接失败 | [TRB-013 docs/troubleshooting.md:L256-L277](./troubleshooting.md#L256-L277) |
 | pgvector/RAG 检索异常 | [TRB-014 docs/troubleshooting.md:L279-L302](./troubleshooting.md#L279-L302) |
 | Playwright 下载失败 | [TEST-010 docs/test_reference.md:L87-L97](./test_reference.md#L87-L97) |
-
-
-

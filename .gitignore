@@ -16,6 +16,7 @@ frontend/.npm-cache/
 data/vector_db/
 data/admin_knowledge/*
 !data/admin_knowledge/.gitkeep
+data/backups/
 data/*.db
 data/*.sqlite
 logs/
@@ -48,6 +49,8 @@ target/
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
 output/
+frontend/test-results/
+frontend/playwright-report/
 
 # Testing
 .pytest_cache/
