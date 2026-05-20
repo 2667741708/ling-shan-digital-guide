@@ -2,10 +2,12 @@ from app.core.database import new_session, reset_database
 from app.schemas.visitor import SpotRatingRequest
 from app.services.rating_service import (
     create_or_update_rating,
+    get_admin_rating_insight_report,
     get_admin_rating_ranking,
     get_spot_statistics,
     get_user_preference_profile,
     list_public_ratings,
+    update_rating_review_status,
 )
 from backend.tests.postgres_test_utils import postgres_test_database_url
 
@@ -62,3 +64,13 @@ def test_rating_upsert_stats_and_preference_profile():
         profile = get_user_preference_profile(db, "s_rating")
         assert profile["total_ratings"] == 1
         assert "culture" in profile["preferred_dimensions"]
+
+        report = get_admin_rating_insight_report(db)
+        assert report["summary"]["total_ratings"] == 1
+        assert report["dimension_averages"]["photo"] == 5
+        assert report["service_suggestions"]
+
+        hidden = update_rating_review_status(db, updated.id, "hidden", False)
+        assert hidden.review_status == "hidden"
+        assert hidden.is_public is False
+        assert list_public_ratings(db, 6) == []

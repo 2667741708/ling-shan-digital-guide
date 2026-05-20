@@ -38,6 +38,7 @@ from app.services.knowledge_service import (
 from app.services.route_service import recommend_route
 from app.services.rating_service import (
     create_or_update_rating,
+    get_admin_rating_insight_report,
     get_admin_rating_ranking,
     get_admin_rating_trend,
     get_ratings_by_session,
@@ -45,6 +46,7 @@ from app.services.rating_service import (
     list_admin_ratings,
     list_public_ratings,
     rating_to_response,
+    update_rating_review_status,
 )
 from app.services.scenic_service import list_facilities, list_scenic_spots
 from app.services.system_service import get_system_status
@@ -284,6 +286,10 @@ def admin_ratings_v1(
     rating_max: int | None = None,
     sentiment: str | None = None,
     is_public: bool | None = None,
+    review_status: str | None = None,
+    source: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     keyword: str = "",
     admin=Depends(require_admin_user),
     db: Session = Depends(get_db),
@@ -296,6 +302,10 @@ def admin_ratings_v1(
             "rating_max": rating_max,
             "sentiment": sentiment,
             "is_public": is_public,
+            "review_status": review_status,
+            "source": source,
+            "start_date": start_date,
+            "end_date": end_date,
             "keyword": keyword,
         },
     )
@@ -310,6 +320,37 @@ def admin_rating_ranking_v1(admin=Depends(require_admin_user), db: Session = Dep
 @router.get("/admin/ratings/trend")
 def admin_rating_trend_v1(admin=Depends(require_admin_user), db: Session = Depends(get_db)):
     return {"code": 0, "message": "success", "data": get_admin_rating_trend(db)}
+
+
+@router.get("/admin/ratings/report")
+def admin_rating_report_v1(
+    start_date: str | None = None,
+    end_date: str | None = None,
+    admin=Depends(require_admin_user),
+    db: Session = Depends(get_db),
+):
+    return {"code": 0, "message": "success", "data": get_admin_rating_insight_report(db, start_date, end_date)}
+
+
+@router.put("/admin/ratings/{rating_id}/review")
+def admin_rating_review_v1(
+    rating_id: str,
+    payload: dict,
+    admin=Depends(require_admin_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        rating = update_rating_review_status(
+            db,
+            rating_id,
+            payload.get("review_status", "approved"),
+            payload.get("is_public"),
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"code": 0, "message": "success", "data": rating_to_response(rating).model_dump()}
 
 
 @router.get("/admin/knowledge-bases")

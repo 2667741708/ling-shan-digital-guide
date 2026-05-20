@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lingling mouth viseme assets</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f5f1ec;
+        color: #2c2624;
+        font-family: Inter, "Microsoft YaHei", sans-serif;
+      }
+
+      .wrap {
+        width: min(100%, 1000px);
+        padding: 36px 42px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 26px;
+        color: #6a5b55;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        border: 1px solid #e4dad2;
+        border-radius: 8px;
+        padding: 18px;
+        background: #fff;
+        box-shadow: 0 8px 22px rgba(70, 50, 40, 0.08);
+      }
+
+      .card img {
+        display: block;
+        width: 100%;
+        height: 118px;
+        object-fit: contain;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #fff7f4, #f8ece8);
+      }
+
+      .card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 16px;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .card span {
+        display: block;
+        margin-top: 4px;
+        color: #7b6962;
+        font-size: 13px;
+      }
+
+      @media (max-width: 720px) {
+        .wrap {
+          padding: 22px;
+        }
+
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Lingling local-2d mouth viseme assets</h1>
+      <p>Generated SVG mouth sprites for the current lip-sync fallback; OBJ reference poses share the same viseme names.</p>
+      <section class="grid" aria-label="Mouth viseme asset preview">
+        <article class="card"><img src="/avatar/mouth/viseme-closed.svg" alt="closed mouth viseme" /><strong>closed</strong><span>/avatar/mouth/viseme-closed.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-mbp.svg" alt="mbp mouth viseme" /><strong>mbp</strong><span>/avatar/mouth/viseme-mbp.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-aa.svg" alt="aa mouth viseme" /><strong>aa</strong><span>/avatar/mouth/viseme-aa.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-ee.svg" alt="ee mouth viseme" /><strong>ee</strong><span>/avatar/mouth/viseme-ee.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-oh.svg" alt="oh mouth viseme" /><strong>oh</strong><span>/avatar/mouth/viseme-oh.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-round.svg" alt="round mouth viseme" /><strong>round</strong><span>/avatar/mouth/viseme-round.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-fv.svg" alt="fv mouth viseme" /><strong>fv</strong><span>/avatar/mouth/viseme-fv.svg</span></article>
+        <article class="card"><img src="/avatar/mouth/viseme-smile.svg" alt="smile mouth viseme" /><strong>smile</strong><span>/avatar/mouth/viseme-smile.svg</span></article>
+      </section>
+    </main>
+  </body>
+</html>

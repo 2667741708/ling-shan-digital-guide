@@ -74,7 +74,7 @@
 | 请求字段 | 提交评分：`session_uuid`, `spot_id`, `overall_rating`, `culture_rating?`, `nature_rating?`, `photo_rating?`, `facility_rating?`, `comment?`, `user_tags`, `is_public`, `user_profile_snapshot`, `source` |
 | 响应字段 | 评分记录、`created_or_updated`、景点评分统计、公开评论列表 |
 | API 入口 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [session_ratings_v1 backend/app/api/v1.py:L238-L241](../backend/app/api/v1.py#L238-L241), [spot_rating_stats_v1 backend/app/api/v1.py:L244-L246](../backend/app/api/v1.py#L244-L246), [spot_public_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252) |
-| 服务函数 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [list_public_ratings backend/app/services/rating_service.py:L207-L223](../backend/app/services/rating_service.py#L207-L223) |
+| 服务函数 | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [list_public_ratings backend/app/services/rating_service.py:L217-L233](../backend/app/services/rating_service.py#L217-L233) |
 | 前端使用 | [submitSpotRating frontend/src/api/visitor.ts:L87-L89](../frontend/src/api/visitor.ts#L87-L89), [fetchSpotRatingStats frontend/src/api/visitor.ts:L91-L93](../frontend/src/api/visitor.ts#L91-L93), [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L91-L114](../frontend/src/pages/visitor/ChatGuide.vue#L91-L114) |
 | 测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
 
@@ -82,13 +82,14 @@
 
 | 项目 | 内容 |
 |---|---|
-| 方法与路径 | `GET /api/v1/admin/ratings`, `GET /api/v1/admin/ratings/ranking`, `GET /api/v1/admin/ratings/trend` |
+| 方法与路径 | `GET /api/v1/admin/ratings`, `GET /api/v1/admin/ratings/ranking`, `GET /api/v1/admin/ratings/trend`, `GET /api/v1/admin/ratings/report`, `PUT /api/v1/admin/ratings/{rating_id}/review` |
 | 鉴权 | `Authorization: Bearer <token>` |
-| 查询参数 | `spot_id`, `rating_min`, `rating_max`, `sentiment`, `is_public`, `keyword` |
-| 响应字段 | 评分列表、景点评分排行、日维度评分趋势和情绪分布 |
-| API 入口 | [admin_ratings_v1 backend/app/api/v1.py:L280-L302](../backend/app/api/v1.py#L280-L302), [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307), [admin_rating_trend_v1 backend/app/api/v1.py:L310-L312](../backend/app/api/v1.py#L310-L312) |
-| 服务函数 | [list_admin_ratings backend/app/services/rating_service.py:L330-L347](../backend/app/services/rating_service.py#L330-L347), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366), [get_admin_rating_trend backend/app/services/rating_service.py:L369-L385](../backend/app/services/rating_service.py#L369-L385) |
-| 前端使用 | [fetchRatingRanking frontend/src/api/admin.ts:L7-L9](../frontend/src/api/admin.ts#L7-L9), [fetchRatingTrend frontend/src/api/admin.ts:L11-L13](../frontend/src/api/admin.ts#L11-L13), [fetchAdminRatings frontend/src/api/admin.ts:L15-L17](../frontend/src/api/admin.ts#L15-L17), [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L59-L105](../frontend/src/pages/admin/AdminDashboard.vue#L59-L105) |
+| 查询参数 | `spot_id`, `rating_min`, `rating_max`, `sentiment`, `is_public`, `review_status`, `source`, `start_date`, `end_date`, `keyword` |
+| 响应字段 | 评分列表、景点评分排行、日维度评分趋势、游客感受度报告、公开评论审核结果 |
+| API 入口 | [admin_ratings_v1 backend/app/api/v1.py:L283-L313](../backend/app/api/v1.py#L283-L313), [admin_rating_ranking_v1 backend/app/api/v1.py:L316-L317](../backend/app/api/v1.py#L316-L317), [admin_rating_trend_v1 backend/app/api/v1.py:L321-L322](../backend/app/api/v1.py#L321-L322), [admin_rating_report_v1 backend/app/api/v1.py:L326-L333](../backend/app/api/v1.py#L326-L333), [admin_rating_review_v1 backend/app/api/v1.py:L336-L354](../backend/app/api/v1.py#L336-L354) |
+| 服务函数 | [list_admin_ratings backend/app/services/rating_service.py:L340-L367](../backend/app/services/rating_service.py#L340-L367), [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386), [get_admin_rating_trend backend/app/services/rating_service.py:L417-L433](../backend/app/services/rating_service.py#L417-L433), [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
+| 前端使用 | [fetchRatingRanking frontend/src/api/admin.ts:L7-L9](../frontend/src/api/admin.ts#L7-L9), [fetchRatingTrend frontend/src/api/admin.ts:L11-L13](../frontend/src/api/admin.ts#L11-L13), [fetchAdminRatings frontend/src/api/admin.ts:L15-L17](../frontend/src/api/admin.ts#L15-L17), [fetchRatingReport frontend/src/api/admin.ts:L19-L21](../frontend/src/api/admin.ts#L19-L21), [reviewRating frontend/src/api/admin.ts:L23-L25](../frontend/src/api/admin.ts#L23-L25), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167), [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L18-L109](../frontend/src/pages/admin/AdminDashboard.vue#L18-L109) |
+| 示例请求 | `GET /api/v1/admin/ratings/report?start_date=2026-05-01&end_date=2026-05-18`；`PUT /api/v1/admin/ratings/{id}/review` body: `{"review_status":"hidden","is_public":false}` |
 
 ## API-019 `/api/v1` 后台鉴权、知识库、数字人与系统状态
 

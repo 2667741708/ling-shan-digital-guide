@@ -23,7 +23,7 @@ codex/optimize-map-avatar-v0.1
 | 游客评分 | 支持多维评分、公开评论、游客画像、后台排行和趋势 | [REQ-021 docs/requirements_traceability.md:L539-L581](docs/requirements_traceability.md#L539-L581) |
 | 路线推荐 | 接入兴趣、时间、体力、游客评分和偏好画像，并持久化路线日志 | [路线推荐 backend/app/services/route_service.py:L152-L196](backend/app/services/route_service.py#L152-L196) |
 | 数据大屏 | 从问答、路线、评分、景点表聚合真实运营数据 | [数据大屏 backend/app/services/analytics_service.py:L34-L89](backend/app/services/analytics_service.py#L34-L89) |
-| 前端 App | Vue 3 游客端、地图页、后台登录、知识库管理、评分面板和管理大屏 | [前端入口 docs/program_index.md:L54-L68](docs/program_index.md#L54-L68) |
+| 前端 App | Vue 3 游客端、地图页、已内置参考 `数字人形象示例` 生成的 `lingling-realistic.glb` realistic-3d 数字人、local-2d 口型回退、高清嘴型素材、后台登录、知识库管理、评分面板和管理大屏 | [前端入口 docs/program_index.md:L40-L66](docs/program_index.md#L40-L66) |
 | Docker 部署 | 支持 Compose 双容器和 All-in-One 单容器，单容器内包含 PostgreSQL + pgvector | [TEST-019 docs/test_reference.md:L218-L227](docs/test_reference.md#L218-L227), [TEST-020 docs/test_reference.md:L230-L241](docs/test_reference.md#L230-L241) |
 
 ## 技术栈
@@ -83,6 +83,8 @@ docker compose -f deploy/docker-compose.allinone.yml up --build
 
 ```powershell
 python scripts\run_local.py test-backend
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
+npm --prefix frontend run test:avatar
 python scripts\run_local.py build-frontend
 python scripts\check_doc_links.py
 ```

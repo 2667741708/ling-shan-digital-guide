@@ -1,4 +1,4 @@
-# 需求追踪
+﻿# 需求追踪
 
 ## REQ-001 DeepSeek + 本地知识库问答闭环
 
@@ -131,24 +131,43 @@ python scripts\run_local.py build-frontend
 
 ### 用户场景
 
-游客在数字人导览页看到可辨识的“灵灵”导游形象，支持文本提问、浏览器语音输入、浏览器语音播报、嘴部动画、知识引用和推荐路线展示。
+游客在数字人导览页看到可辨识的“灵灵”导游形象，支持文本提问、浏览器语音输入、浏览器语音播报、local-2d 口型同步、知识引用和推荐路线展示。本地 2D 模式参考 Live2D/pixi-live2d-display 一类开源 Web 数字人渲染思路，先以轻量 SVG + viseme 时间线作为实时互动兜底；口型素材已升级为 8 个高清 SVG 嘴型和 OBJ 参考网格；3D 路线已接入 Three.js/VRM `AvatarRenderer`，并内置本地 Blender 生成的 `lingling-realistic.glb` 全身演示数字人。后续每次制作或替换 3D 资产时，必须先参考 `数字人形象示例` 目录中的 5 张设计图，优先保持浅青古风汉服、透纱宽袖、发髻发簪、花卉/山水刺绣、玉佩流苏、表情和口型方向一致。
 
 ### 实现位置
 
 | 类型 | 说明 | 跳转链接 |
 |---|---|---|
-| 数字人状态 | 待机、倾听、思考、讲解、口型模拟和字幕 | [useAvatarStore frontend/src/store/avatar.ts:L1-L33](../frontend/src/store/avatar.ts#L1-L33) |
-| 数字人形象 | SVG 汉服导游形象、口型、状态、提示语 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
-| 问答页 | 快捷问题、浏览器语音识别、语音播报、引用和路线卡片 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L147](../frontend/src/pages/visitor/ChatGuide.vue#L1-L147) |
+| 口型时间线 | 根据文本、语速、标点和 `mbp/fv` 等接触音生成 local-2d viseme 时间线 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
+| 数字人状态 | 待机、倾听、思考、讲解、口型时间线、播放进度和字幕 | [useAvatarStore frontend/src/store/avatar.ts:L18-L84](../frontend/src/store/avatar.ts#L18-L84) |
+| 数字人形象 | 优先加载 3D AvatarRenderer，失败时回退 SVG 汉服导游形象和高清 mouth sprite | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156) |
+| 3D 渲染器 | Three.js/GLTFLoader/three-vrm 加载本地 GLB/VRM，全身模型按 viseme 更新 morph targets | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242) |
+| 3D 口型映射 | realistic-3d 模型路径、VRM expression 和 morph target 候选名 | [avatarRenderer frontend/src/store/avatarRenderer.ts:L1-L46](../frontend/src/store/avatarRenderer.ts#L1-L46) |
+| 3D 模型目录 | 本地 Blender 全身演示 GLB、source copy、哈希和验证命令 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 3D 设计参考 | 5 张本地数字人形象设计板，覆盖汉服、制服、户外服、表情、口型和材质细节 | [数字人形象示例](../数字人形象示例) |
+| 3D 前端依赖 | Three.js、three-vrm 和 Three 类型依赖 | [package.json frontend/package.json:L13-L24](../frontend/package.json#L13-L24) |
+| 2D/OBJ 嘴型素材 | 生成 8 个高清 SVG 嘴型、OBJ pose 和 manifest | [generate_mouth_assets scripts/generate_mouth_assets.py:L11-L266](../scripts/generate_mouth_assets.py#L11-L266), [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
+| 嘴型素材预览 | 浏览器查看 8 个 mouth sprite 的独立预览页 | [mouth-preview frontend/public/avatar/mouth-preview.html:L1-L96](../frontend/public/avatar/mouth-preview.html#L1-L96) |
+| 3D GLB 建模脚本 | Blender 安装后生成带 shape keys 的嘴部 GLB 模型 | [blender_generate_mouth_model.py scripts/blender_generate_mouth_model.py:L1-L113](../scripts/blender_generate_mouth_model.py#L1-L113) |
+| 全身 GLB 生成脚本 | 生成带汉服、发髻、发簪、面部、参考图 metadata 和 8 个口型 shape keys 的 `lingling-realistic.glb` | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| GLB 口型检查 | 解析 GLB JSON chunk 并校验 frontend viseme morph targets | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
+| 问答页 | 快捷问题、浏览器语音识别、语音播报生命周期、引用和路线卡片 | [speakAnswer frontend/src/pages/visitor/ChatGuide.vue:L116-L137](../frontend/src/pages/visitor/ChatGuide.vue#L116-L137) |
 | 聊天面板 | 文字输入、语音按钮和快捷问题 | [ChatPanel frontend/src/components/ChatPanel.vue:L1-L49](../frontend/src/components/ChatPanel.vue#L1-L49) |
-| 视觉样式 | 数字人、问答区、路线和引用区响应式布局 | [guide styles frontend/src/styles.css:L143-L437](../frontend/src/styles.css#L143-L437) |
+| 视觉样式 | 3D renderer 覆盖层、数字人、高清嘴型、播放进度、问答区、路线和引用区响应式布局 | [avatar renderer styles frontend/src/styles.css:L199-L220](../frontend/src/styles.css#L199-L220), [avatar mouth styles frontend/src/styles.css:L268-L295](../frontend/src/styles.css#L268-L295) |
+| 测试 | local-2d 口型时间线、接触音映射、素材 manifest、GLB 参考 metadata 和 3D morph 映射单元测试 | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L1-L93](../frontend/tests/avatarLipSync.test.ts#L1-L93) |
 
 ### 验证命令
 
 ```powershell
+npm --prefix frontend run test:avatar
+python scripts\generate_mouth_assets.py
+python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb
 python scripts\run_local.py build-frontend
 python scripts\smoke_vue_full_stack.py
 ```
+
+### 影响范围
+
+影响游客端数字人导览页的口型表现、浏览器 TTS 播放期间的数字人状态、前端构建、静态素材目录和 `test:avatar` 前端单测；不改变后端 API、数据库结构或数字人配置表。当前 3D 渲染器已接入并内置本地 procedural GLB，模型缺失或加载失败时仍会自动回退到 2D。
 
 ## REQ-009 GitHub 发布与版本交付
 
@@ -343,7 +362,7 @@ python scripts\smoke_vue_full_stack.py
 | 大屏页面 | 展示服务量、评分、热门问答、路线访问、景点评分排行、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L19-L108](../frontend/src/pages/admin/AdminDashboard.vue#L19-L108) |
 | 问答日志 | 游客问答写入 `chat_message`，供大屏计算服务量、热门问题和知识命中率 | [_log_message backend/app/services/chat_service.py:L66-L82](../backend/app/services/chat_service.py#L66-L82), [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
 | 路线日志 | 路线推荐写入 `route_plan`，供大屏计算热门景点和路线偏好 | [_persist_route backend/app/services/route_service.py:L118-L133](../backend/app/services/route_service.py#L118-L133) |
-| 评分聚合 | 景点评分排行、情绪趋势和标签统计来自评分服务 | [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366), [get_admin_rating_trend backend/app/services/rating_service.py:L369-L385](../backend/app/services/rating_service.py#L369-L385) |
+| 评分聚合 | 景点评分排行、情绪趋势和标签统计来自评分服务 | [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386), [get_admin_rating_trend backend/app/services/rating_service.py:L417-L433](../backend/app/services/rating_service.py#L417-L433) |
 | 现有后台鉴权 | 大屏接口已受管理员权限保护 | [require_admin_user backend/app/services/auth_service.py:L134-L145](../backend/app/services/auth_service.py#L134-L145) |
 
 ### 计划交付结果
@@ -550,15 +569,15 @@ python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-dig
 | 景区主数据 | `scenic_spot`、`facility`、`visitor_session`、`chat_message` 和 `route_plan` 支撑评分、路线和大屏 | [ScenicSpot backend/app/models/persistence.py:L64-L86](../backend/app/models/persistence.py#L64-L86), [Facility backend/app/models/persistence.py:L89-L102](../backend/app/models/persistence.py#L89-L102), [VisitorSession backend/app/models/persistence.py:L105-L119](../backend/app/models/persistence.py#L105-L119), [ChatMessage backend/app/models/persistence.py:L122-L136](../backend/app/models/persistence.py#L122-L136), [RoutePlan backend/app/models/persistence.py:L139-L151](../backend/app/models/persistence.py#L139-L151) |
 | 景区数据初始化 | 启动时把内置灵山景点和设施同步到 PostgreSQL，避免评分外键缺失 | [init_db backend/app/core/database.py:L58-L69](../backend/app/core/database.py#L58-L69), [ensure_scenic_catalog backend/app/services/scenic_service.py:L255-L298](../backend/app/services/scenic_service.py#L255-L298) |
 | 请求/响应模型 | 评分请求包含画像快照、来源和公开标记，响应返回情绪和创建/更新状态 | [SpotRatingRequest backend/app/schemas/visitor.py:L25-L41](../backend/app/schemas/visitor.py#L25-L41), [SpotRatingResponse backend/app/schemas/visitor.py:L44-L67](../backend/app/schemas/visitor.py#L44-L67) |
-| 评分服务 | upsert、情绪分析、加权评分、公开评论、游客画像、后台排行和趋势 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
+| 评分服务 | upsert、情绪分析、加权评分、公开评论、游客画像、后台筛选、审核、排行、趋势和感受度报告 | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [get_user_preference_profile backend/app/services/rating_service.py:L296-L337](../backend/app/services/rating_service.py#L296-L337), [list_admin_ratings backend/app/services/rating_service.py:L340-L367](../backend/app/services/rating_service.py#L340-L367), [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
 | 游客 API | `/api/v1/visitor/ratings`、评分历史、景点评分统计和公开评论 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [session_ratings_v1 backend/app/api/v1.py:L238-L241](../backend/app/api/v1.py#L238-L241), [spot_rating_stats_v1 backend/app/api/v1.py:L244-L246](../backend/app/api/v1.py#L244-L246), [spot_public_ratings_v1 backend/app/api/v1.py:L249-L252](../backend/app/api/v1.py#L249-L252) |
-| 后台 API | `/api/v1/admin/ratings`、评分排行和趋势 | [admin_ratings_v1 backend/app/api/v1.py:L280-L302](../backend/app/api/v1.py#L280-L302), [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307), [admin_rating_trend_v1 backend/app/api/v1.py:L310-L312](../backend/app/api/v1.py#L310-L312) |
+| 后台 API | `/api/v1/admin/ratings`、评分排行、趋势、感受度报告和评论审核 | [admin_ratings_v1 backend/app/api/v1.py:L283-L313](../backend/app/api/v1.py#L283-L313), [admin_rating_ranking_v1 backend/app/api/v1.py:L316-L317](../backend/app/api/v1.py#L316-L317), [admin_rating_trend_v1 backend/app/api/v1.py:L321-L322](../backend/app/api/v1.py#L321-L322), [admin_rating_report_v1 backend/app/api/v1.py:L326-L333](../backend/app/api/v1.py#L326-L333), [admin_rating_review_v1 backend/app/api/v1.py:L336-L354](../backend/app/api/v1.py#L336-L354) |
 | 路线反哺 | 路线评分公式读取景点评分与游客偏好画像，生成后写入 `route_plan` | [_route_context backend/app/services/route_service.py:L110-L115](../backend/app/services/route_service.py#L110-L115), [_score_spot backend/app/services/route_service.py:L82-L107](../backend/app/services/route_service.py#L82-L107), [recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196) |
 | 游客前端 | 数字人页新增评分面板、评分统计和提交后路线偏好反馈 | [ChatGuide script frontend/src/pages/visitor/ChatGuide.vue:L29-L114](../frontend/src/pages/visitor/ChatGuide.vue#L29-L114), [ChatGuide rating template frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211), [visitor rating API frontend/src/api/visitor.ts:L29-L56](../frontend/src/api/visitor.ts#L29-L56) |
-| 后台前端 | 大屏新增评分、负向反馈、景点评分排行、情绪趋势和高频标签 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105), [admin rating API frontend/src/api/admin.ts:L7-L17](../frontend/src/api/admin.ts#L7-L17) |
-| 视觉样式 | 基于卡片、玻璃导航、评分面板和大屏网格的前端视觉刷新 | [UX refresh frontend/src/styles.css:L929-L1259](../frontend/src/styles.css#L929-L1259) |
+| 后台前端 | 大屏新增评分入口；独立评分运营页支持筛选、报告、审核、隐藏和拒绝公开评论 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L18-L109](../frontend/src/pages/admin/AdminDashboard.vue#L18-L109), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167), [admin rating API frontend/src/api/admin.ts:L7-L24](../frontend/src/api/admin.ts#L7-L24), [admin route frontend/src/router/index.ts:L1-L24](../frontend/src/router/index.ts#L1-L24) |
+| 视觉样式 | 基于卡片、玻璃导航、评分面板、大屏网格、评分筛选和审核卡片的前端视觉刷新 | [UX refresh frontend/src/styles.css:L929-L1328](../frontend/src/styles.css#L929-L1328) |
 | 初始化 SQL | 手写 SQL 与 ORM 对齐，包含 pgvector、评分、会话、消息和路线表 | [scripts/init_db.sql:L1-L231](../scripts/init_db.sql#L1-L231) |
-| 测试 | 评分 upsert、统计、公开评论、排行和画像测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
+| 测试 | 评分 upsert、统计、公开评论、排行、画像、感受度报告、审核和 v1 后台 API 测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L15-L76](../backend/tests/test_rating_service.py#L15-L76), [test_v1_admin_rating_operations backend/tests/test_api_v1.py:L84-L126](../backend/tests/test_api_v1.py#L84-L126) |
 
 ### 验收标准
 
@@ -566,6 +585,7 @@ python scripts\publish_ghcr_allinone.py --image ghcr.io/2667741708/ling-shan-dig
 - 景点评分统计返回综合、文化、自然、拍照、设施、评分分布和高频标签。
 - 路线推荐返回 `score_summary.uses_visitor_ratings`，并把路线写入 `route_plan`。
 - 后台大屏能从真实问答、路线和评分数据生成热门问答、热门景点、满意度、负向反馈和标签。
+- 后台评分运营页能筛选评分、生成游客感受度报告，并审核、隐藏或拒绝公开评论。
 - 前端游客页和后台大屏构建通过，且移动端布局不崩溃。
 
 ### 验证命令
@@ -578,7 +598,7 @@ python scripts\check_doc_links.py
 
 ### 影响范围
 
-影响游客评分入口、路线推荐排序、后台数据大屏、PostgreSQL 表结构、`/api/v1` 契约、前端页面视觉和评分相关测试。
+影响游客评分入口、路线推荐排序、后台数据大屏、评分运营页、PostgreSQL 表结构、`/api/v1` 契约、前端页面视觉和评分相关测试。
 
 ## REQ-015 演示视频与最终交付物
 
@@ -717,3 +737,7 @@ python scripts\run_local.py smoke-docker-postgres
 ### 影响范围
 
 影响本地开发、容器部署、测试隔离策略、仓库清洁度，以及新同事对数据库后端的默认认知。
+
+
+
+

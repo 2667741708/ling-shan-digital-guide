@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512" viewBox="0 0 512 256" role="img" aria-label="oval oh/o mouth">
+  <defs>
+    <linearGradient id="upperLip" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#d86575"/>
+      <stop offset="0.55" stop-color="#b73d52"/>
+      <stop offset="1" stop-color="#7d2334"/>
+    </linearGradient>
+    <linearGradient id="lowerLip" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#e9828a"/>
+      <stop offset="0.62" stop-color="#c54b5c"/>
+      <stop offset="1" stop-color="#87283a"/>
+    </linearGradient>
+    <radialGradient id="innerMouth" cx="50%" cy="48%" r="58%">
+      <stop offset="0" stop-color="#221019"/>
+      <stop offset="0.72" stop-color="#3a1622"/>
+      <stop offset="1" stop-color="#12070c"/>
+    </radialGradient>
+    <linearGradient id="tooth" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7ea"/>
+      <stop offset="1" stop-color="#dfd3bf"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#39151f" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M168 130 C174 83 226 65 256 98 C286 65 338 83 344 130 C338 190 288 212 256 181 C224 212 174 190 168 130 Z" fill="url(#innerMouth)"/>
+    <path d="M134 114 C168 71 220 72 244 103 C251 111 261 111 268 103 C292 72 344 71 378 114 C342 135 305 141 256 134 C207 141 170 135 134 114 Z" fill="url(#upperLip)"/>
+    <path d="M128 145 C159 205 206 229 256 221 C306 229 353 205 384 145 C348 178 305 190 256 183 C207 190 164 178 128 145 Z" fill="url(#lowerLip)"/>
+    <path d="M162 126 C185 150 219 158 256 151 C293 158 327 150 350 126" fill="none" stroke="#f4a2a8" stroke-width="7" stroke-linecap="round" opacity="0.38"/>
+    <path d="M112 118 C166 98 211 108 242 124" fill="none" stroke="#ffd0cc" stroke-width="8" stroke-linecap="round" opacity="0.34"/>
+    <path d="M270 124 C302 108 346 98 400 118" fill="none" stroke="#ffd0cc" stroke-width="8" stroke-linecap="round" opacity="0.25"/>
+  </g>
+</svg>

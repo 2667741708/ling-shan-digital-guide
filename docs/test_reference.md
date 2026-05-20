@@ -1,4 +1,4 @@
-# 测试方式和验证命令
+﻿# 测试方式和验证命令
 
 ## TEST-001 健康检查
 
@@ -102,8 +102,9 @@
 | 对应需求 | REQ-001、REQ-003、REQ-006 |
 | 启动脚本 | [dev_vue_full_stack main scripts/dev_vue_full_stack.py:L52-L95](../scripts/dev_vue_full_stack.py#L52-L95) |
 | 前端路由 | [frontend/src/router/index.ts:L10-L20](../frontend/src/router/index.ts#L10-L20) |
-| 问答页面 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L147](../frontend/src/pages/visitor/ChatGuide.vue#L1-L147) |
-| 数字人组件 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| 问答页面 | [ChatGuide frontend/src/pages/visitor/ChatGuide.vue:L1-L163](../frontend/src/pages/visitor/ChatGuide.vue#L1-L163) |
+| 数字人组件 | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L7-L125](../frontend/src/components/Avatar/DigitalAvatar.vue#L7-L125) |
+| 口型同步 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
 | 后端问答 | [chat_with_text backend/app/services/chat_service.py:L38-L88](../backend/app/services/chat_service.py#L38-L88) |
 | 运行命令 | `python scripts/dev_vue_full_stack.py` |
 | 测试页面 | `http://127.0.0.1:5173/guide` |
@@ -256,11 +257,11 @@ python scripts\run_local.py smoke-docker-postgres
 | 项目 | 内容 |
 |---|---|
 | 对应需求 | [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) |
-| 测试函数 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
-| 被测服务 | [create_or_update_rating backend/app/services/rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176), [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277), [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327), [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
-| 相关路由 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [admin_rating_ranking_v1 backend/app/api/v1.py:L305-L307](../backend/app/api/v1.py#L305-L307) |
+| 测试函数 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L15-L76](../backend/tests/test_rating_service.py#L15-L76), [test_v1_admin_rating_operations backend/tests/test_api_v1.py:L84-L126](../backend/tests/test_api_v1.py#L84-L126) |
+| 被测服务 | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186), [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287), [get_user_preference_profile backend/app/services/rating_service.py:L296-L337](../backend/app/services/rating_service.py#L296-L337), [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386), [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546), [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457) |
+| 相关路由 | [submit_rating_v1 backend/app/api/v1.py:L232-L235](../backend/app/api/v1.py#L232-L235), [admin_rating_ranking_v1 backend/app/api/v1.py:L316-L317](../backend/app/api/v1.py#L316-L317), [admin_rating_report_v1 backend/app/api/v1.py:L326-L333](../backend/app/api/v1.py#L326-L333), [admin_rating_review_v1 backend/app/api/v1.py:L336-L354](../backend/app/api/v1.py#L336-L354) |
 | 运行命令 | `python scripts\run_local.py test-backend` |
-| 预期结果 | 同一游客会话对同一景点重复评分会更新；景点评分统计、公开评论、后台排行和游客偏好画像均返回有效数据 |
+| 预期结果 | 同一游客会话对同一景点重复评分会更新；景点评分统计、公开评论、后台排行、游客偏好画像、感受度报告和审核隐藏均返回有效数据 |
 
 ## TEST-023 前端评分面板与大屏视觉构建
 
@@ -268,10 +269,10 @@ python scripts\run_local.py smoke-docker-postgres
 |---|---|
 | 对应需求 | [REQ-012 后台运营大屏真实聚合](./requirements_traceability.md#req-012-后台运营大屏真实聚合), [REQ-021 游客个性化评分、路线反哺与数据大屏](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) |
 | 游客页面 | [ChatGuide rating frontend/src/pages/visitor/ChatGuide.vue:L183-L211](../frontend/src/pages/visitor/ChatGuide.vue#L183-L211) |
-| 后台页面 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L105](../frontend/src/pages/admin/AdminDashboard.vue#L28-L105) |
-| 样式入口 | [UX refresh frontend/src/styles.css:L929-L1259](../frontend/src/styles.css#L929-L1259) |
+| 后台页面 | [AdminDashboard frontend/src/pages/admin/AdminDashboard.vue:L28-L109](../frontend/src/pages/admin/AdminDashboard.vue#L28-L109), [AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167) |
+| 样式入口 | [UX refresh frontend/src/styles.css:L929-L1328](../frontend/src/styles.css#L929-L1328) |
 | 运行命令 | `python scripts\run_local.py build-frontend` |
-| 预期结果 | Vue 类型检查和 Vite 生产构建通过，评分面板和大屏新增模块没有类型错误 |
+| 预期结果 | Vue 类型检查和 Vite 生产构建通过，评分面板、大屏和评分运营页没有类型错误 |
 
 ## TEST-024 PostgreSQL 初始化 SQL 验证
 
@@ -282,3 +283,31 @@ python scripts\run_local.py smoke-docker-postgres
 | 覆盖范围 | `CREATE EXTENSION vector`、知识库、chunk vector、景点、设施、游客会话、问答日志、路线日志和游客评分表 |
 | 运行命令 | `docker compose -f deploy/docker-compose.yml up -d postgres` 后，将 [scripts/init_db.sql:L1-L231](../scripts/init_db.sql#L1-L231) 输入临时 PostgreSQL 数据库执行 |
 | 预期结果 | 临时数据库能完整执行 SQL 并创建 HNSW 向量索引，随后可删除临时库 |
+
+## TEST-025 local-2d 数字人口型同步单元测试
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | [REQ-006 数字人灵灵真实前端交互体验](./requirements_traceability.md#req-006-数字人灵灵真实前端交互体验) |
+| 测试函数 | [avatarLipSync.test frontend/tests/avatarLipSync.test.ts:L1-L93](../frontend/tests/avatarLipSync.test.ts#L1-L93) |
+| 被测函数 | [avatarLipSync frontend/src/store/avatarLipSync.ts:L50-L110](../frontend/src/store/avatarLipSync.ts#L50-L110) |
+| 3D 映射 | [avatarRenderer frontend/src/store/avatarRenderer.ts:L1-L46](../frontend/src/store/avatarRenderer.ts#L1-L46) |
+| 静态素材 | [mouth manifest frontend/public/avatar/mouth/mouth-manifest.json:L1-L50](../frontend/public/avatar/mouth/mouth-manifest.json#L1-L50) |
+| 依赖入口 | [package.json test:avatar frontend/package.json:L5-L24](../frontend/package.json#L5-L24) |
+| 运行命令 | `npm --prefix frontend run test:avatar` |
+| 预期结果 | 生成完整时长 viseme 时间线，标点产生闭嘴停顿，播放中能按 elapsed time 取到当前嘴型，语速越慢估算播报时长越长，并确认 8 个 SVG/OBJ 嘴型素材、3D morph target 映射、`lingling-realistic.glb` 口型 target 和 `数字人形象示例` 参考 metadata 均可用 |
+
+## TEST-026 realistic-3d GLB morph target 检查
+
+| 项目 | 内容 |
+|---|---|
+| 对应需求 | [REQ-006 数字人灵灵真实前端交互体验](./requirements_traceability.md#req-006-数字人灵灵真实前端交互体验) |
+| 生成脚本 | [blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L449](../scripts/blender_generate_lingling_avatar.py#L20-L449) |
+| 检查脚本 | [inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
+| 模型说明 | [models README frontend/public/avatar/models/README.md:L1-L40](../frontend/public/avatar/models/README.md#L1-L40) |
+| 运行命令 | `python scripts\inspect_glb_morph_targets.py frontend\public\avatar\models\lingling-realistic.glb` |
+| 预期结果 | 输出 glTF 2.0、非空 mesh、8 个 morph targets，且 `missing` 为空 |
+
+
+
+

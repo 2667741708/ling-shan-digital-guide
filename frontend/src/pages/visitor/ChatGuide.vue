@@ -114,14 +114,27 @@ async function handleSubmitRating() {
 }
 
 function speakAnswer(text: string) {
-  avatar.simulateSpeaking(text);
-  if (!("speechSynthesis" in window)) return;
+  const speechRate = 0.95;
+  if (!("speechSynthesis" in window)) {
+    avatar.simulateSpeaking(text, { rate: speechRate });
+    return;
+  }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN";
-  utterance.rate = 0.95;
+  utterance.rate = speechRate;
   utterance.pitch = 1.08;
+  utterance.onstart = () => {
+    avatar.simulateSpeaking(text, { rate: utterance.rate, holdUntilStopped: true });
+  };
+  utterance.onend = () => {
+    avatar.finishSpeaking();
+  };
+  utterance.onerror = () => {
+    avatar.finishSpeaking("浏览器语音播报暂时不可用，文字回答已显示。");
+  };
   window.speechSynthesis.speak(utterance);
+  avatar.simulateSpeaking(text, { rate: speechRate, holdUntilStopped: true });
 }
 
 function handleListen() {

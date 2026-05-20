@@ -16,6 +16,14 @@ export function fetchAdminRatings(params: Record<string, unknown> = {}) {
   return unwrap(http.get("/api/v1/admin/ratings", { params }));
 }
 
+export function fetchRatingReport(params: Record<string, unknown> = {}) {
+  return unwrap(http.get("/api/v1/admin/ratings/report", { params }));
+}
+
+export function reviewRating(ratingId: string, payload: { review_status: string; is_public?: boolean }) {
+  return unwrap(http.put(`/api/v1/admin/ratings/${encodeURIComponent(ratingId)}/review`, payload));
+}
+
 export function loginAdmin(username: string, password: string) {
   return unwrap(http.post("/api/v1/auth/login", { username, password }));
 }
