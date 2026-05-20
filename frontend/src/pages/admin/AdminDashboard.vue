@@ -21,6 +21,8 @@ function logout() {
     <nav class="top-nav">
       <strong>管理后台数据大屏</strong>
       <router-link to="/">游客端</router-link>
+      <router-link to="/admin/ratings">评分运营</router-link>
+      <router-link to="/admin/users">管理员账号</router-link>
       <router-link to="/admin/knowledge">知识库</router-link>
       <router-link to="/admin/avatar">数字人配置</router-link>
       <button type="button" @click="logout">退出</button>

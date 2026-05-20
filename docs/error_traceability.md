@@ -192,6 +192,76 @@ assert any(name in names for name in {"灵山大佛", "九龙灌浴", "灵山梵
 python scripts\run_local.py test-backend
 ```
 
+## ERR-0014 Open-LLM-VTuber 原版演示缺少 ffprobe 导致 TTS 静默
+
+### 错误现象
+
+在外部英文路径 `D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main` 运行 Open-LLM-VTuber 原版演示时，文本对话和 LLM 回复正常，但首轮 TTS 音频无法生成有效 payload，前端只收到静默音频。
+
+```text
+RuntimeWarning: Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work
+Error preparing audio payload: Error loading or converting generated audio file to wav file
+'cache\20260520_132529_45774efe.mp3': [WinError 2] 系统找不到指定的文件。
+```
+
+### 触发命令
+
+```powershell
+cd D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main
+$env:PATH = "D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg;$env:PATH"
+.\.venv\Scripts\python.exe run_server.py --verbose
+```
+
+### 错误定位
+
+| 类型 | 说明 | 跳转链接 |
+|---|---|---|
+| 对比记录 | 本次原版 Open-LLM-VTuber 英文路径演示和复测结果 | [Q-0031 docs/question_traceability.md:L1021-L1122](./question_traceability.md#L1021-L1122) |
+| 当前 2D 对比 | 本项目 local-2d 口型由 viseme 时间线生成，不依赖 pydub/ffprobe | [avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110) |
+| 当前 3D 对比 | 本项目 3D 数字人通过 morph targets 驱动，不直接复用原版后端 TTS 链路 | [AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L159-L214](../frontend/src/components/Avatar/AvatarRenderer.vue#L159-L214) |
+
+外部 Open-LLM-VTuber 代码定位（不纳入当前仓库链接检查）：
+
+```text
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\tts\edge_tts.py:L40-L50
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\src\open_llm_vtuber\utils\stream_audio.py:L62-L70
+```
+
+### 原因分析
+
+原版演示使用 Edge TTS 生成 mp3，再由 `pydub.AudioSegment.from_file()` 读取并导出 wav/base64 音频 payload。只放置 `ffmpeg.exe` 不够，pydub 读取 mp3 时还会查找 `ffprobe.exe` 或 `avprobe`。当前进程 PATH 中缺少 `ffprobe.exe`，因此 mp3 转 wav 阶段失败，前端无法拿到有效音频和音量切片。
+
+### 修复方案
+
+下载 FFmpeg essentials 构建，将 `ffmpeg.exe` 和 `ffprobe.exe` 放到同一工具目录：
+
+```text
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg\ffmpeg.exe
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg\ffprobe.exe
+```
+
+启动服务前把该目录加入 PATH：
+
+```powershell
+$env:PATH = "D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg;$env:PATH"
+```
+
+### 验证命令
+
+```powershell
+D:\OpenLLMVTuberDemo\Open-LLM-VTuber-main\tools\ffmpeg\ffprobe.exe -version
+```
+
+浏览器打开 `http://localhost:12393/`，用文本框发送一句中文测试语。服务端日志应出现非空音频 payload，例如：
+
+```text
+DEBUG: > TEXT '{"type": "audio", "audio": "UklG...", "volumes": ...}'
+```
+
+### 影响范围
+
+该问题只影响外部 Open-LLM-VTuber 原版对比演示的 TTS、音频播放和音频驱动口型评估；不影响当前灵山项目的 RAG、后端 API、数据库、管理员系统，也不影响现有 `local-2d` 和 `lingling-realistic.glb` 静态资产。
+
 ## ERR-0012 Docker All-in-One 构建时无法拉取 `node:20-bookworm-slim`
 
 ### 错误现象

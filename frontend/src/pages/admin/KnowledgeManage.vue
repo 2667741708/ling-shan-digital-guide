@@ -167,6 +167,7 @@ onMounted(async () => {
     <nav class="top-nav">
       <strong>知识库管理</strong>
       <router-link to="/admin">返回大屏</router-link>
+      <router-link to="/admin/users">管理员账号</router-link>
       <router-link to="/guide">游客端验证</router-link>
       <button class="secondary" @click="logout">退出登录</button>
     </nav>

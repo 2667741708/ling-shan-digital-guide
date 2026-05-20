@@ -7,6 +7,17 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://postgres:postgres@127.0.0.1:5433/lingtour"
     vector_db_path: str = "data/vector_db/scenic_vector_store.json"
     pgvector_dimension: int = 256
+    embedding_provider: str = "hash"
+    embedding_base_url: str = "https://api.openai.com/v1"
+    embedding_api_key: str = ""
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimension: int = 256
+    embedding_timeout_seconds: float = 20.0
+    rerank_provider: str = "none"
+    rerank_base_url: str = ""
+    rerank_api_key: str = ""
+    rerank_model: str = "bge-reranker-v2-m3"
+    rerank_timeout_seconds: float = 20.0
     default_knowledge_base_id: str = "default"
     text_model_provider: str = "mock"
     text_model_name: str = "mock-guide"

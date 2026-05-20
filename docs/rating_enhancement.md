@@ -8,10 +8,13 @@
 |---|---|---|
 | 情感分析 | 使用确定性中文词典分析评论正负向，返回 `sentiment`、`score`、`confidence` 和关键词 | [analyze_sentiment backend/app/services/rating_service.py:L36-L85](../backend/app/services/rating_service.py#L36-L85) |
 | 评分权重 | 根据评分完整性、评论长度、情感一致性、公开状态和历史稳定性计算 0.5 到 1.5 权重 | [calculate_rating_weight backend/app/services/rating_service.py:L88-L121](../backend/app/services/rating_service.py#L88-L121) |
-| 景点统计 | 返回均分、加权均分、评分分布、高频标签和情绪分布 | [get_spot_statistics backend/app/services/rating_service.py:L231-L277](../backend/app/services/rating_service.py#L231-L277) |
-| 游客画像 | 从会话历史评分生成关注维度、标签偏好、评分模式和总评分数 | [get_user_preference_profile backend/app/services/rating_service.py:L286-L327](../backend/app/services/rating_service.py#L286-L327) |
-| 后台排行 | 基于加权满意度和评分数生成景点评分排行 | [get_admin_rating_ranking backend/app/services/rating_service.py:L350-L366](../backend/app/services/rating_service.py#L350-L366) |
-| 评分趋势 | 按日期聚合平均分和正中负情绪数量 | [get_admin_rating_trend backend/app/services/rating_service.py:L369-L385](../backend/app/services/rating_service.py#L369-L385) |
+| 景点统计 | 返回均分、加权均分、评分分布、高频标签和情绪分布 | [get_spot_statistics backend/app/services/rating_service.py:L241-L287](../backend/app/services/rating_service.py#L241-L287) |
+| 游客画像 | 从会话历史评分生成关注维度、标签偏好、评分模式和总评分数 | [get_user_preference_profile backend/app/services/rating_service.py:L296-L337](../backend/app/services/rating_service.py#L296-L337) |
+| 后台筛选 | 按景点、评分、情绪、审核状态、来源、日期和关键词筛选评分 | [list_admin_ratings backend/app/services/rating_service.py:L340-L367](../backend/app/services/rating_service.py#L340-L367) |
+| 后台排行 | 基于加权满意度和评分数生成景点评分排行 | [get_admin_rating_ranking backend/app/services/rating_service.py:L370-L386](../backend/app/services/rating_service.py#L370-L386) |
+| 评分趋势 | 按日期聚合平均分和正中负情绪数量 | [get_admin_rating_trend backend/app/services/rating_service.py:L417-L433](../backend/app/services/rating_service.py#L417-L433) |
+| 评论审核 | 后台修改 `review_status`，隐藏或拒绝时自动取消公开 | [update_rating_review_status backend/app/services/rating_service.py:L436-L457](../backend/app/services/rating_service.py#L436-L457) |
+| 感受度报告 | 聚合满意度、维度均分、正负反馈、标签和服务建议 | [get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546) |
 
 ## 路线推荐集成
 
@@ -40,7 +43,8 @@
 
 | 项目 | 实现位置 |
 |---|---|
-| 单元测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L13-L64](../backend/tests/test_rating_service.py#L13-L64) |
+| 单元测试 | [test_rating_upsert_stats_and_preference_profile backend/tests/test_rating_service.py:L15-L76](../backend/tests/test_rating_service.py#L15-L76) |
+| API 测试 | [test_v1_admin_rating_operations backend/tests/test_api_v1.py:L84-L126](../backend/tests/test_api_v1.py#L84-L126) |
 | 测试说明 | [TEST-022 docs/test_reference.md:L254-L264](./test_reference.md#L254-L264) |
 
 运行：

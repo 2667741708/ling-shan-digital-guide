@@ -8,7 +8,7 @@ import secrets
 import time
 from datetime import datetime
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -18,6 +18,22 @@ from app.models.persistence import AdminUser
 
 PASSWORD_ITERATIONS = 120_000
 TOKEN_TTL_SECONDS = 24 * 60 * 60
+ROLE_ALIASES = {"admin": "super_admin"}
+ROLE_PERMISSIONS: dict[str, set[str]] = {
+    "super_admin": {
+        "dashboard:read",
+        "system:read",
+        "knowledge:read",
+        "knowledge:write",
+        "ratings:read",
+        "ratings:review",
+        "users:manage",
+        "avatar:write",
+    },
+    "knowledge_manager": {"dashboard:read", "knowledge:read", "knowledge:write"},
+    "operator": {"dashboard:read", "ratings:read", "ratings:review", "knowledge:read", "avatar:write"},
+    "viewer": {"dashboard:read", "knowledge:read", "ratings:read"},
+}
 
 
 def _b64(data: bytes) -> str:
@@ -41,6 +57,31 @@ def hash_password(password: str, salt: bytes | None = None) -> str:
     return f"pbkdf2_sha256${PASSWORD_ITERATIONS}${salt.hex()}${digest.hex()}"
 
 
+def normalize_role(role: str) -> str:
+    return ROLE_ALIASES.get(role, role)
+
+
+def permissions_for_role(role: str) -> list[str]:
+    return sorted(ROLE_PERMISSIONS.get(normalize_role(role), set()))
+
+
+def has_permission(role: str, permission: str) -> bool:
+    return permission in ROLE_PERMISSIONS.get(normalize_role(role), set())
+
+
+def _admin_user_payload(user: AdminUser) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": normalize_role(user.role),
+        "permissions": permissions_for_role(user.role),
+        "enabled": user.enabled,
+        "last_login_at": user.last_login_at.isoformat(timespec="seconds") if user.last_login_at else None,
+        "created_at": user.created_at.isoformat(timespec="seconds"),
+        "updated_at": user.updated_at.isoformat(timespec="seconds"),
+    }
+
+
 def verify_password(password: str, password_hash: str) -> bool:
     try:
         algorithm, iterations, salt_hex, digest_hex = password_hash.split("$", 3)
@@ -58,11 +99,16 @@ def ensure_admin_user(db: Session | None = None) -> AdminUser:
     try:
         user = db.query(AdminUser).filter(AdminUser.username == settings.admin_username).first()
         if user:
+            if normalize_role(user.role) != user.role:
+                user.role = normalize_role(user.role)
+                user.updated_at = datetime.utcnow()
+                db.commit()
+                db.refresh(user)
             return user
         user = AdminUser(
             username=settings.admin_username,
             password_hash=hash_password(settings.admin_password),
-            role="admin",
+            role="super_admin",
             enabled=True,
         )
         db.add(user)
@@ -83,9 +129,9 @@ def create_admin_token(user: AdminUser) -> str:
     payload = _b64(
         json.dumps(
             {
-                "sub": user.username,
-                "role": user.role,
-                "exp": int(time.time()) + TOKEN_TTL_SECONDS,
+            "sub": user.username,
+            "role": normalize_role(user.role),
+            "exp": int(time.time()) + TOKEN_TTL_SECONDS,
             },
             ensure_ascii=False,
             separators=(",", ":"),
@@ -124,7 +170,8 @@ def authenticate_admin(username: str, password: str, db: Session | None = None) 
             "token": create_admin_token(user),
             "token_type": "bearer",
             "username": user.username,
-            "role": user.role,
+            "role": normalize_role(user.role),
+            "permissions": permissions_for_role(user.role),
         }
     finally:
         if owns_session:
@@ -140,6 +187,108 @@ def require_admin_user(authorization: str | None = Header(default=None)) -> dict
         user = db.query(AdminUser).filter(AdminUser.username == data.get("sub")).first()
         if not user or not user.enabled:
             raise HTTPException(status_code=401, detail="admin user disabled or missing")
-        return {"username": user.username, "role": user.role}
+        return {
+            "username": user.username,
+            "role": normalize_role(user.role),
+            "permissions": permissions_for_role(user.role),
+        }
     finally:
         db.close()
+
+
+def require_admin_permission(permission: str):
+    def dependency(admin=Depends(require_admin_user)) -> dict:
+        if not has_permission(admin["role"], permission):
+            raise HTTPException(status_code=403, detail=f"missing admin permission: {permission}")
+        return admin
+
+    return dependency
+
+
+def list_admin_users(db: Session | None = None) -> list[dict]:
+    owns_session = db is None
+    db = db or new_session()
+    try:
+        ensure_admin_user(db)
+        rows = db.query(AdminUser).order_by(AdminUser.created_at.asc()).all()
+        return [_admin_user_payload(user) for user in rows]
+    finally:
+        if owns_session:
+            db.close()
+
+
+def create_admin_user(username: str, password: str, role: str, db: Session | None = None) -> dict:
+    normalized_role = normalize_role(role)
+    if normalized_role not in ROLE_PERMISSIONS:
+        raise ValueError(f"unsupported admin role: {role}")
+    if len(username.strip()) < 3:
+        raise ValueError("admin username must be at least 3 characters")
+    if len(password) < 8:
+        raise ValueError("admin password must be at least 8 characters")
+
+    owns_session = db is None
+    db = db or new_session()
+    try:
+        ensure_admin_user(db)
+        if db.query(AdminUser).filter(AdminUser.username == username.strip()).first():
+            raise ValueError(f"admin username already exists: {username}")
+        user = AdminUser(
+            username=username.strip(),
+            password_hash=hash_password(password),
+            role=normalized_role,
+            enabled=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return _admin_user_payload(user)
+    finally:
+        if owns_session:
+            db.close()
+
+
+def _get_admin_user_or_error(db: Session, user_id: str) -> AdminUser:
+    user = db.get(AdminUser, user_id)
+    if not user:
+        raise FileNotFoundError(f"admin user not found: {user_id}")
+    return user
+
+
+def set_admin_user_enabled(user_id: str, enabled: bool, db: Session | None = None) -> dict:
+    owns_session = db is None
+    db = db or new_session()
+    try:
+        user = _get_admin_user_or_error(db, user_id)
+        if not enabled and normalize_role(user.role) == "super_admin":
+            active_super_admin_count = (
+                db.query(AdminUser)
+                .filter(AdminUser.enabled.is_(True), AdminUser.role.in_(["super_admin", "admin"]))
+                .count()
+            )
+            if active_super_admin_count <= 1:
+                raise ValueError("cannot disable the last enabled super_admin")
+        user.enabled = enabled
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+        return _admin_user_payload(user)
+    finally:
+        if owns_session:
+            db.close()
+
+
+def reset_admin_password(user_id: str, password: str, db: Session | None = None) -> dict:
+    if len(password) < 8:
+        raise ValueError("admin password must be at least 8 characters")
+    owns_session = db is None
+    db = db or new_session()
+    try:
+        user = _get_admin_user_or_error(db, user_id)
+        user.password_hash = hash_password(password)
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+        return _admin_user_payload(user)
+    finally:
+        if owns_session:
+            db.close()

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512" viewBox="0 0 512 256" role="img" aria-label="f/v lower-lip contact">
+  <defs>
+    <linearGradient id="upperLip" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#d86575"/>
+      <stop offset="0.55" stop-color="#b73d52"/>
+      <stop offset="1" stop-color="#7d2334"/>
+    </linearGradient>
+    <linearGradient id="lowerLip" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#e9828a"/>
+      <stop offset="0.62" stop-color="#c54b5c"/>
+      <stop offset="1" stop-color="#87283a"/>
+    </linearGradient>
+    <radialGradient id="innerMouth" cx="50%" cy="48%" r="58%">
+      <stop offset="0" stop-color="#221019"/>
+      <stop offset="0.72" stop-color="#3a1622"/>
+      <stop offset="1" stop-color="#12070c"/>
+    </radialGradient>
+    <linearGradient id="tooth" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7ea"/>
+      <stop offset="1" stop-color="#dfd3bf"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#39151f" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M114 130 C162 122 211 127 256 134 C301 127 350 122 398 130 C366 158 309 171 256 164 C203 171 146 158 114 130 Z" fill="url(#innerMouth)"/>
+    <path d="M128 122 C169 114 214 119 256 127 C298 119 343 114 384 122 L370 145 C326 151 292 153 256 150 C220 153 186 151 142 145 Z" fill="url(#tooth)" opacity="0.94"/>
+      <path d="M82 125 C133 89 190 96 231 118 C248 127 264 127 281 118 C322 96 379 89 430 125 C374 150 317 157 256 145 C195 157 138 150 82 125 Z" fill="url(#upperLip)"/>
+    <path d="M96 147 C148 181 203 187 256 173 C309 187 364 181 416 147 C370 191 312 201 256 184 C200 201 142 191 96 147 Z" fill="url(#lowerLip)"/>
+    <path d="M124 146 C170 162 214 166 256 160 C298 166 342 162 388 146" fill="none" stroke="#f4a2a8" stroke-width="7" stroke-linecap="round" opacity="0.38"/>
+    <path d="M112 118 C166 98 211 108 242 124" fill="none" stroke="#ffd0cc" stroke-width="8" stroke-linecap="round" opacity="0.34"/>
+    <path d="M270 124 C302 108 346 98 400 118" fill="none" stroke="#ffd0cc" stroke-width="8" stroke-linecap="round" opacity="0.25"/>
+  </g>
+</svg>

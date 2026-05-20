@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
-import math
 import re
 import zipfile
 from dataclasses import dataclass
@@ -18,6 +16,15 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import init_db, new_session
 from app.models.persistence import KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeDocumentVersion, PgVector, new_id
+from app.services.embedding_service import (
+    configured_embedding_dimension,
+    cosine_similarity,
+    embed_text,
+    embedding_metadata,
+    hash_vectorize,
+    rerank_hits,
+    tokenize,
+)
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -25,7 +32,7 @@ DATA_DIR = ROOT_DIR / "data"
 VECTOR_DB_DIR = DATA_DIR / "vector_db"
 VECTOR_STORE_PATH = ROOT_DIR / settings.vector_db_path
 ADMIN_KNOWLEDGE_DIR = DATA_DIR / "admin_knowledge"
-VECTOR_DIMENSION = settings.pgvector_dimension
+VECTOR_DIMENSION = configured_embedding_dimension()
 DEFAULT_KNOWLEDGE_BASE_ID = settings.default_knowledge_base_id
 
 
@@ -38,31 +45,10 @@ class KnowledgeEntry:
     title: str
 
 
-def tokenize(text: str) -> list[str]:
-    normalized = text.lower()
-    words = re.findall(r"[a-z0-9_]+", normalized)
-    chinese_chars = re.findall(r"[\u4e00-\u9fff]", normalized)
-    chinese_bigrams = [
-        "".join(chinese_chars[index : index + 2])
-        for index in range(max(len(chinese_chars) - 1, 0))
-    ]
-    return words + chinese_chars + chinese_bigrams
-
-
 def vectorize(text: str, dimension: int = VECTOR_DIMENSION) -> list[float]:
-    vector = [0.0] * dimension
-    for token in tokenize(text):
-        digest = hashlib.md5(token.encode("utf-8")).hexdigest()
-        index = int(digest[:8], 16) % dimension
-        vector[index] += 1.0
-    norm = math.sqrt(sum(value * value for value in vector))
-    if norm == 0:
-        return vector
-    return [value / norm for value in vector]
-
-
-def cosine_similarity(left: list[float], right: list[float]) -> float:
-    return sum(a * b for a, b in zip(left, right))
+    if dimension == configured_embedding_dimension():
+        return embed_text(text).vector
+    return hash_vectorize(text, dimension)
 
 
 def chunk_text(text: str, chunk_size: int = 420, overlap: int = 80) -> Iterable[str]:
@@ -302,10 +288,12 @@ def ensure_default_knowledge_base(db: Session | None = None) -> KnowledgeBase:
     owns_session = db is None
     db = db or new_session()
     try:
+        metadata = embedding_metadata()
         knowledge_base = db.query(KnowledgeBase).filter(KnowledgeBase.code == DEFAULT_KNOWLEDGE_BASE_ID).first()
         if knowledge_base:
             knowledge_base.vector_backend = vector_backend_name()
-            knowledge_base.embedding_dimension = VECTOR_DIMENSION
+            knowledge_base.embedding_model = metadata["embedding_model"]
+            knowledge_base.embedding_dimension = metadata["embedding_dimension"]
             knowledge_base.updated_at = datetime.utcnow()
             db.flush()
             return knowledge_base
@@ -314,8 +302,8 @@ def ensure_default_knowledge_base(db: Session | None = None) -> KnowledgeBase:
             name="灵山景区知识库",
             description="景区 FAQ、景点资料、后台上传资料和公开资料包的统一知识库。",
             vector_backend=vector_backend_name(),
-            embedding_model=f"hash_token_{VECTOR_DIMENSION}",
-            embedding_dimension=VECTOR_DIMENSION,
+            embedding_model=metadata["embedding_model"],
+            embedding_dimension=metadata["embedding_dimension"],
             enabled=True,
         )
         db.add(knowledge_base)
@@ -348,7 +336,8 @@ def _persist_static_entries(db: Session, knowledge_base_id: str, entries: list[K
         KnowledgeChunk.document_id.is_(None),
     ).delete(synchronize_session=False)
     for index, entry in enumerate(entries, start=1):
-        embedding = vectorize(entry.text)
+        embedding_result = embed_text(entry.text)
+        embedding = embedding_result.vector
         db.add(
             KnowledgeChunk(
                 id=new_id(),
@@ -397,7 +386,8 @@ def _upsert_document_version_chunks(
     db.query(KnowledgeChunk).filter(KnowledgeChunk.version_id == version.id).delete(synchronize_session=False)
     entries = _document_version_chunks(document, version)
     for index, entry in enumerate(entries, start=1):
-        embedding = vectorize(entry.text)
+        embedding_result = embed_text(entry.text)
+        embedding = embedding_result.vector
         db.add(
             KnowledgeChunk(
                 id=new_id(),
@@ -457,6 +447,7 @@ def embed_document(document_id: str) -> dict:
             "chunk_count": chunk_count,
             "enabled_chunk_count": enabled_chunk_count,
             "vector_backend": vector_backend_name(),
+            **embedding_metadata(),
         }
     finally:
         db.close()
@@ -466,6 +457,15 @@ def build_knowledge_base(output_path: Path = VECTOR_STORE_PATH) -> dict:
     init_db()
     db = new_session()
     try:
+        metadata = embedding_metadata()
+        existing_knowledge_base = db.query(KnowledgeBase).filter(KnowledgeBase.code == DEFAULT_KNOWLEDGE_BASE_ID).first()
+        provider_changed = bool(
+            existing_knowledge_base
+            and (
+                existing_knowledge_base.embedding_model != metadata["embedding_model"]
+                or existing_knowledge_base.embedding_dimension != metadata["embedding_dimension"]
+            )
+        )
         knowledge_base = ensure_default_knowledge_base(db)
         static_entry_count = _persist_static_entries(db, knowledge_base.id, load_static_knowledge_entries())
         documents = db.query(KnowledgeDocument).all()
@@ -478,7 +478,7 @@ def build_knowledge_base(output_path: Path = VECTOR_STORE_PATH) -> dict:
                     .filter(KnowledgeChunk.version_id == version.id)
                     .count()
                 )
-                if has_current_chunks == 0:
+                if has_current_chunks == 0 or provider_changed:
                     _upsert_document_version_chunks(
                         db,
                         knowledge_base.id,
@@ -494,9 +494,11 @@ def build_knowledge_base(output_path: Path = VECTOR_STORE_PATH) -> dict:
             "path": str(output_path),
             "knowledge_base_id": knowledge_base.code,
             "vector_backend": vector_backend_name(),
+            **metadata,
             "entry_count": payload["entry_count"],
             "static_entry_count": static_entry_count,
             "embedded_document_count": embedded_document_count,
+            "provider_changed": provider_changed,
             "active_chunk_count": payload["entry_count"],
         }
     finally:
@@ -526,7 +528,7 @@ def _retrieve_pgvector_chunks(
     )
     scored = [_row_to_hit(row, query_vector, query) for row in rows]
     scored.sort(key=lambda item: item["score"], reverse=True)
-    return [item for item in scored[:top_k] if item["score"] > 0]
+    return rerank_hits(query, [item for item in scored if item["score"] > 0], top_k)
 
 
 def load_vector_store(path: Path = VECTOR_STORE_PATH, output_path: Path | None = None, rebuild: bool = True) -> dict:
@@ -561,6 +563,7 @@ def load_vector_store(path: Path = VECTOR_STORE_PATH, output_path: Path | None =
             "dimension": VECTOR_DIMENSION,
             "vector_backend": vector_backend_name(),
             "knowledge_base_id": knowledge_base.code,
+            **embedding_metadata(),
             "entry_count": len(entries),
             "entries": entries,
         }
@@ -629,6 +632,7 @@ def list_knowledge_bases() -> list[dict]:
                     "name": row.name,
                     "description": row.description,
                     "vector_backend": row.vector_backend,
+                    "embedding_provider": "hash" if row.embedding_model.startswith("hash_") else settings.embedding_provider,
                     "embedding_model": row.embedding_model,
                     "embedding_dimension": row.embedding_dimension,
                     "document_count": document_count,

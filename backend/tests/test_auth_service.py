@@ -18,7 +18,8 @@ def test_admin_login_success_and_invalid_password():
     token = authenticate_admin("admin", "123456")
 
     assert token["token"]
-    assert token["role"] == "admin"
+    assert token["role"] == "super_admin"
+    assert "users:manage" in token["permissions"]
 
     with pytest.raises(Exception):
         authenticate_admin("admin", "bad-password")

@@ -44,7 +44,7 @@ class PgVector(UserDefinedType):
         return process
 
 
-EMBEDDING_DIMENSION = settings.pgvector_dimension
+EMBEDDING_DIMENSION = settings.embedding_dimension
 EmbeddingType = PgVector(EMBEDDING_DIMENSION)
 
 

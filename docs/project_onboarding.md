@@ -1,17 +1,17 @@
-# Project Onboarding
+﻿# Project Onboarding
 
 ## 1. 项目目标
 
-LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的工程项目，当前阶段目标是跑通游客问答、PostgreSQL + pgvector RAG、版本化知识库、后台权限、游客评分、路线推荐反哺、数字人配置、真实地图和管理大屏基础数据。
+LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的工程项目，当前阶段目标是跑通游客问答、PostgreSQL + pgvector RAG、OpenAI 兼容 embedding/rerank fallback、版本化知识库、后台 RBAC、游客评分、路线推荐反哺、数字人配置、真实地图和管理大屏基础数据。
 
 ## 2. 当前包含
 
 - DeepSeek 文本问答和问答日志：[chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137)
-- PostgreSQL + pgvector 知识库和向量检索：[retrieve_context backend/app/services/vector_store.py:L575-L596](../backend/app/services/vector_store.py#L575-L596)
+- PostgreSQL + pgvector 知识库、OpenAI 兼容 embedding/rerank fallback 和向量检索：[embedding_service backend/app/services/embedding_service.py:L14-L190](../backend/app/services/embedding_service.py#L14-L190)、[retrieve_context backend/app/services/vector_store.py:L578-L599](../backend/app/services/vector_store.py#L578-L599)
 - 灵山真实景点和评分反哺路线：[SCENIC_SPOTS backend/app/services/scenic_service.py:L14-L230](../backend/app/services/scenic_service.py#L14-L230)、[recommend_route backend/app/services/route_service.py:L152-L196](../backend/app/services/route_service.py#L152-L196)
-- 游客个性化评分与大屏聚合：[VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354)、[dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89)
-- 数字人灵灵和真实地图：[DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64)、[ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101)
-- 管理后台登录、知识库版本化和发布流转：[login backend/app/api/admin.py:L15-L16](../backend/app/api/admin.py#L15-L16)、[publish_document backend/app/services/knowledge_service.py:L265-L282](../backend/app/services/knowledge_service.py#L265-L282)
+- 游客个性化评分、后台运营与大屏聚合：[VisitorSpotRating backend/app/models/persistence.py:L306-L354](../backend/app/models/persistence.py#L306-L354)、[get_admin_rating_insight_report backend/app/services/rating_service.py:L460-L546](../backend/app/services/rating_service.py#L460-L546)、[dashboard_overview backend/app/services/analytics_service.py:L34-L89](../backend/app/services/analytics_service.py#L34-L89)
+- 数字人灵灵 realistic-3d 渲染、local-2d 口型同步和真实地图：[DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156)、[AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242)、[avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110)、[blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662)、[inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133)、[ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101)
+- 管理后台登录、RBAC、管理员账号、知识库版本化和发布流转：[admin user APIs backend/app/api/v1.py:L291-L335](../backend/app/api/v1.py#L291-L335)、[publish_document backend/app/services/knowledge_service.py:L328-L353](../backend/app/services/knowledge_service.py#L328-L353)
 - 数据库持久化模型：[persistence models backend/app/models/persistence.py:L51-L354](../backend/app/models/persistence.py#L51-L354)
 - 无 npm 依赖静态演示端：[frontend_static/index.html:L170-L218](../frontend_static/index.html#L170-L218)
 - 完整栈烟测：[main scripts/smoke_full_stack.py:L30-L61](../scripts/smoke_full_stack.py#L30-L61)
@@ -19,7 +19,7 @@ LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的
 ## 3. 当前不包含
 
 - 真实 ASR/TTS 音频生成仍是 P1。
-- Live2D 数字人仍是 P1。
+- 商业数字人 SDK、真人级骨骼绑定和外部 AI 图生 3D 高保真初模仍是 P1；当前已完成 realistic-3d 渲染器、MPFB/MakeHuman 基座 + 本地 Blender 精修全身 GLB、local-2d 高清 mouth sprites + viseme 时间线口型同步兜底，并提供 OBJ/OpenSCAD/Blender 脚本资产链路。
 - 仓库默认只支持 PostgreSQL；本机调试统一连接 `127.0.0.1:5433`，不再保留 SQLite 兼容层。
 - ChromaDB / Milvus / Qdrant 不是当前项目依赖；比赛版统一使用 PostgreSQL + pgvector。
 - 图片识景接口仍是演示逻辑，真实多模态模型接入是 P1，详见 [实现缺口核查 docs/implementation_gap_audit.md:L1-L51](./implementation_gap_audit.md#L1-L51)。
@@ -52,12 +52,12 @@ LingTour AI 是面向中国软件杯 A5 景区导览服务 AI 数字人赛题的
 |---|---|---|
 | 修改问答逻辑 | [REQ-001](./requirements_traceability.md#req-001-deepseek--本地知识库问答闭环) | [chat_with_text backend/app/services/chat_service.py:L85-L137](../backend/app/services/chat_service.py#L85-L137) |
 | 补充景区资料 | [REQ-017](./requirements_traceability.md#req-017-postgresql--pgvector-知识库迁移) | [data/raw_documents/demo_scenic_guide.md:L1-L25](../data/raw_documents/demo_scenic_guide.md#L1-L25) |
-| 修改游客评分 | [REQ-021](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) | [rating_service.py:L151-L176](../backend/app/services/rating_service.py#L151-L176) |
+| 修改游客评分与后台运营 | [REQ-021](./requirements_traceability.md#req-021-游客个性化评分路线反哺与数据大屏) | [create_or_update_rating backend/app/services/rating_service.py:L161-L186](../backend/app/services/rating_service.py#L161-L186)、[AdminRatings frontend/src/pages/admin/AdminRatings.vue:L1-L167](../frontend/src/pages/admin/AdminRatings.vue#L1-L167) |
 | 修改真实地图 | [REQ-005](./requirements_traceability.md#req-005-灵山真实景点地图与路线导览) | [ScenicMapView frontend/src/components/ScenicMapView.vue:L1-L101](../frontend/src/components/ScenicMapView.vue#L1-L101) |
-| 修改数字人灵灵 | [REQ-006](./requirements_traceability.md#req-006-数字人灵灵真实前端交互体验) | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L64](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L64) |
+| 修改数字人灵灵 | [REQ-006](./requirements_traceability.md#req-006-数字人灵灵真实前端交互体验) | [DigitalAvatar frontend/src/components/Avatar/DigitalAvatar.vue:L1-L156](../frontend/src/components/Avatar/DigitalAvatar.vue#L1-L156)、[AvatarRenderer frontend/src/components/Avatar/AvatarRenderer.vue:L1-L242](../frontend/src/components/Avatar/AvatarRenderer.vue#L1-L242)、[avatarLipSync frontend/src/store/avatarLipSync.ts:L1-L110](../frontend/src/store/avatarLipSync.ts#L1-L110)、[blender_generate_lingling_avatar scripts/blender_generate_lingling_avatar.py:L20-L662](../scripts/blender_generate_lingling_avatar.py#L20-L662)、[inspect_glb_morph_targets scripts/inspect_glb_morph_targets.py:L11-L133](../scripts/inspect_glb_morph_targets.py#L11-L133) |
 | 修改后台知识库发布机制 | [REQ-007](./requirements_traceability.md#req-007-后台知识库管理闭环) | [knowledge_service.py:L153-L324](../backend/app/services/knowledge_service.py#L153-L324) |
-| 修改后台权限或数据库 | [REQ-008](./requirements_traceability.md#req-008-后台权限版本化知识库与数据库持久化) | [auth_service.py:L32-L145](../backend/app/services/auth_service.py#L32-L145)、[database.py:L38-L76](../backend/app/core/database.py#L38-L76) |
+| 修改后台权限或数据库 | [REQ-008](./requirements_traceability.md#req-008-后台权限版本化知识库与数据库持久化)、[REQ-022](./requirements_traceability.md#req-022-生产级-rag权限迁移与-e2e-加固) | [auth_service.py:L22-L294](../backend/app/services/auth_service.py#L22-L294)、[migrate_db.py:L1-L91](../scripts/migrate_db.py#L1-L91) |
 | 修改 README 或架构文档 | [架构说明](./architecture.md) | [README.md:L1-L116](../README.md#L1-L116)、[architecture.md:L1-L136](./architecture.md#L1-L136) |
-| 修改运行命令 | [CLI 使用说明](./cli_usage.md) | [run_local.py:L204-L254](../scripts/run_local.py#L204-L254) |
+| 修改运行命令 | [CLI 使用说明](./cli_usage.md) | [run_local.py:L211-L266](../scripts/run_local.py#L211-L266) |
 | 启动本地演示 | [TEST-006](./test_reference.md#test-006-完整栈烟测) | [main scripts/smoke_full_stack.py:L30-L61](../scripts/smoke_full_stack.py#L30-L61) |
 | 排查 npm 失败 | [TRB-001](./troubleshooting.md#trb-001-前端-npm-install-超时或-econnreset) | [frontend/.npmrc:L1-L4](../frontend/.npmrc#L1-L4) |
